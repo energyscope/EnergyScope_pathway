@@ -40,6 +40,7 @@ set END_USES_INPUT; # Types of demand (end-uses). Input to the model
 set END_USES_CATEGORIES; # Categories of demand (end-uses): electricity, heat, mobility
 set END_USES_TYPES_OF_CATEGORY {END_USES_CATEGORIES}; # Types of demand (end-uses).
 set RESOURCES; # Resources: fuels (renewables and fossils) and electricity imports
+set RES_IMPORT_CONSTANT within RESOURCES; # resources imported at constant power (e.g. NG, diesel, ...)
 set BIOFUELS within RESOURCES; # imported biofuels.
 set EXPORT within RESOURCES; # exported resources
 set END_USES_TYPES := setof {i in END_USES_CATEGORIES, j in END_USES_TYPES_OF_CATEGORY [i]} j; # secondary set
@@ -76,11 +77,12 @@ set AGE {TECHNOLOGIES,PHASE} within PHASE union {"2010_2015"} union {"STILL_IN_U
 #################################
 
 ## NEW PARAMETERS FOR PATHWAY:
-param max_inv_phase {PHASE} default 1e15;#Unlimited
+param max_inv_phase {PHASE} default Infinity;#Unlimited
 param t_phase ;
 param diff_2015_phase {PHASE};
-param gwp_limit_transition >=0 default 1e15; #To limit CO2 emissions over the transition
+param gwp_limit_transition >=0 default Infinity; #To limit CO2 emissions over the transition
 param decom_allowed {PHASE,PHASE union {"2010_2015"},TECHNOLOGIES} default 0;
+param remaining_years {TECHNOLOGIES,PHASE} >=0;
 param limit_LT_renovation >= 0;
 param limit_pass_mob_changes >= 0;
 param limit_freight_changes >= 0;
@@ -112,7 +114,7 @@ param share_freight_boat_max {YEARS}  >= 0, <= 1 default 0; # % max limit for pe
 # share dhn vs decentralized for low-T heating
 param share_heat_dhn_min {YEARS} >= 0, <= 1 default 0; # %_dhn,min [-]: min limit for penetration of dhn in low-T heating
 param share_heat_dhn_max {YEARS} >= 0, <= 1 default 0; # %_dhn,max [-]: max limit for penetration of dhn in low-T heating
-
+param share_ned {YEARS, END_USES_TYPES_OF_CATEGORY["NON_ENERGY"]} >= 0, <= 1; # %_ned [-] share of non-energy demand per type of feedstocks.
 param t_op {HOURS, TYPICAL_DAYS} default 1;# [h]: operating time 
 param f_max {YEARS,TECHNOLOGIES} >= 0 default 0; # Maximum feasible installed capacity [GW], refers to main output. storage level [GWh] for STORAGE_TECH
 param f_min {YEARS,TECHNOLOGIES} >= 0 default 0; # Minimum feasible installed capacity [GW], refers to main output. storage level [GWh] for STORAGE_TECH
@@ -138,6 +140,7 @@ param storage_discharge_time {YEARS, STORAGE_TECH} >= 0 default 0; # t_sto_out [
 param storage_availability {YEARS, STORAGE_TECH} >=0, default 1;# %_sto_avail [-]: Storage technology availability to charge/discharge. Used for EVs 
 param loss_network {YEARS, END_USES_TYPES} >= 0 default 0; # %_net_loss: Losses coefficient [0; 1] in the networks (grid and DHN)
 param batt_per_car {YEARS, V2G} >= 0 default 0; # ev_Batt_size [GWh]: Battery size per EVs car technology
+param state_of_charge_ev {EVs_BATT,HOURS} >= 0, default 0; # Minimum state of charge of the EV during the day. 
 param c_grid_extra >=0; # # Cost to reinforce the grid due to IRE penetration [Meuros/GW of (PV + Wind)].
 param elec_max_import_capa  {YEARS} >=0;
 param solar_area	 {YEARS} >= 0; # Maximum land available for PV deployment [km2]
@@ -160,6 +163,7 @@ var F_new {PHASE union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for
 var F_decom {PHASE,PHASE union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase
 var F_old {PHASE,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output
 var C_inv_phase {PHASE} >=0; #[M€/GW] Phase total annualised investment cost
+var C_inv_return {TECHNOLOGIES} >=0; #[M€] Money given back for existing technologies after 2050 to compute the objective function
 #var Fixed_phase_investment;
 var C_opex {YEARS} >=0;
 var C_tot_opex >=0;
@@ -228,10 +232,14 @@ subject to end_uses_t {y in YEARS, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 			(end_uses_input[y,"MOBILITY_FREIGHT"]   * mob_freight_time_series [h, td] / t_op [h, td] ) *  Share_freight_boat [y]
 		else (if l == "HEAT_HIGH_T" then
 			end_uses_input[y,l] / total_time
-		else (if l == "NON_ENERGY" then
-			end_uses_input[y,l] / total_time
+		else (if l == "HVC" then
+			end_uses_input[y,"NON_ENERGY"] * share_ned [y,"HVC"] / total_time
+		else (if l == "AMMONIA" then
+			end_uses_input[y,"NON_ENERGY"] * share_ned [y,"AMMONIA"] / total_time
+		else (if l == "METHANOL" then
+			end_uses_input[y,"NON_ENERGY"] * share_ned [y,"METHANOL"] / total_time
 		else 
-			0 )))))))))); # For all layers which don't have an end-use demand
+			0 )))))))))))); # For all layers which don't have an end-use demand
 
 
 ## Cost
@@ -296,6 +304,12 @@ subject to capacity_factor {y in YEARS, j in TECHNOLOGIES}:
 subject to resource_availability {y in YEARS, i in RESOURCES}:
 	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,i, h, td] * t_op [h, td]) <= avail [y,i];
 
+# [Eq. 2.12-bis] Constant flow of import for resources listed in SET RES_IMPORT_CONSTANT
+var Import_constant {y in YEARS, RES_IMPORT_CONSTANT} >= 0;
+subject to resource_constant_import {y in YEARS, i in RES_IMPORT_CONSTANT, h in HOURS, td in TYPICAL_DAYS}:
+	F_t [y, i, h, td] * t_op [h, td] = Import_constant [y, i];
+
+
 ## Layers
 #--------
 
@@ -338,9 +352,12 @@ subject to storage_layer_out {y in YEARS, j in STORAGE_TECH, l in LAYERS, h in H
 	(if storage_eff_out [y, j, l]=0 then  Storage_out [y, j, l, h, td]  = 0);
 		
 # [Eq. 19] limit the Energy to power ratio. 
-subject to limit_energy_to_power_ratio {y in YEARS, j in STORAGE_TECH , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to limit_energy_to_power_ratio {y in YEARS, j in STORAGE_TECH diff {"BEV_BATT","PHEV_BATT"}, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + Storage_out [y, j, l, h, td] * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
-	
+
+# [Eq. 19] limit the Energy to power ratio. 
+subject to limit_energy_to_power_ratio_bis {y in YEARS, i in V2G, j in EVs_BATT_OF_V2G[i] , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + (Storage_out [y, j, l, h, td] + layers_in_out[y, i,"ELECTRICITY"]* F_t [y, i, h, td] ) * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
 
 ## Infrastructure
 #----------------
@@ -357,7 +374,7 @@ subject to extra_grid {y in YEARS}:
 
 # [Eq. 22] DHN: assigning a cost to the network
 subject to extra_dhn  {y in YEARS}:
-	F [y, "DHN"] = sum {j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DHN"]} (F [y, j]);
+	F [y, "DHN"] = sum {j in TECHNOLOGIES diff STORAGE_TECH: layers_in_out [y, j,"HEAT_LOW_T_DHN"] > 0} (layers_in_out [y, j,"HEAT_LOW_T_DHN"] * F [y, j]);
 
 ## Additional constraints
 #------------------------
@@ -408,6 +425,11 @@ subject to EV_storage_size {y in YEARS, j in V2G, i in EVs_BATT_OF_V2G[j]}:
 subject to EV_storage_for_V2G_demand {y in YEARS, j in V2G, i in EVs_BATT_OF_V2G[j], h in HOURS, td in TYPICAL_DAYS}:
 	Storage_out [y, i,"ELECTRICITY",h,td] >=  - layers_in_out[y,j,"ELECTRICITY"]* F_t [y, j, h, td];
 		
+# [Eq. 2.31-bis]  Impose a minimum state of charge at some hours of the day:
+subject to ev_minimum_state_of_charge {j in V2G, i in EVs_BATT_OF_V2G[j], y in YEARS,  t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
+	Storage_level [y, i, t] >=  F [y, i] * state_of_charge_ev [i, h];
+
+		
 ## Peak demand :
 
 # [Eq. 34] Peak in decentralized heating
@@ -457,7 +479,7 @@ subject to max_elec_import {y in YEARS, h in HOURS, td in TYPICAL_DAYS}:
 	
 # [Eq. 39] Limit surface area for solar
 subject to solar_area_limited {y in YEARS} :
-	F[y,"PV"]/power_density_pv+(F[y,"DEC_SOLAR"]+F[y,"DHN_SOLAR"])/power_density_solar_thermal <= solar_area [y];
+	F[y, "PV"] / power_density_pv + ( F [y, "DEC_SOLAR"] + F [y, "DHN_SOLAR"] ) / power_density_solar_thermal <= solar_area [y];
 
 # [Eq. XX] Force the system to consume all the WASTE available.
 subject to use_all_the_waste {y in YEARS diff {"YEAR_2015"}} : # I don't know why this constraint should be removed. 
@@ -513,12 +535,13 @@ subject to limit_changes_fright {p in PHASE, y_start in PHASE_START[p], y_stop i
 
 # [Eq. XX] Total transition cost = capex + opex
 subject to New_totalTransitionCost_calculation :
-	TotalTransitionCost = C_tot_capex + C_tot_opex ;
+	TotalTransitionCost = C_tot_capex + C_tot_opex;
 	
 # [Eq. XX] Compute capital expenditure for transition
 subject to total_capex: # category: COST_calc
 	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2015",i] # 2015 investment
-				 + sum{p in PHASE} C_inv_phase [p];# euros_2015
+				 + sum{p in PHASE} C_inv_phase [p]
+				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
 				 
 # [Eq. XX] Compute operating cost for transition
 subject to Opex_tot_cost_calculation :# category: COST_calc
@@ -533,7 +556,7 @@ subject to Opex_cost_calculation{y in YEARS} : # category: COST_calc
 					
 # [Eq. XX] Compute the total investment cost per phase
 subject to investment_computation {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
-	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new[p,i]*annualised_factor[p]*(c_inv[y_start,i]+c_inv[y_stop,i])/2; #In bÃ¢â€šÂ¬
+	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
 
 # [Eq. XX] We could either limit the max investment on a period or fix that these investments must be equals in â‚¬_2015
 subject to maxInvestment {p in PHASE}:
@@ -551,6 +574,9 @@ subject to maxInvestment {p in PHASE}:
 ##########################
 
 
+# [Eq. XX] 
+subject to investment_return {i in TECHNOLOGIES}:
+	C_inv_return [i] = sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
 
 # Can choose between TotalTransitionCost_calculation and TotalGWP and TotalCost
 minimize obj:  TotalTransitionCost;#sum {y in YEARS} TotalCost [y];
