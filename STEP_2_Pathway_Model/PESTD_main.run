@@ -27,20 +27,19 @@ model PESTD_initialise_2015.mod;
 ################################################################################
 ################################################################################
 
+#Set up of options identical to ESMC (from https://github.com/energyscope/EnergyScope_multi_cells/blob/Multi_cell/esmc/preprocessing/esmc.py line 121)
 option solver cplex;
 
-option show_stats 1; # show statistics
-option times 1; # show time
-option gentimes 1; # show time
+option log_file './log.txt';   #write the log in a .txt file. Create the file before running.
+option presolve 0;
+option times 0;
+option gentimes 0;
 
-option cplex_options  'mipdisplay 5 mipinterval 1000'; 
-option log_file 'log.txt';   #write the log in a .txt file. Create the file before running.
-
-
-option cplex_options $cplex_options 'mipgap 0.01 '; 
-#option cplex_options $cplex_options 'timelimit 200000 ';
-# computaion time between 30e3 - 150e3 seconds 
-# Rarely morethan 200 e3 seconds. If it goes, it may mean that the solver is not properly set.
+option cplex_options $cplex_options 'baropt predual=-1 crossover=0 barstart= 4';
+option cplex_options $cplex_options 'bardisplay=0';
+option cplex_options $cplex_options 'prestats=0';
+option cplex_options $cplex_options 'display=0';
+option cplex_options $cplex_options 'timelimit 64800 ';
 
 
 ################################################################################
@@ -64,11 +63,6 @@ param PathName symbolic default "output";
 		
 		# option cplex_options $cplex_options 'startbasis ./output/solution.bas '; # to read previously existing path
 		# option cplex_options $cplex_options 'endbasis ./output/solution.bas '; # to write how to solve
-		
-		option reset_initial_guesses 1; # Do not use previous solution (it takes more time 10 times more :/...)
-		option dual_initial_guesses 0;
-		option send_statuses 0;
-
 		
 		solve;
 
@@ -167,7 +161,6 @@ param PathName symbolic default "output";
 			for {j in TECHNOLOGIES}{
 				printf "\n %s\t%.6f\t",j, C_inv_return [j] >> (PathName & "/Cinv_return.txt");
 			}
-			
 			## Print Operating costs info to txt file.
 			print "--------------SAVING GWP YEARLY (based on RES) -----------";
 			printf "Emissions [ktCO2]\t" > (PathName & "/GWP_YEARLY.txt");
