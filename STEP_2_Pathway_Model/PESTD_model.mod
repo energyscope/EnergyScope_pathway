@@ -25,6 +25,10 @@ set YEARS ;#..  2050 by 25;
 set PHASE ;
 set PHASE_START {PHASE} within YEARS;
 set PHASE_STOP  {PHASE} within YEARS;
+set YEARS_WND within YEARS;
+set PHASE_WND within PHASE;
+set YEARS_UP_TO within YEARS;
+set PHASE_UP_TO within PHASE;
 
 #########################
 ###  SETS [Figure 3]  ###
@@ -201,6 +205,18 @@ var GWP_constr {YEARS, TECHNOLOGIES} >= 0; # GWP_constr [ktCO2-eq.]: Total emiss
 var GWP_op {YEARS, RESOURCES} >= 0; #  GWP_op [ktCO2-eq.]: Total yearly emissions of the resources [ktCO2-eq./y]
 var Network_losses {YEARS, END_USES_TYPES, HOURS, TYPICAL_DAYS} >= 0; # Net_loss [GW]: Losses in the networks (normally electricity grid and DHN)
 var Storage_level {YEARS, STORAGE_TECH, PERIODS} >= 0; # Sto_level [GWh]: Energy stored at each period
+
+# NEW VARIABLE FOR MYOPIC
+var F_wnd {YEARS_WND, TECHNOLOGIES} >= 0; # F_wnd: Installed capacity during the window of interest
+var F_up_to {YEARS_UP_TO, TECHNOLOGIES} >= 0; # F_up_to: Installed capacity from the start of the optimisation (2015)
+var F_new_up_to {PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase from the start of the optimisation (2015)
+var F_decom_up_to {PHASE_UP_TO,PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase from the start of the optimisation (2015)
+var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output from the start of the optimisation (2015)
+var Res_wnd {YEARS_WND, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
+var Tech_wnd {YEARS_WND, TECHNOLOGIES diff STORAGE_TECH, setof {i in END_USES_CATEGORIES, j in END_USES_TYPES_OF_CATEGORY [i]} j}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
+var F_t_wnd {YEARS_WND, TECHNOLOGIES diff STORAGE_TECH, HOURS, TYPICAL_DAYS} >= 0; # F_t: Operation in each period [GW] or, for STORAGE_TECH, storage level [GWh]. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
+var C_inv_wnd {YEARS_WND, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
+var C_op_maint_wnd {YEARS_WND, TECHNOLOGIES union RESOURCES}; #[€] Variable to store operational costs of resources or maintenance costs of technologies
 
 #########################################
 ###      CONSTRAINTS Eqs [1-42]       ###

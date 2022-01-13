@@ -43,15 +43,4 @@ def set_up_ampl(ampl_obj, pth_model):
     ampl_obj.setOption("cplex_options","timelimit=64800")
     
     ampl_obj.setOption("show_boundtol", "0") # To suppress messages about abs_boundtol and rel_boundtol, since the dual variables are not crucial to the analysis of the results
-
-
-def initialisation(files, pth_model):
-    concat_file = ""
-    for i in files:
-        file_i = os.path.join(pth_model,i)
-        with open(file_i, encoding='utf-8') as fp:
-            concat_file += fp.read()
-            concat_file += "\n"
-    with open('Initialisation.mod','w+', encoding='utf-8') as fp:
-        fp.write(concat_file)
         
