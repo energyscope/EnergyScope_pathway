@@ -25,7 +25,7 @@ subject to store_F_t_wnd {y in YEARS_WND, j in TECHNOLOGIES diff STORAGE_TECH, h
 subject to store_res_up_to {y in YEARS_WND, j in RESOURCES}:
 	Res_wnd [y, j] = sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j,h,td] * t_op [h, td]);
 
-## To store share of production in Electricity layer
+## To store share of production and consumption of END_USE layers
 subject to store_tech {y in YEARS_WND, tech in TECHNOLOGIES diff STORAGE_TECH,c in END_USES_CATEGORIES, l in END_USES_TYPES_OF_CATEGORY[c]}:
     Tech_wnd [y,tech,l] = sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} layers_in_out [y,tech,l] * F_t [y,tech, h, td];
 

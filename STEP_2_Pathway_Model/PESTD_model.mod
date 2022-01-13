@@ -228,7 +228,7 @@ var C_op_maint_wnd {YEARS_WND, TECHNOLOGIES union RESOURCES}; #[€] Variable to
 #-----------------------------------------
 
 # [Figure 4] From annual energy demand to hourly power demand. End_uses is non-zero only for demand layers.
-subject to end_uses_t {y in YEARS, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to end_uses_t {y in YEARS_WND, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 	End_uses [y,l, h, td] = (if l == "ELECTRICITY" 
 		then
 			(end_uses_input[y,l] / total_time + end_uses_input[y,"LIGHTING"] * electricity_time_series [h, td] / t_op [h, td] ) + Network_losses [y,l,h,td]
@@ -262,67 +262,67 @@ subject to end_uses_t {y in YEARS, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 #------
 
 # [Eq. 1]	
-subject to totalcost_cal {y in YEARS}:
+subject to totalcost_cal {y in YEARS_WND}:
 	TotalCost [y] = sum {j in TECHNOLOGIES} (tau [y,j]  * C_inv [y,j] + C_maint [y,j]) + sum {i in RESOURCES} C_op [y,i];
 	
 # [Eq. 3] Investment cost of each technology
-subject to investment_cost_calc {y in YEARS,j in TECHNOLOGIES}: 
+subject to investment_cost_calc {y in YEARS_WND,j in TECHNOLOGIES}: 
 	C_inv [y,j] = c_inv [y,j] * F [y,j];
 		
 # [Eq. 4] O&M cost of each technology
-subject to main_cost_calc {y in YEARS, j in TECHNOLOGIES}: 
+subject to main_cost_calc {y in YEARS_WND, j in TECHNOLOGIES}: 
 	C_maint [y,j] = c_maint [y,j] * F [y,j];		
 
 # [Eq. 5] Total cost of each resource
-subject to op_cost_calc {y in YEARS, i in RESOURCES}:
+subject to op_cost_calc {y in YEARS_WND, i in RESOURCES}:
 	C_op [y,i] = sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (c_op [y,i] * F_t [y,i, h, td] * t_op [h, td] ) ;
 
 ## Emissions
 #-----------
 
 # [Eq. 6]
-subject to totalGWP_calc {y in YEARS}:
+subject to totalGWP_calc {y in YEARS_UP_TO union YEARS_WND}:
 	TotalGWP [y] =  sum {i in RESOURCES} GWP_op [y,i];
 	#JUST RESOURCES : TotalGWP [y] =  sum {i in RESOURCES} GWP_op [y,i];
 	#BASED ON LCA:    TotalGWP [y] = sum {j in TECHNOLOGIES} (GWP_constr [y,j] / lifetime [y,j]) + sum {i in RESOURCES} GWP_op [y,i];
 	
 # [Eq. 7]
-subject to gwp_constr_calc {y in YEARS, j in TECHNOLOGIES}:
+subject to gwp_constr_calc {y in YEARS_UP_TO union YEARS_WND, j in TECHNOLOGIES}:
 	GWP_constr [y,j] = gwp_constr [y,j] * F [y,j];
 
 # [Eq. 8]
-subject to gwp_op_calc {y in YEARS, i in RESOURCES}:
+subject to gwp_op_calc {y in YEARS_UP_TO union YEARS_WND, i in RESOURCES}:
 	GWP_op [y,i] = gwp_op [y,i] * sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} ( F_t [y,i, h, td] * t_op [h, td] );	
 
 # [Eq. XX] total transition gwp calculation
 subject to totalGWPTransition_calculation : # category: GWP_calc
-	TotalGWPTransition = TotalGWP ["YEAR_2015"] + sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]}  (t_phase * (TotalGWP [y_start] + TotalGWP [y_stop])/2);
+	TotalGWPTransition = TotalGWP ["YEAR_2015"] + sum {p in PHASE_UP_TO union PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]}  (t_phase * (TotalGWP [y_start] + TotalGWP [y_stop])/2);
 	
 ## Multiplication factor
 #-----------------------
 	
 # [Eq. 9] min & max limit to the size of each technology
-subject to size_limit {y in YEARS, j in TECHNOLOGIES}:
+subject to size_limit {y in YEARS_WND, j in TECHNOLOGIES}:
 	f_min [y,j] <= F [y,j] <= f_max [y,j];
 	
 # [Eq. 10] relation between power and capacity via period capacity factor. This forces max hourly output (e.g. renewables)
-subject to capacity_factor_t {y in YEARS, j in TECHNOLOGIES, h in HOURS, td in TYPICAL_DAYS}:
+subject to capacity_factor_t {y in YEARS_WND, j in TECHNOLOGIES, h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y,j, h, td] <= F [y,j] * c_p_t [j, h, td];
 	
 # [Eq. 11] relation between mult_t and mult via yearly capacity factor. This one forces total annual output
-subject to capacity_factor {y in YEARS, j in TECHNOLOGIES}:
+subject to capacity_factor {y in YEARS_WND, j in TECHNOLOGIES}:
 	sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,j, h, td] * t_op [h, td]) <= F [y,j] * c_p [y,j] * total_time;	
 		
 ## Resources
 #-----------
 
 # [Eq. 12] Resources availability equation
-subject to resource_availability {y in YEARS, i in RESOURCES}:
+subject to resource_availability {y in YEARS_WND, i in RESOURCES}:
 	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,i, h, td] * t_op [h, td]) <= avail [y,i];
 
 # [Eq. 2.12-bis] Constant flow of import for resources listed in SET RES_IMPORT_CONSTANT
 var Import_constant {y in YEARS, RES_IMPORT_CONSTANT} >= 0;
-subject to resource_constant_import {y in YEARS, i in RES_IMPORT_CONSTANT, h in HOURS, td in TYPICAL_DAYS}:
+subject to resource_constant_import {y in YEARS_WND, i in RES_IMPORT_CONSTANT, h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y, i, h, td] * t_op [h, td] = Import_constant [y, i];
 
 
@@ -331,7 +331,7 @@ subject to resource_constant_import {y in YEARS, i in RES_IMPORT_CONSTANT, h in 
 
 # [Eq. 13] Layer balance equation with storage. Layers: input > 0, output < 0. Demand > 0. Storage: in > 0, out > 0;
 # output from technologies/resources/storage - input to technologies/storage = demand. Demand has default value of 0 for layers which are not end_uses
-subject to layer_balance {y in YEARS, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to layer_balance {y in YEARS_WND, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 		sum {i in RESOURCES union TECHNOLOGIES diff STORAGE_TECH } 
 		(layers_in_out[y,i, l] * F_t [y,i, h, td]) 
 		+ sum {j in STORAGE_TECH} ( Storage_out [y,j, l, h, td] - Storage_in [y,j, l, h, td] )
@@ -342,7 +342,7 @@ subject to layer_balance {y in YEARS, l in LAYERS, h in HOURS, td in TYPICAL_DAY
 #---------
 	
 # [Eq. 14] The level of the storage represents the amount of energy stored at a certain time.
-subject to storage_level {y in YEARS, j in STORAGE_TECH, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
+subject to storage_level {y in YEARS_WND, j in STORAGE_TECH, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
 	Storage_level [y, j, t] = (if t == 1 then
 	 			Storage_level [y, j, card(PERIODS)] * (1.0 -  storage_losses[y,j])
 				+ t_op [h, td] * (   (sum {l in LAYERS: storage_eff_in [y,j,l] > 0}  (Storage_in [y, j, l, h, td]  * storage_eff_in  [y, j, l])) 
@@ -354,72 +354,72 @@ subject to storage_level {y in YEARS, j in STORAGE_TECH, t in PERIODS, h in HOUR
 				);
 
 # [Eq. 15] Bounding daily storage
-subject to impose_daily_storage {y in YEARS, j in STORAGE_DAILY, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
+subject to impose_daily_storage {y in YEARS_WND, j in STORAGE_DAILY, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
 	Storage_level [y, j, t] = F_t [y, j, h, td];
 	
 # [Eq. 16] Bounding seasonal storage
-subject to limit_energy_stored_to_maximum {y in YEARS, j in STORAGE_TECH diff STORAGE_DAILY , t in PERIODS}:
+subject to limit_energy_stored_to_maximum {y in YEARS_WND, j in STORAGE_TECH diff STORAGE_DAILY , t in PERIODS}:
 	Storage_level [y, j, t] <= F [y, j];# Never exceed the size of the storage unit
 	
 # [Eqs. 17-18] Each storage technology can have input/output only to certain layers. If incompatible then the variable is set to 0
-subject to storage_layer_in {y in YEARS, j in STORAGE_TECH, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to storage_layer_in {y in YEARS_WND, j in STORAGE_TECH, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 	(if storage_eff_in [y, j, l]=0 then  Storage_in [y, j, l, h, td]  = 0);
-subject to storage_layer_out {y in YEARS, j in STORAGE_TECH, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to storage_layer_out {y in YEARS_WND, j in STORAGE_TECH, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 	(if storage_eff_out [y, j, l]=0 then  Storage_out [y, j, l, h, td]  = 0);
 		
 # [Eq. 19] limit the Energy to power ratio. 
-subject to limit_energy_to_power_ratio {y in YEARS, j in STORAGE_TECH diff {"BEV_BATT","PHEV_BATT"}, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to limit_energy_to_power_ratio {y in YEARS_WND, j in STORAGE_TECH diff {"BEV_BATT","PHEV_BATT"}, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + Storage_out [y, j, l, h, td] * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
 
 # [Eq. 19] limit the Energy to power ratio. 
-subject to limit_energy_to_power_ratio_bis {y in YEARS, i in V2G, j in EVs_BATT_OF_V2G[i] , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to limit_energy_to_power_ratio_bis {y in YEARS_WND, i in V2G, j in EVs_BATT_OF_V2G[i] , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
 	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + (Storage_out [y, j, l, h, td] + layers_in_out[y, i,"ELECTRICITY"]* F_t [y, i, h, td] ) * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
 
 ## Infrastructure
 #----------------
 
 # [Eq. 20] Calculation of losses for each end-use demand type (normally for electricity and DHN)
-subject to network_losses {y in YEARS, eut in END_USES_TYPES, h in HOURS, td in TYPICAL_DAYS}:
+subject to network_losses {y in YEARS_WND, eut in END_USES_TYPES, h in HOURS, td in TYPICAL_DAYS}:
 	Network_losses [y, eut,h,td] = (sum {j in RESOURCES union TECHNOLOGIES diff STORAGE_TECH: layers_in_out [y,j, eut] > 0} ((layers_in_out[y,j, eut]) * F_t [y, j, h, td])) * loss_network [y,eut];
 
 # [Eq. 21] Extra grid cost for integrating 1 GW of RE is estimated to 367.8Meuros per GW of intermittent renewable (27beuros to integrate the overall potential) 
-subject to extra_grid {y in YEARS}:
+subject to extra_grid {y in YEARS_WND}:
 	F [y,"GRID"] = 1 +  (c_grid_extra / c_inv[y,"GRID"]) *(    (F [y, "WIND_ONSHORE"] + F [y, "WIND_OFFSHORE"] + F [y, "PV"]      )
 					                                     - (f_min [y,"WIND_ONSHORE"] + f_min [y,"WIND_OFFSHORE"] + f_min [y,"PV"]) );
 
 
 # [Eq. 22] DHN: assigning a cost to the network
-subject to extra_dhn  {y in YEARS}:
+subject to extra_dhn  {y in YEARS_WND}:
 	F [y, "DHN"] = sum {j in TECHNOLOGIES diff STORAGE_TECH: layers_in_out [y, j,"HEAT_LOW_T_DHN"] > 0} (layers_in_out [y, j,"HEAT_LOW_T_DHN"] * F [y, j]);
 
 ## Additional constraints
 #------------------------
 	
 # [Eq. 23] Fix nuclear production constant : 
-subject to constantNuc {y in YEARS, h in HOURS, td in TYPICAL_DAYS}:
+subject to constantNuc {y in YEARS_WND, h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y, "NUCLEAR", h, td] = Power_nuclear [y];
 
 # [Eq. 24] Operating strategy in mobility passenger (to make model more realistic)
 # Each passenger mobility technology (j) has to supply a constant share  (Shares_mobility_passenger[j]) of the passenger mobility demand
-subject to operating_strategy_mob_passenger{y in YEARS, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_PASSENGER"], h in HOURS, td in TYPICAL_DAYS}:
+subject to operating_strategy_mob_passenger{y in YEARS_WND, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_PASSENGER"], h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y, j, h, td]   = Shares_mobility_passenger [y, j] * (end_uses_input[y,"MOBILITY_PASSENGER"] * mob_pass_time_series [h, td] / t_op [h, td] );
 	
 	
 # NEW CONSTRAINT to fix the use of trucks (not having FC trucks during summer and other during winter).
 # [Eq. 25Â¤ Operating strategy in mobility freight (to make model more realistic)
 # Each freight mobility technology (j) has to supply a constant share  (Shares_mobility_freight[j]) of the passenger mobility demand
-subject to operating_strategy_mobility_freight{y in YEARS, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_FREIGHT"], h in HOURS, td in TYPICAL_DAYS}:
+subject to operating_strategy_mobility_freight{y in YEARS_WND, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_FREIGHT"], h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y, j, h, td]   = Shares_mobility_freight [y, j] * (end_uses_input[y,"MOBILITY_FREIGHT"] * mob_freight_time_series [h, td] / t_op [h, td] );
 	
 # [Eq. 26] To impose a constant share in the mobility
-subject to Freight_shares {y in YEARS} :
-	Share_freight_train [y] + Share_freight_road [y] + Share_freight_boat [y] = 1; # =1 should work... But don't know why it doesn't
+subject to Freight_shares {y in YEARS_WND} :
+	Share_freight_train [y] + Share_freight_road [y] + Share_freight_boat [y] = 1;
 
 	
 ## Thermal solar & thermal storage:
 
 # [Eq. 26] relation between decentralised thermal solar power and capacity via period capacity factor.
-subject to thermal_solar_capacity_factor {y in YEARS, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
+subject to thermal_solar_capacity_factor {y in YEARS_WND, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
 	F_t_solar [y, j, h, td] <= F_solar[y, j] * c_p_t["DEC_SOLAR", h, td];
 	
 # [Eq. 27] Overall thermal solar is the sum of specific thermal solar 	
