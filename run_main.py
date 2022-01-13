@@ -9,9 +9,8 @@ import os
 
 import matplotlib.pyplot as plt
 import plotly.express as px
-import itertools
 from plotly.offline import plot
-from plotly.graph_objs import *
+
 
 import time
 import pandas as pd
@@ -22,39 +21,14 @@ from pylib.pre_treatment import Pathway_window as wnd
 from pylib.pre_treatment import set_up_ampl as sua
 from pylib.post_treatment import post_processing as postp
 
-import sys
-import glob
+import pylib.opti_probl as op
+
 import numpy as np
-import scipy as sp
 
-from multiprocessing import Process, Queue
-import multiprocessing as mp
-import shutil
-import csv
+
 import pickle
-from itertools import groupby
-from collections import OrderedDict
-import subprocess as subp
-from copy import deepcopy
 
-
-
-###############################################################################
-''' additional functions '''
-###############################################################################
-
-### Class useful to launch the .run in an other function
-class cd:
-    def __init__(self, newPath):
-        self.newPath = os.path.expanduser(newPath)
-    
-    def __enter__(self):
-        self.savedPath = os.getcwd()
-        os.chdir(self.newPath)
-    
-    def __exit__(self, etype, value, traceback):
-        os.chdir(self.savedPath)
-        
+from copy import deepcopy        
 
 ###############################################################################
 ''' main script '''
@@ -65,13 +39,40 @@ if __name__ == '__main__':
     # Different actions
     CleanHistory = True
     InitStorage = True
-    RunMyopicOpti = False
+    RunMyopicOpti = True
     GoNextWindow = True
-    PostProcess = True
+    PostProcess = False
     DrawGraphs = False
     
+    
+    ## Pickled results: preparation
     PKL_list = ['Resources','Tech_Prod_Cons','Tech_Cap','Shadow_prices']
     PKL_dict = dict.fromkeys(PKL_list)
+    
+    
+    ## Paths
+    pth_model = os.path.join(os.getcwd(),'STEP_2_Pathway_Model')
+    pth_ampl = '/Users/xrixhon/Documents/Software/AMPL'
+    pth_output = os.path.join(os.getcwd(),'outputs')
+    
+    ## Options for ampl and cplex
+    cplex_options = ['baropt',
+                 'predual=-1',
+                 'barstart=4',
+                 'timelimit 64800',
+                 'crossover=0',
+                 'bardisplay=0',
+                 'prestats=0',
+                 'display=0']
+    cplex_options_str = ' '.join(cplex_options)
+    ampl_options = {'show_stats': 3,
+                    'log_file': os.path.join(pth_model,'log.txt'),
+                    'presolve': 0,
+                    'times': 0,
+                    'gentimes': 0,
+                    'show_boundtol': 0,
+                    'cplex_options': cplex_options_str}
+    
     
     # N_year_opti = [35, 20, 10]
     # N_year_overlap = [0, 10, 5]
@@ -86,10 +87,6 @@ if __name__ == '__main__':
         # n_year_overlap = 5
     
     
-        # Paths
-        pth_model = os.path.join(os.getcwd(),'STEP_2_Pathway_Model')
-        pth_ampl = '/Users/xrixhon/Documents/Software/AMPL'
-        pth_output = os.path.join(os.getcwd(),'outputs')
         file_name = os.path.join(pth_output,'pickle_{}_{}.pkl'.format(n_year_opti,n_year_overlap))
     
         [years_wnd, phases_wnd, years_up_to, phases_up_to] = wnd.pathway_window(n_year_opti,n_year_overlap)
@@ -101,8 +98,9 @@ if __name__ == '__main__':
             
         if InitStorage:
             ampl0 = AMPL(Environment(pth_ampl))
-            # ampl0 = AMPL(Environment(pth_ampl,'ampldev'))        
-            sua.set_up_ampl(ampl0, pth_model)
+            # ampl0 = AMPL(Environment(pth_ampl,'ampldev'))
+            # ampl0 = op.OptiProbl(pth_model, pth_model, pth_ampl, ampl_options)
+            sua.set_up_ampl(ampl0, pth_model, ampl_options)
             
             S = ampl0.getSets()
             V = ampl0.getVariables()
@@ -160,7 +158,7 @@ if __name__ == '__main__':
                 ampl = AMPL(Environment(pth_ampl))
 
                 
-                sua.set_up_ampl(ampl, pth_model)
+                sua.set_up_ampl(ampl, pth_model, ampl_options)
                 ampl._startRecording('session.log')
                 ampl.setOption('_log_input_only', False)
                 

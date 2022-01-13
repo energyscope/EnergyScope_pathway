@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from amplpy import AMPL, DataFrame
-from esmc.postprocessing import amplpy2pd as a2p
+from amplpy import AMPL, DataFrame, Environment
+# from esmc.postprocessing import amplpy2pd as a2p
 
 
 
@@ -24,14 +24,15 @@ class OptiProbl:
 
     """
 
-    def __init__(self, mod_path, data_path, options):
+    def __init__(self, mod_path, data_path, ampl_path, options):
         # instantiate different attributes
         self.dir = Path()
         self.dir = mod_path.parent
         self.mod_path = mod_path
         self.data_path = data_path
+        self.ampl_path = ampl_path
         self.options = options
-        self.ampl = self.set_ampl(mod_path, data_path, options)
+        self.ampl = self.set_ampl(mod_path, data_path, ampl_path, options)
         self.vars = list()
         self.params = list()
         self.sets = dict()
@@ -93,28 +94,28 @@ class OptiProbl:
             else:
                 self.sets[name] = self.get_subset(obj)
 
-    def print_inputs(self, directory=None):
-        """
+    # def print_inputs(self, directory=None):
+    #     """
 
-        Prints the sets, parameters' names and variables' names of the LP optimization problem
+    #     Prints the sets, parameters' names and variables' names of the LP optimization problem
 
-        Parameters
-        ----------
-        directory : pathlib.Path
-        Path of the directory where to save the inputs
+    #     Parameters
+    #     ----------
+    #     directory : pathlib.Path
+    #     Path of the directory where to save the inputs
 
-        """
-        # default directory
-        if directory is None:
-            directory = self.dir / 'inputs'
-        # creating inputs dir
-        directory.mkdir(parents=True, exist_ok=True)
-        # printing inputs
-        a2p.print_json(self.sets, directory / 'sets.json')
-        a2p.print_json(self.params, directory / 'parameters.json')
-        a2p.print_json(self.vars, directory / 'variables.json')
+    #     """
+    #     # default directory
+    #     if directory is None:
+    #         directory = self.dir / 'inputs'
+    #     # creating inputs dir
+    #     directory.mkdir(parents=True, exist_ok=True)
+    #     # printing inputs
+    #     a2p.print_json(self.sets, directory / 'sets.json')
+    #     a2p.print_json(self.params, directory / 'parameters.json')
+    #     a2p.print_json(self.vars, directory / 'variables.json')
 
-        return
+    #     return
 
     def get_outputs(self):
         """
@@ -183,7 +184,7 @@ class OptiProbl:
     #############################
 
     @staticmethod
-    def set_ampl(mod_path, data_path, options):
+    def set_ampl(mod_path, data_path, ampl_path, options):
         """
 
         Initialize the AMPL() object containing the LP problem
@@ -207,7 +208,7 @@ class OptiProbl:
         """
         try:
             # Create an AMPL instance
-            ampl = AMPL()
+            ampl = AMPL(Environment(ampl_path))
             # define solver
             ampl.setOption('solver', 'cplex')
             # set options
