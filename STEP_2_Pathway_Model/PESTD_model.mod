@@ -423,41 +423,41 @@ subject to thermal_solar_capacity_factor {y in YEARS_WND, j in TECHNOLOGIES_OF_E
 	F_t_solar [y, j, h, td] <= F_solar[y, j] * c_p_t["DEC_SOLAR", h, td];
 	
 # [Eq. 27] Overall thermal solar is the sum of specific thermal solar 	
-subject to thermal_solar_total_capacity {y in YEARS}:
+subject to thermal_solar_total_capacity {y in YEARS_WND}:
 	F [y, "DEC_SOLAR"] = sum {j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}} F_solar[y, j];
 
 # [Eq. 28]: Decentralised thermal technology must supply a constant share of heat demand.
-subject to decentralised_heating_balance  {y in YEARS, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, i in TS_OF_DEC_TECH[j], h in HOURS, td in TYPICAL_DAYS}:
+subject to decentralised_heating_balance  {y in YEARS_WND, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, i in TS_OF_DEC_TECH[j], h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y, j, h, td] + F_t_solar [y, j, h, td] + sum {l in LAYERS } ( Storage_out [y, i, l, h, td] - Storage_in [y, i, l, h, td])  
 		= Shares_lowT_dec[y, j] * (end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_time_series [h, td] / t_op [h, td]);
 
 ## EV storage :
 
 # [Eq. 32] Compute the equivalent size of V2G batteries based on the installed capacity, the capacity per vehicles and the battery capacity per EVs technology
-subject to EV_storage_size {y in YEARS, j in V2G, i in EVs_BATT_OF_V2G[j]}:
+subject to EV_storage_size {y in YEARS_WND, j in V2G, i in EVs_BATT_OF_V2G[j]}:
 	F [y, i] = F[y,j] / vehicule_capacity [y,j] * batt_per_car[y,j];# Battery size proportional to the number of cars
 	
 # [Eq. 33]  Impose EVs to be supplied by their battery.
-subject to EV_storage_for_V2G_demand {y in YEARS, j in V2G, i in EVs_BATT_OF_V2G[j], h in HOURS, td in TYPICAL_DAYS}:
+subject to EV_storage_for_V2G_demand {y in YEARS_WND, j in V2G, i in EVs_BATT_OF_V2G[j], h in HOURS, td in TYPICAL_DAYS}:
 	Storage_out [y, i,"ELECTRICITY",h,td] >=  - layers_in_out[y,j,"ELECTRICITY"]* F_t [y, j, h, td];
 		
 # [Eq. 2.31-bis]  Impose a minimum state of charge at some hours of the day:
-subject to ev_minimum_state_of_charge {j in V2G, i in EVs_BATT_OF_V2G[j], y in YEARS,  t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
+subject to ev_minimum_state_of_charge {j in V2G, i in EVs_BATT_OF_V2G[j], y in YEARS_WND,  t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
 	Storage_level [y, i, t] >=  F [y, i] * state_of_charge_ev [i, h];
 
 		
 ## Peak demand :
 
 # [Eq. 34] Peak in decentralized heating
-subject to peak_lowT_dec {y in YEARS, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
+subject to peak_lowT_dec {y in YEARS_WND, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
 	F [y, j] >= peak_sh_factor * F_t [y, j, h, td] ;
 
 # [Eq. 35] Calculation of max heat demand in DHN (1st constrain required to linearised the max function)
 var Max_Heat_Demand {YEARS} >= 0;
-subject to max_dhn_heat_demand {y in YEARS, h in HOURS, td in TYPICAL_DAYS}:
+subject to max_dhn_heat_demand {y in YEARS_WND, h in HOURS, td in TYPICAL_DAYS}:
 	Max_Heat_Demand [y] >= End_uses [y, "HEAT_LOW_T_DHN", h, td];
 # Peak in DHN
-subject to peak_lowT_dhn {y in YEARS}:
+subject to peak_lowT_dhn {y in YEARS_WND}:
 	sum {j in TECHNOLOGIES_OF_END_USES_TYPE ["HEAT_LOW_T_DHN"], i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DHN"]} (F [y, j] + F[y, i]/storage_discharge_time[y, i]) >= peak_sh_factor * Max_Heat_Demand [y];
 		
 
@@ -465,7 +465,7 @@ subject to peak_lowT_dhn {y in YEARS}:
 #-----------------------------------------------------------------------------------------------------------------------
 
 # [Eq. 34]  constraint to reduce the GWP subject to gwp_limit :
-subject to minimum_GWP_reduction  {y in YEARS} :
+subject to minimum_GWP_reduction  {y in YEARS_WND} :
 	TotalGWP [y] <= gwp_limit [y];
 
 # [Eq. XX] Constraint to limit the emissions below a budget (gwp_limit_transition) 
@@ -474,31 +474,31 @@ subject to minimum_GWP_transition  : # category: GWP_calc
 
 
 # [Eq. 35] Minimum share of RE in primary energy supply
-subject to Minimum_RE_share {y in YEARS} :
+subject to Minimum_RE_share {y in YEARS_WND} :
 	sum {j in RE_RESOURCES, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y, j, h, td] * t_op [h, td] 
 	>=	re_share_primary [y] *
 	sum {j in RESOURCES, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y, j, h, td] * t_op [h, td]	;
 		
 # [Eq. 36] Definition of min/max output of each technology as % of total output in a given layer. 
-subject to f_max_perc {y in YEARS, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
+subject to f_max_perc {y in YEARS_WND, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
 	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j,h,td] * t_op[h,td]) <= fmax_perc [y,j] * sum {j2 in TECHNOLOGIES_OF_END_USES_TYPE[eut], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j2, h, td] * t_op[h,td]);
-subject to f_min_perc {y in YEARS, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
+subject to f_min_perc {y in YEARS_WND, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
 	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j,h,td] * t_op[h,td]) >= fmin_perc [y,j] * sum {j2 in TECHNOLOGIES_OF_END_USES_TYPE[eut], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j2, h, td] * t_op[h,td]);
 
 # [Eq. 39] Energy efficiency is a fixed cost
-subject to extra_efficiency {y in YEARS}:
+subject to extra_efficiency {y in YEARS_WND}:
 	F [y,"EFFICIENCY"] = efficiency [y];	
 
 # [Eq. 38] Limit electricity import capacity
-subject to max_elec_import {y in YEARS, h in HOURS, td in TYPICAL_DAYS}:
+subject to max_elec_import {y in YEARS_WND, h in HOURS, td in TYPICAL_DAYS}:
 	F_t [y, "ELECTRICITY", h, td] * t_op [h, td] <= elec_max_import_capa [y];
 	
 # [Eq. 39] Limit surface area for solar
-subject to solar_area_limited {y in YEARS} :
+subject to solar_area_limited {y in YEARS_WND} :
 	F[y, "PV"] / power_density_pv + ( F [y, "DEC_SOLAR"] + F [y, "DHN_SOLAR"] ) / power_density_solar_thermal <= solar_area [y];
 
 # [Eq. XX] Force the system to consume all the WASTE available.
-subject to use_all_the_waste {y in YEARS diff {"YEAR_2015"}} : # I don't know why this constraint should be removed. 
+subject to use_all_the_waste {y in YEARS_WND diff {"YEAR_2015"}} : # I don't know why this constraint should be removed. 
 	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"WASTE",h,td] * t_op[h,td]) = avail [y,"WASTE"];
 
 
