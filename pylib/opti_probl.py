@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from amplpy import AMPL, DataFrame, Environment
+import json
 # from esmc.postprocessing import amplpy2pd as a2p
 
 
@@ -94,28 +95,28 @@ class OptiProbl:
             else:
                 self.sets[name] = self.get_subset(obj)
 
-    # def print_inputs(self, directory=None):
-    #     """
+    def print_inputs(self, directory=None):
+        """
 
-    #     Prints the sets, parameters' names and variables' names of the LP optimization problem
+        Prints the sets, parameters' names and variables' names of the LP optimization problem
 
-    #     Parameters
-    #     ----------
-    #     directory : pathlib.Path
-    #     Path of the directory where to save the inputs
+        Parameters
+        ----------
+        directory : pathlib.Path
+        Path of the directory where to save the inputs
 
-    #     """
-    #     # default directory
-    #     if directory is None:
-    #         directory = self.dir / 'inputs'
-    #     # creating inputs dir
-    #     directory.mkdir(parents=True, exist_ok=True)
-    #     # printing inputs
-    #     a2p.print_json(self.sets, directory / 'sets.json')
-    #     a2p.print_json(self.params, directory / 'parameters.json')
-    #     a2p.print_json(self.vars, directory / 'variables.json')
+        """
+        # default directory
+        if directory is None:
+            directory = self.dir / 'inputs'
+        # creating inputs dir
+        directory.mkdir(parents=True, exist_ok=True)
+        # printing inputs
+        self.print_json(self.sets, directory / 'sets.json')
+        self.print_json(self.params, directory / 'parameters.json')
+        self.print_json(self.vars, directory / 'variables.json')
 
-    #     return
+        return
 
     def get_outputs(self):
         """
@@ -271,3 +272,16 @@ class OptiProbl:
         columns = {header: list(amplpy_df.getColumn(header)) for header in headers}
         df = pd.DataFrame(columns)
         return df
+    
+    @staticmethod
+    def print_json(my_sets, file):  # printing the dictionary containing all the sets into directory/sets.json
+        with open(file, 'w') as fp:
+            json.dump(my_sets, fp, indent=4, sort_keys=True)
+        return
+
+    @staticmethod
+    def read_json(file):
+        # reading the saved dictionary containing all the sets from directory/sets.json
+        with open(file, 'r') as fp:
+            data = json.load(fp)
+        return data

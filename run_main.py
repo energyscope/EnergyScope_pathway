@@ -39,9 +39,9 @@ if __name__ == '__main__':
     # Different actions
     CleanHistory = True
     InitStorage = True
-    RunMyopicOpti = True
+    RunMyopicOpti = False
     GoNextWindow = True
-    PostProcess = False
+    PostProcess = True
     DrawGraphs = False
     
     
