@@ -39,9 +39,9 @@ if __name__ == '__main__':
     # Different actions
     CleanHistory = True
     InitStorage = True
-    RunMyopicOpti = False
+    RunMyopicOpti = True
     GoNextWindow = True
-    PostProcess = True
+    PostProcess = False
     DrawGraphs = False
     
     
@@ -77,8 +77,8 @@ if __name__ == '__main__':
     # N_year_opti = [35, 20, 10]
     # N_year_overlap = [0, 10, 5]
     
-    N_year_opti = [35]
-    N_year_overlap = [0]
+    N_year_opti = [10]
+    N_year_overlap = [5]
     
     for m in range(len(N_year_opti)):    
         n_year_opti = N_year_opti[m]
@@ -163,7 +163,13 @@ if __name__ == '__main__':
                 ampl.setOption('_log_input_only', False)
                 
                 t = time.time()
-                # ampl.getConstraint('store_tech_elec').drop()
+                if i==0:
+                    ampl.getConstraint('total_capex_no_2015').drop()
+                    ampl.getConstraint('Opex_tot_cost_calculation_no_2015').drop()
+                else:
+                    ampl.getConstraint('total_capex_2015').drop()
+                    ampl.getConstraint('Opex_tot_cost_calculation_2015').drop()
+
                 ampl.solve()
                 elapsed = time.time()-t
                 print('Time to solve the window #'+str(i+1)+': ',elapsed)

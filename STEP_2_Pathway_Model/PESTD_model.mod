@@ -527,22 +527,22 @@ subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE, age in AGE [i,p
 
 # Limit renovation rate:
 # [Eq. XX] Define the amount of change between years 
-subject to delta_change_definition {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], j in TECHNOLOGIES} :
+subject to delta_change_definition {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], j in TECHNOLOGIES} :
 	Delta_change [p,j] >= (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_start,j, h,td] * t_op[h,td]) - (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_stop,j, h,td] * t_op[h,td]) ;
 
 # [Eq. XX] Limit the amount of change for low temperature heating
-subject to limit_changes_heat {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
+subject to limit_changes_heat {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
 	sum {euc in END_USES_TYPES_OF_CATEGORY["HEAT_LOW_T"], j in TECHNOLOGIES_OF_END_USES_TYPE[euc]} Delta_change[p,j] 
 		<= limit_LT_renovation * (end_uses_input[y_start,"HEAT_LOW_T_HW"] + end_uses_input[y_start,"HEAT_LOW_T_SH"]) ;
 
 
 # [Eq. XX] Limit the amount of change for passenger mobility
-subject to limit_changes_mob {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
+subject to limit_changes_mob {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
 	sum {euc in END_USES_TYPES_OF_CATEGORY["MOBILITY_PASSENGER"], j in TECHNOLOGIES_OF_END_USES_TYPE[euc]} Delta_change[p,j] 
 		<= limit_pass_mob_changes * (end_uses_input[y_start,"MOBILITY_PASSENGER"]);
 
 # [Eq. XX] Limit the amount of change for freight mobility
-subject to limit_changes_fright {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
+subject to limit_changes_freight {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
 	sum {euc in END_USES_TYPES_OF_CATEGORY["MOBILITY_FREIGHT"], j in TECHNOLOGIES_OF_END_USES_TYPE[euc]} Delta_change[p,j] 
 		<= limit_freight_changes * (end_uses_input[y_start,"MOBILITY_FREIGHT"]);
 
@@ -554,25 +554,36 @@ subject to New_totalTransitionCost_calculation :
 	TotalTransitionCost = C_tot_capex + C_tot_opex;
 	
 # [Eq. XX] Compute capital expenditure for transition
-subject to total_capex: # category: COST_calc
+subject to total_capex_2015: # category: COST_calc
 	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2015",i] # 2015 investment
 				 + sum{p in PHASE} C_inv_phase [p]
 				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
-				 
+
+subject to total_capex_no_2015: # category: COST_calc
+	C_tot_capex = sum{p in PHASE} C_inv_phase [p]
+				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
+
+# [Eq. XX] Compute the total investment cost per phase
+subject to investment_computation {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
+	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
+
+# [Eq. XX] 
+subject to investment_return {i in TECHNOLOGIES}:
+	C_inv_return [i] = sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
+
 # [Eq. XX] Compute operating cost for transition
-subject to Opex_tot_cost_calculation :# category: COST_calc
+subject to Opex_tot_cost_calculation_2015 :# category: COST_calc
 	C_tot_opex = C_opex["YEAR_2015"] 
 				 + t_phase *  sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
+					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
+
+subject to Opex_tot_cost_calculation_no_2015 :# category: COST_calc
+	C_tot_opex = t_phase *  sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 
 # [Eq. XX] Compute operating cost for years
 subject to Opex_cost_calculation{y in YEARS} : # category: COST_calc
 	C_opex [y] = sum {j in TECHNOLOGIES} C_maint [y,j] + sum {i in RESOURCES} C_op [y,i]; #In â‚¬_y
-
-					
-# [Eq. XX] Compute the total investment cost per phase
-subject to investment_computation {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
-	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
 
 # [Eq. XX] We could either limit the max investment on a period or fix that these investments must be equals in â‚¬_2015
 subject to maxInvestment {p in PHASE}:
@@ -580,20 +591,9 @@ subject to maxInvestment {p in PHASE}:
 # subject to sameInvestmentPerPhase {p in PHASE}:
 # 	 C_inv_phase [p] = Fixed_phase_investment; #In bÃ¢â€šÂ¬
 
-
-
-
-
-
 ##########################
 ### OBJECTIVE FUNCTION ###
 ##########################
 
-
-# [Eq. XX] 
-subject to investment_return {i in TECHNOLOGIES}:
-	C_inv_return [i] = sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
-
 # Can choose between TotalTransitionCost_calculation and TotalGWP and TotalCost
 minimize obj:  TotalTransitionCost;#sum {y in YEARS} TotalCost [y];
-
