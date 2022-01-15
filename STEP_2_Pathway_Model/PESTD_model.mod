@@ -506,12 +506,12 @@ subject to use_all_the_waste {y in YEARS_WND diff {"YEAR_2015"}} : # I don't kno
 #-------------------------------------------
 
 # [Eq. XX] Relate the installed capacity between years
-subject to phase_new_build {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in TECHNOLOGIES}:
+subject to phase_new_build {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in TECHNOLOGIES}:
 	F[y_stop,i] = F[y_start,i] + F_new[p,i] - F_old [p,i] 
-  											     - sum {p2 in {PHASE union {"2010_2015"}}} F_decom[p,p2,i];
+  											     - sum {p2 in {PHASE_WND union PHASE_UP_TO union {"2010_2015"}}} F_decom[p,p2,i];
 
 # [Eq. XX] Impose decom_allowed to 0 when not physical
-subject to define_f_decom_properly {p_decom in PHASE, p_built in PHASE union {"2010_2015"}, i in TECHNOLOGIES}:
+subject to define_f_decom_properly {p_decom in PHASE_WND, p_built in PHASE_WND union PHASE_UP_TO union {"2010_2015"}, i in TECHNOLOGIES}:
 	if decom_allowed[p_decom,p_built,i] == 0 then F_decom [p_decom,p_built,i] = 0;
 
 # [Eq. XX] Intialise the first phase based on YEAR_2015 results
@@ -519,9 +519,9 @@ subject to F_new_initiatlisation {tech in TECHNOLOGIES}:
 	F_new ["2010_2015",tech] = F["YEAR_2015",tech]; # Generate F_new2010_2015
 
 # [Eq. XX] Impose the exact capacity that reaches its lifetime
-subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE, age in AGE [i,p]}:
+subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE_WND union PHASE_UP_TO, age in AGE [i,p]}:
 	F_old [p,i] = if (age == "STILL_IN_USE") then  0 #<=> no problem
-					else F_new [age,i]    - sum {p2 in PHASE} F_decom [p2,age,i]
+					else F_new [age,i]    - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,age,i]
 				;
 
 
@@ -556,37 +556,37 @@ subject to New_totalTransitionCost_calculation :
 # [Eq. XX] Compute capital expenditure for transition
 subject to total_capex_2015: # category: COST_calc
 	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2015",i] # 2015 investment
-				 + sum{p in PHASE} C_inv_phase [p]
+				 + sum{p in PHASE_WND} C_inv_phase [p]
 				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
 
 subject to total_capex_no_2015: # category: COST_calc
-	C_tot_capex = sum{p in PHASE} C_inv_phase [p]
+	C_tot_capex = sum{p in PHASE_WND} C_inv_phase [p]
 				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
 
 # [Eq. XX] Compute the total investment cost per phase
-subject to investment_computation {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
+subject to investment_computation {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
 	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
 
 # [Eq. XX] 
 subject to investment_return {i in TECHNOLOGIES}:
-	C_inv_return [i] = sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
+	C_inv_return [i] = sum {p in PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
 
 # [Eq. XX] Compute operating cost for transition
 subject to Opex_tot_cost_calculation_2015 :# category: COST_calc
 	C_tot_opex = C_opex["YEAR_2015"] 
-				 + t_phase *  sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
+				 + t_phase *  sum {p in PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 
 subject to Opex_tot_cost_calculation_no_2015 :# category: COST_calc
-	C_tot_opex = t_phase *  sum {p in PHASE,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
+	C_tot_opex = t_phase *  sum {p in PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 
 # [Eq. XX] Compute operating cost for years
-subject to Opex_cost_calculation{y in YEARS} : # category: COST_calc
+subject to Opex_cost_calculation{y in YEARS_WND} : # category: COST_calc
 	C_opex [y] = sum {j in TECHNOLOGIES} C_maint [y,j] + sum {i in RESOURCES} C_op [y,i]; #In â‚¬_y
 
 # [Eq. XX] We could either limit the max investment on a period or fix that these investments must be equals in â‚¬_2015
-subject to maxInvestment {p in PHASE}:
+subject to maxInvestment {p in PHASE_WND}:
 	 C_inv_phase [p] <= max_inv_phase[p]; #In bÃ¢â€šÂ¬
 # subject to sameInvestmentPerPhase {p in PHASE}:
 # 	 C_inv_phase [p] = Fixed_phase_investment; #In bÃ¢â€šÂ¬

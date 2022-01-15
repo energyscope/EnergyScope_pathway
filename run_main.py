@@ -39,9 +39,9 @@ if __name__ == '__main__':
     # Different actions
     CleanHistory = True
     InitStorage = True
-    RunMyopicOpti = True
+    RunMyopicOpti = False
     GoNextWindow = True
-    PostProcess = False
+    PostProcess = True
     DrawGraphs = False
     
     
@@ -77,8 +77,8 @@ if __name__ == '__main__':
     # N_year_opti = [35, 20, 10]
     # N_year_overlap = [0, 10, 5]
     
-    N_year_opti = [10]
-    N_year_overlap = [5]
+    N_year_opti = [35]
+    N_year_overlap = [0]
     
     for m in range(len(N_year_opti)):    
         n_year_opti = N_year_opti[m]
@@ -184,7 +184,7 @@ if __name__ == '__main__':
                             for td in TD:
                                 h_i = int(h-1)
                                 td_i = int(td-1)
-                                temp[h_i,td_i] = ampl.getConstraint('end_uses_t')[y,l,h,td].dual()
+                                temp[h_i,td_i] = ampl.getConstraint('layer_balance')[y,l,h,td].dual()
                         Shadow_prices[l][y] = deepcopy(temp)
                 elapsed_x = time.time()-t_x
                 print('Time to extract shadow prices:',elapsed_x)
