@@ -59,7 +59,7 @@ def pathway_window(years_window = 35, years_overlap = 0):
     
     return years_opti, phases_opti, years_up_to, phases_up_to
 
-def write_seq_opti(curr_window_y, curr_window_p, years_up_to, phases_up_to, folder):
+def write_seq_opti(curr_window_y, curr_window_p, years_up_to, phases_up_to, folder, year_one, i):
     with open(os.path.join(folder,'seq_opti.dat'),'w+', encoding='utf-8') as f:
             f.write('set YEARS_WND := ' )
             for year in curr_window_y:
@@ -76,7 +76,13 @@ def write_seq_opti(curr_window_y, curr_window_p, years_up_to, phases_up_to, fold
             f.write('set PHASE_UP_TO := ')
             for phase in phases_up_to:
                 f.write('%s ' %phase)
+            f.write(';\n')
+            
+            f.write('set YEAR_ONE')
+            if i>0 :
+                f.write(':= %s' %year_one)
             f.write(';')
+                
 
 def remaining_update(file, pth_model,PHASE_WND):
     n_phase = len(PHASE_WND)
