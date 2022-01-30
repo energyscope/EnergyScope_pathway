@@ -1,0 +1,474 @@
+% This ensures that only the main file is compiled
+% !TEX root = ../my_thesis.tex
+
+
+\chapter{Modelling for pathway analysis}
+\label{ch:methodo_pathway}
+
+%\begin{flushright}
+%\emph{``Ca va moutarder!!!''}\\
+%Xavier Rixhon
+%\end{flushright}
+
+
+\medskip
+
+\begin{mybox}{Chapter overview}
+\begin{itemize}[leftmargin=0cm,itemindent=.5cm,labelwidth=\itemindent,labelsep=0cm,align=left]
+\item Methodology to optimise transition pathways based on a scenario analysis model.
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\linewidth]{figures/ch3_methodo_pathway/chp_meth_pathway_overview.pdf}
+\caption{Overview of the pathway modeling framework}
+\label{fig:ch2_pathway_methodo_overview}
+\end{figure}
+\end{mybox}
+
+\medskip
+
+
+%Two approaches are proposed in the literature to optimise the energy transition: 
+%using a single model that represents the overall energy transition at once, or coupling an optimisation model with another model to of a model that optimises the investment decision with a model that verifies certain years through a scenario analysis model. The first strategy has been adopted in the framework of this work, as previously motivated.
+ 
+In the previous chapter, the \gls{ESTD} model was presented. %This model is suitable for optimising both the design and operation of a single year.
+It is tailored to analyse different scenarios, and it answers research questions such as: which resources are going to substitute fossil fuels? What is the most effective design to integrate intermittent renewables? Which technologies will play a major role? In a nutshell, \gls{ESTD} model is a tool to better understand the long term target. 
+Nevertheless, it doesn't indicate how to reach this target. 
+
+Defining the path from today energy system to a low emission one in 2050 is another challenge. The chosen strategy is to extend the \gls{ESTD} model to an  transition pathway one. 
+As illustrated in the previous chapter, the presented model has a short computational time and accounts for the hourly operation over a year. In addition, its concise formulation makes it an appropriate candidate to be extended to a \emph{pathway} model.
+
+\subsection*{Challenges and research approach}
+
+To achieve this extension, there are four major challenges  to be tackled: (i) how to manage different time scales (hours, years, decades)? (ii) how to implement ageing technologies? (iii) how to represent society's inertia to change? and, (iv) how to calculate costs and emissions over a long period of time. 
+
+The time horizon considered for the transition is from yesterday, 2015, to the European Commission's objective: carbon neutral by 2050.  As previously motivated, an hourly resolution over a year is required to accurately estimate the storage capacity needs and how to integrate intermittent renewables. This problem will be addressed by applying the \gls{ESTD} model to representative years.
+
+
+Implementing technologies during the transition years brings many difficulties. Indeed, the price, efficiency, maintenance cost, etc. of technologies vary from year to year, how can this be taken into account? How to distinguish between technologies that reach their lifetime and those that are dismantled earlier? How to initialise the problem in 2015? This problem will be solved by making some simplifications and implementing new constraints.
+
+
+A \acrlong{LP} problem can vary from one year to the next without taking into account the society's inertia to change.  However, even if the optimum is to switch exclusively to one technology, e.g. from gasoline and diesel cars to electric ones, this cannot be done in a few years. Thus, a representation of this inertia is required. The latter represents the acceptance of citizens to change technology, the training of competent people to install these technologies, the projects permitting, the time it takes for industries to put these new technologies into production, etc. In respond to this problem, new constraints have been implemented to limit change in the sectors concerned.
+
+One euro today is not equal to one euro tomorrow, just as a tonne of \gls{CO2} emitted today will not have the same impact as one tonne emitted tomorrow. 
+An accounting method has been developed to take into account this difference over the time horizon.
+% Solution Concerning the financial cost, they are all expressed in €\textsubscript{2015} and an annualisation factor is used to distinguish investments over the years. For the \acrlong{GWP}, the metric used is based on the effect of the gas over 100 years and it is therefore assumed that the impact of emitting at the beginning or the end of transition are equivalent. 
+
+
+
+\subsection*{Contributions}
+
+
+ 
+In this chapter, we present the model called \emph{EnergyScope pathway}, it optimises the investment strategies over the period 2015 to 2050. At the same time, the model optimises the hourly operation over representative years.
+To achieve this, the \gls{ESTD} methodology is extended to the pathway version which accounts for new SETs, Variables, parameters, constraints and an adapted objective function.
+%transition while optimising representative years (every five yers) from .
+%The computational time increases ($\approx$10 hours).
+%Building on the previous chapter, this one presents an extension aimed at optimising the transition pathway of a regional  energy system. Figure \ref{fig:ch2_pathway_methodo_overview} illustrates the conceptual framework: the \gls{ESTD} model is represented every five years of the transition. Between each representation, the system design - in other terms the installed technologies - can be modified according to an investment strategies. Finally, objectives are implemented at each evaluated year to force the model to decarbonise. 
+
+%Each representation of the model follows the same constraints as those described in Chapter \ref{ch:estd}. However, the input parameters are adjusted for each year. For example, electrolysers are expected to experience significant cost reductions and efficiency increase between 2015 and 2050. 
+
+The resulting model has to address four major challenges described previously and requiring to develop new methodologies. And more specifically in a linear formulation of equations that enable to account for the evolution of technologies over a period of 35 years, taking into account characteristics that vary from year to year. But also in the formulation of equations representing the inertia of society. 
+
+%\textcolor{blue}{%% ADDED
+ Similarly to the \gls{ESTD} version, the pathway version has a perfect foresight, and optimises all the transition design and operation at once. The minimised objective is the total cost of the transition. 
+%} %% ADDED
+
+
+
+%to calculate the costs in a same monetary manner.
+
+%In a complementary manner, this chapter also describes how the different evaluations are related; how the installed capacity varies and account for decommissioning of old plants; and how the total energy transition cost is accounted. 
+
+\section{Methodology}
+\label{sec:path_methodo}
+
+
+% SOL % A representation of all the years is too cumbersome, so it is proposed to represent the energy system every 5 years from 2015 to 2050. Consequently, 8 years, later called representative years, are defined. For each of these years, the EnergyScope TD model will be applied. This methodology takes into account the hourly resolution over a year, and covers the 35-year horizon.
+
+%% Challenge 1 - Multiple years
+% Explain here the methodology big picture 
+Modelling the energy transition involves representing the energy system from today to a low emission one. % Similarly to the \glspl{TD} use, not all years are required to represent the methodology. Instead, 
+A representation of all the years is too cumbersome, so it is proposed to represent the energy system every 5 years from 2015 to 2050. Consequently, 8 years, later called representative years, are related. For each of these years, the \gls{ESTD} model is applied with data updated, such as energy demand, technology costs, \gls{CO2} emissions target. %This methodology takes into account the hourly resolution over a year, and covers the 35-year horizon. 
+% We propose a method that models the system with a time horizon from today until the end of the transition (2015 to 2050) with periods of five years (2015, 2020 ...), later called `\emph{representative}´ years.
+ Figure \ref{fig:meth_path_methodology} represents this methodology. It results in one large \gls{LP} model which involves: eight resolutions of \gls{ESTD} for the representative years (see blue boxes in Figure \ref{fig:meth_path_methodology}), and the design constraints between two consecutive years (see black boxes in Figure \ref{fig:meth_path_methodology}). 
+ 
+ %To realise this new implementation, additional SETS, Variables, parameters and constraints are defined in the following paragraphs.
+ 
+ \begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/ch3_methodo_pathway/ch_meth_path_overview.pdf}
+\caption[Illustration of the Pathway methodology.]{Illustration of the Pathway methodology: \gls{ESTD} is resolved over 8 representative years (blue boxes). In-between, a phase limit the design changes between consecutive years (black boxes). The problem is initialised in year 2015 (grey box).}
+\label{fig:meth_path_methodology}
+\end{figure}
+ 
+ 
+ %% CHALLENGE 2 : implement varying technologies linearly
+
+ At this stage, the transition is not correctly represented because there is no link between the years.  Each representative year requires a mix of technologies which can vary from one representative year to another.
+To link them, additional constraints are necessary. Some compromises have been necessary, and are summarised through the following assumptions: the lifetime of a technology does not change during the transition (e.g. if the lifetime of a \gls{CCGT} installed in 2015 is 25 years, then the same lifetime will be used for a \gls{CCGT} installed in 2040); the efficiency is adapted from year to year, e.g. if a gas boiler is installed in 2015, it is assumed that it will have the efficiency of a new gas boiler in 2020\footnote{This assumption is required to ensure a linear formulation of Eq. (\ref{eq:layer_balance}).}; technologies that exist in 2015 are considered new, e.g. the 3.9~GW of \glspl{CCGT} estimated in 2015 can be used until 2040\footnote{This assumption was made because the age of all the technologies in 2015 were not found. The impact of this assumption is little as the design in 2015 in 2015 is imposed - and thus the investments - for all scenarios, and that technologies can be removed prematurely (e.g. nuclear in 2020 and 2025).}; the capacity installed is constant during a representative year but can vary between two of them. 
+Based on these assumptions, a linear formulation - presented hereafter - is defined based on four  constraints, three variables, one set and one parameter.
+Similarly to the energy balance, a balance is made on the capacity installed between two representative years. For each technology, the capacity for the next representative year is equal to the one of the previous representative year plus the new capacity build, minus the capacity which reached its lifetime, minus capacity early decommissioned during the same period. We deem `\emph{early decommissioned}', a technology that will be removed before it reaches its lifetime limit.  A technology may be early decommissioned if it will not be used in the coming years (e.g. coal-based power plants).
+
+%Between these two,  there is a period of 4 years, later called \emph{phase}, where the technologies capacity can be modified (i.e. commissioned or decommissioned). For example, 3.6 GW of \gls{PV} are installed in 2015; thus, in 2020, the capacity installed is the sum of the one from previous period (i.e. 2015), plus the new capacity built between 2015 and 2020, minus the capacity which reached its lifetime, minus capacity early decommissioned during the same period. We deem ``\emph{early decommissioned}'', a technology that will be removed before it reaches its lifetime limit.  A technology may be withdrawn if it will not be used in the coming years (e.g. coal-based technologies). 
+
+
+%% Challenge 3
+To avoid unrealistic change between two representative years, the change made in three sectors are limited. The `\emph{change}' accounts for the amount of energy service provided per technology in a sector, such as passenger-kilometers provided by gasoline cars in the passenger mobility sector. Thus, the proposed implementation avoid all the passenger mobility to switch from one technology (gasoline and diesel cars) to another (electric vehicles or buses). 
+The three sectors are: passenger mobility, freight mobility, and low temperature heat. We assume that high temperature heat and electricity sectors can drastically change in 5 years. It results in four constraints, one per sectors plus one to define the \emph{change} in each sector. 
+
+%To make a phase more realistic, additional constraints are imposed to limit the change in the energy system over a short period of time. For example, low-temperature heat cannot be switched from the existing system in 2015 exclusively to \glspl{HP} in 2020; instead, one would expect all heaters to be replaced within 10 to 20 years, which would result in a 25 to 50\% turnover over a 5-year period.
+
+% Removed
+% \subsection{Pathway overview}
+% \label{ssec:path_overview}
+
+%% Challenge 4:
+To optimise the energy system, two key metrics must be adapted: the transition cost and the total \acrfull{GWP}. 
+Concerning the first one, all costs are expressed in €\textsubscript{2015} and an annualisation factor is used to distinguish investments over the transition. For the \gls{GWP}, the metric used is based on the harmfulness of the gas over 100 years. It is assumed that the impact of emitting at the beginning or the end of transition are equivalent and thus no annualisation is made. 
+
+
+\subsection{Additional sets, parameters and variables}
+\label{ssec:path_sets_params_vars}
+% List the new sets ...
+
+To represent the new structure, the \gls{ESTD} model is replicated for each representative year and phases will be defined in-between. As a consequence, a new dimension `\emph{year}' is added to all Variables and parameters, except the interest rate (\emph{i\textsubscript{rate}}) assumed constant during the transition. This new dimension is necessary to represent the changes of technology characteristics over the representative years. 
+As an example, the investment cost of a battery will drastically vary between 2020 and 2035 (from 501 to 302 [€\textsubscript{2015}/kWh]). 
+ Consequently, new SETs, parameters and  Variables are defined and summarised in Tables \ref{tab:path_sets}, \ref{tab:path_params} and  \ref{tab:path_variablesIndependent}, respectively.
+
+\begin{table}[htbp]
+\caption[New SETs for pathway formulation.]{New SETs for pathway formulation.} %%\textcolor{redOK}{I don't get the difference between 
+%\label{tab:paramsScenario}
+\label{tab:path_sets}
+\begin{minipage}{\textwidth}
+\centering
+%\resizebox{\textwidth}{!}{
+\begin{tabular}{l c l }
+\toprule
+\textbf{Set}      & \textbf{Index}	 &	\textbf{Description}\\
+\midrule
+YEARS 		 &	$y\in$Y	& 	\pbox{20cm}{\vspace{1mm} Representative years when the \\ \gls{ESTD} model is evaluated}\\
+PHASE        &  $\emph{p}\in$P   & Phase between two consecutive YEARS \\
+PHASE\_START (\emph{p}) 	$\subset$ Y & & Year just before the phase  \emph{p}\\
+PHASE\_STOP (\emph{p}) 	$\subset$ Y & & Year just after the phase  \emph{p}\\
+AGE (\emph{tech},\emph{p}) $\subset$ P $\cup$ Exceptions\footnote{The set AGE gives for each technology (\emph{tech}) at a phase (\emph{p}) the phase when it has been built. However, the set PHASE does not cover all the cases. Instead, if the technology has been built before YEAR\_2015, another value is assigned to the set AGE. Either the technology has been built just the phase before YEAR\_2015 (``\emph{2010\_2015}'') or the technology has been built before (``\emph{STILL\_IN\_USE}''). Section \ref{ssec:path_lp_formulation} illustrates the use of this parameter.} 
+&& Phase when the technology (\emph{tech}) has been built \\
+\bottomrule
+\end{tabular}%}
+\end{minipage}
+\end{table}
+
+
+
+\begin{table}[htbp]
+\caption[New parameters for pathway formulation.]{New parameters for pathway formulation. Set indices as in Figure \ref{fig:sets}} %%\textcolor{redOK}{I don't get the difference between 
+%\label{tab:paramsScenario}
+\label{tab:path_params}
+\begin{minipage}{\textwidth}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l c l}
+\toprule
+\textbf{Parameter}      &	\textbf{Units}	 &	\textbf{Description}\\
+\midrule
+\emph{max\textsubscript{inv,phase}}(\text{\emph{p}})		&	[€\textsubscript{2015}]	& Maximum investment per phase	\\
+\emph{t\textsubscript{phase}} & [y] & Phase period (default 5 years)\footnote{In this Pathway version, two time scales are mentioned, the one used by the \gls{ESTD} model to evaluate the energy system (\emph{t\textsubscript{op})}, usually an hour; and the one for the transition between two representative years (\emph{t\textsubscript{phase}}), usually 5 years.}\\
+\emph{diff\textsubscript{2015,phase}}(\emph{p}) & [y] & Years difference between financial reference year (2015) and the phase\footnote{This parameter is only used to evaluate the annualisation factor, see Eq.~(\ref{eq:path_annu_factor}).}.\\
+\emph{gwp\textsubscript{limit,transition}} & [ktCO$_2$] & Maximum \gls{CO2}$_{eq}$ emissions during the transition.\\
+\emph{decom\textsubscript{allowed}}(\emph{p},\emph{p},\emph{tech}) & [-] & Allow a technology to be decommissioned\footnote{When in a period, the decommissioning is not allowed (\emph{decom\textsubscript{allowed}} = 0), the variable (\textbf{F\textsubscript{decom}}) is forced to 0. See illustrations in Section \ref{ssec:path_lp_formulation}.}\\
+\emph{limit\textsubscript{LT,renovation}} & [-] & Limit the change in low-temperature heat technologies during a phase\footnote{\label{foot:limit_changes_definition}A 20\% value allows 20\% of the service provided by the sectors' technologies to change during a phase. As an example, for private mobility, this means that over a period 20\% of the passenger mobility provided by one or more technologies may change; if 35\% of the mobility is provided by gasoline car, after one period it can drop down to 15\%.}\\
+\emph{limit\textsubscript{pass.mob,changes}} & [-] & Limit the change in passenger mobility technologies during a phase\footref{foot:limit_changes_definition} \\
+\emph{limit\textsubscript{freight,changes}} & [-] & Limit the change in freight mobility technologies during a phase\footref{foot:limit_changes_definition} \\
+\emph{efficiency}(\emph{y}) & [-] & Share of energy efficiency achievement compared to reference (2050).\\
+%\emph{elec\textsubscript{max.import,share}}(\emph{y}) & [-] & Maximum share of electricity imported\footnote{Defined as the amount of imported electricity divided by the \acrlong{EUD} of electricity.}.\\
+$\tau$\textsubscript{\emph{phase}}(\emph{p}) &[-] & Annualisation factor\\
+\bottomrule
+\end{tabular}}
+\end{minipage}
+\end{table}
+
+\begin{table}[htbp]
+\caption[New variables for pathway formulation.]{New variables for pathway formulation. All variables are continuous and non-negative, unless otherwise indicated. %\textcolor{redOK}{Review the description of the last 3 variables, incomprehensible.}
+}
+\label{tab:path_variablesIndependent}
+\begin{minipage}{\textwidth}
+\centering
+\resizebox{\textwidth}{!}{
+\begin{tabular}{l c l}
+\toprule
+\textbf{Variable}      &	\textbf{Units}	 &	\textbf{Description}\\
+\midrule
+\textbf{F\textsubscript{new}} (\emph{p'}\footnote{\label{foot:path_var_extended_phase} $\emph{p} \in PHASE \cup \{2010\_2015\}$.},tech)         &  [GW]\footnote{\label{foot:path_mpkm_h_mob}[Mpkm] (millions of passenger-km) for passenger, [Mtkm] (millions of ton-km) for freight mobility end-uses}\footnote{\label{foot:path_gwh_sto}[GWh] if $\text{\emph{tech}} \in \text{\emph{STO}}$}		&	Installed capacity during a phase with respect to the main output\\
+\textbf{F\textsubscript{decom}}(\emph{p},\emph{p'}\footref{foot:path_var_extended_phase},tech)&[GW]\footref{foot:path_mpkm_h_mob}\footref{foot:path_gwh_sto}& Decommissioned\footnote{\label{foot:path_decom_vs_old}During a phase, a technology can be retired (\textbf{F\textsubscript{old}}) or decommissioned (\textbf{F\textsubscript{decom}}). The retirement happens once the technology reaches its expected lifetime limit. Instead, the decommissioning can happen in-between the construction phase and the retirement.} capacity during a phase with respect to the main output\\
+\textbf{F\textsubscript{old}}(\emph{p},tech)& [GW]\footref{foot:path_mpkm_h_mob}\footref{foot:path_gwh_sto}& Retired\footref{foot:path_decom_vs_old} capacity during a phase with respect to the main output\\
+\textbf{C\textsubscript{inv,phase}}(\emph{p}) & [M€/GW\footnote{\label{foot:path_mpkm_mob}[Mpkm] (millions of passenger-km) for passenger, [Mtkm] (millions of ton-km) for freight mobility end-uses, [GWh] if $\text{\emph{tech}} \in \text{\emph{STO}}$.}
+] & Phase total annualised investment cost\\
+\textbf{C\textsubscript{opex}}(\emph{y}) & [M€/GW\footref{foot:path_mpkm_mob}]	& Operational expenditure over a year\\
+\textbf{C\textsubscript{tot,opex}} & [M€/GW\footref{foot:path_mpkm_mob}]	& Total operational expenditure over the transition\\
+\textbf{C\textsubscript{tot,capex}} & [M€/GW\footref{foot:path_mpkm_mob}]	& Total capital expenditure over the transition\\
+\textbf{C\textsubscript{tot,trans}} & [M€/GW\footref{foot:path_mpkm_mob}]	& Total transition cost\\
+\textbf{GWP\textsubscript{tot,trans}} & [Mt\gls{CO2}]	& Total transition \acrlong{GWP}\\
+\textbf{$\Delta$\textsubscript{change}} (\emph{p},\emph{tech}) & [GW]\footref{foot:path_mpkm_h_mob}\footref{foot:path_gwh_sto} & 
+Change in a technology used during a phase\\
+\bottomrule
+\end{tabular}}
+\end{minipage}
+\end{table}
+
+
+
+\subsection{Pathway formulation}
+\label{ssec:path_lp_formulation}
+
+Hereafter, we present the new constraints (Eqs.~(\ref{eq:F_newBuilt})-(\ref{eq:limit_reno_freight})) defined to create the link between consecutive years and address the four challenges raised.
+
+
+%In combination with the representative years, the phases are the periods during which the technologies installed in the energy system can be modified. This concept is illustrated in Figure \ref{fig:path_eg_igcc}, where a technology changes during the phases. 
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/ch3_methodo_pathway/path_e.g._tech.pdf}
+\caption[Illustration of the new variables of the pathway version.]{Illustration of the new variables of the pathway version. Example based on a technology with a 20 years lifetime. Initially 1~GW of capacity exists (\textbf{F\textsubscript{new}} during phase $2010\_2015$). Then another 1~GW is deployed (\textbf{F\textsubscript{new}} during phase $2015\_2020$). 15 years later, a part of the capacity reaches its lifetime limit and is removed (\textbf{F\textsubscript{old}} phase $2030\_2035$). 
+Moreover, during the latter phase, additional capacity is decommissioned  prematurely (\textbf{F\textsubscript{decom}}). Finally, the technology reaches its expected lifetime ans is fully withdrawn (\textbf{F\textsubscript{old}}).}
+\label{fig:path_eg_igcc}
+\end{figure}
+
+\subsubsection{Technology changes}
+
+\vspace{-5mm}
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+\label{eq:F_newBuilt}%5
+&\textbf{F}(y\textsubscript{stop},i) = \textbf{F}(y\textsubscript{start},i)
+ + \textbf{F\textsubscript{new}}(p,i)
+ - \textbf{F\textsubscript{old}}(p,i)
+ - \sum_{\mathclap{p2 \in \text{\emph{PHASE}} \cup \{2010\_2015\}}} \textbf{F\textsubscript{decom}}(p,p2,i)& \notag \nonumber 
+ \end{flalign}
+\begin{flalign} 
+ &&  \forall p \in \text{\emph{PHASE}}, \emph{y\textsubscript{stop}} \in \emph{P\_STOP}(p), \emph{y\textsubscript{start}} \in \emph{P\_START}(p), i \in \text{\emph{TECH}}
+ \end{flalign}
+ 
+\begin{flalign} 
+ & \textbf{F\textsubscript{decom}}(p,p2,i) = 0 \hspace{-2cm}&
+\notag \nonumber
+ \end{flalign}
+\begin{flalign} 
+  \label{eq:F_decomNonPhysic1}
+& &  \forall i \in \emph{TECH}, p\in \emph{PHASE}, p2 \in \emph{PHASE} \cup \{2010\_2015\} | \emph{decom\textsubscript{allowed}}(p,p2) = 0 & 
+ \end{flalign}
+\endgroup
+ 
+Figure \ref{fig:path_eg_igcc} illustrates how a technology varies over the different representative years and phases. The available capacity must be adapted between 2 representative years. Similarly to a mass balance, Eq.~(\ref{eq:F_newBuilt}) is the balance on the amount of technologies deployed. The constraint forces the installation or withdrawing of capacities between two representative years: 
+at the end of the phase (\emph{y\textsubscript{stop}}), the available capacity is the one used in the next representative year (\textbf{F}(\emph{y\textsubscript{stop}})). This capacity is equal to the one available in the previous representative year (\textbf{F}(\emph{y\textsubscript{start}})) plus the new installed capacity (\textbf{F\textsubscript{new}}) minus the capacity that has reached its lifetime (\textbf{F\textsubscript{old}}) minus the early decommissioned capacity (\textbf{F\textsubscript{decom}}).
+%at the end of the phase (\emph{y\textsubscript{stop}}), the installed capacity (\textbf{F}(\emph{y\textsubscript{stop}})) is equal to that at the beginning of the phase (\textbf{F}(\emph{y\textsubscript{start}})) plus the new installed capacity (\textbf{F\textsubscript{new}}) minus the capacity that has reached its lifetime (\textbf{F\textsubscript{old}}) minus the early decommissioned capacity (\textbf{F\textsubscript{decom}}). 
+To decommission a technology (\emph{tech}),  two information are required: the phase when it is decommissioned (\emph{p}) and the phase when the decommissioned capacity has been built (\emph{p\textsubscript{built}}). %Based on these parameters, the decommissioned capacity is defined \big(\textbf{F\textsubscript{decom}}(\emph{p},\emph{p\textsubscript{built}},\emph{tech})\big). 
+This mathematical implementation allows a physical non-sence: the decommissioning of a technology which hasn't been built yet ($ \emph{p} < \emph{p\textsubscript{built}}$).
+%This implementation has a major drawback which is non physical decommissioning:  decommission a capacity which will be installed later ($ \emph{p} < \emph{p\textsubscript{built}}$). 
+%For each technology (\emph{tech}), during each phase (\emph{p}), the decommissioned capacity (\textbf{F\textsubscript{decom}}(\emph{p},\emph{p\textsubscript{built}},\emph{tech})) is optimised and may remove a capacity built during another phase (\emph{p\textsubscript{built}}). Mathematically, this definition allows to remove a technology in 2020\_2025 that will be built in 2030\_2035, which is a nonsense.
+To prevent it, Eq.~(\ref{eq:F_decomNonPhysic1}) constrains in this case the decommissioning of this technology to zero.
+%To prevent it, Eq. \ref{eq:F_decomNonPhysic1} unables non-physical possibilities by constraining the variable to 0.
+To do so, a parameter (\emph{decom\textsubscript{allowed}}) is defined \emph{a priori} and is equal to 0 or 1 when decommissioning is not possible or possible, respectively. 
+
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+ \begin{flalign}
+ \label{eq:Phase2015Design}
+& \textbf{F\textsubscript{new}}(\emph{2010\_2015},i) = \textbf{F}(\emph{YEAR\_2015},i)& \forall i \in \emph{TECH}
+ \end{flalign}
+ \begin{flalign}
+ \label{eq:Fold_def}%1
+&\textbf{F\textsubscript{old}} (p,i) =  
+\hspace{3mm}\text{if} ( \emph{age} = "\emph{STILL\_IN\_USE}") \text{ then  } 0   &   &\notag\nonumber\\
+&\hspace{2cm}\text{else } \left(\textbf{F\textsubscript{new}}(age,i)  - \sum_{\vspace{5mm}\mathclap{p2 \in \text{\emph{PHASE}}}} \textbf{F\textsubscript{decom}} (p2,age,i)\right)    & \notag\nonumber\\
+&& \hspace{-3cm} \forall p \in PHASE , \forall j \in TECH | age \in AGE(p,j)
+ \end{flalign}
+\endgroup
+
+
+To initialise the problem in 2015 with the existing design, an additional phase `\emph{2010\_2015}' is created. Eq.~(\ref{eq:Phase2015Design}) requires that the capacity used in 2015 is installed in the previous phase. Eq.~(\ref{eq:Fold_def}) defines the capacity reaching its lifetime limit at a certain phase. For each phase, a SET (\emph{AGE}) is calculated ``\emph{a priori}'' and indicates when the technology was built for a given phase.  
+In the case the technology has already reached its lifetime limit, the SET (\emph{AGE}) returns the phase when the technology has been built\footnote{The equation seems more complex than the problem addressed. Nevertheless, the second part of the equation is needed to remove the capacity that could have been withdrawn before reaching its expected lifetime.}. 
+As an example, Figure \ref{fig:path_eg_igcc} shows a 20 years lifetime technology with 1~GW of capacity installed before 2015. 
+The technology (\emph{tech}) can be used until 2030\_2035 (i.e. \emph{age}(\emph{tech},2030\_2035)=\emph{STILL\_IN\_USE}), then it must be removed (i.e. \emph{age}(\emph{tech},2030\_2035)=2010\_2015). 
+Equally, in 2035\_2040 the capacity built 20 years before must be removed (\emph{age}(\emph{tech},2035\_2040)=2015\_2020), and so on.
+
+
+
+\subsubsection{Cost calculation}
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+% Objective function + investment 
+\label{eq:obj_func_v2}%1
+% adding 25pt space, otherwise flalign with two "&" would flush to the extreme 
+\hspace{0pt} \min \text{  } & \textbf{C\textsubscript{tot,trans}} = \textbf{C\textsubscript{tot,capex}} + \textbf{C\textsubscript{tot,opex}}&\\
+\label{eq:Capex_v2}
+& \textbf{C\textsubscript{tot,capex}} =
+\sum_{\mathclap{j \in \text{\emph{TECH}}}} \textbf{C\textsubscript{inv}}(\emph{2015},j) 
++
+\sum_{\mathclap{p \in \text{\emph{PHASE}}}} 
+\textbf{C\textsubscript{inv,phase}}(p)\\
+  \label{eq:Copex_tot_v2}%5
+& \textbf{C\textsubscript{tot,opex}} =  \textbf{C\textsubscript{opex}}(\emph{2015})
++ \emph{t\textsubscript{phase}}\cdot \tau\textsubscript{\emph{phase}}(p) \cdot \sum_{\mathclap{p \in \emph{PHASE}|y\textsubscript{start}\in \emph{P\_START}(p),y\textsubscript{stop}\in \emph{P\_STOP}(p)}} 
+ \Big(\textbf{C\textsubscript{opex}}(y\textsubscript{start}) + \textbf{C\textsubscript{opex}}(y\textsubscript{stop}) \Big)/2&\\
+\label{eq:path_annu_factor}
+& \tau\textsubscript{\emph{phase}}(p) = 1/(1+\emph{i\textsubscript{rate}})^{\emph{diff\_2015\_year(p)}} &
+%% GL_correction_v2 %% & \tau\textsubscript{\emph{phase}}(p) = 1/(1+\emph{i\textsubscript{rate}})^{\emph{diff\_2015\_year(p)}} &
+\end{flalign}
+\endgroup
+
+The objective function to be minimised is the total transition cost of the energy system (\textbf{C\textsubscript{tot,trans}}), 
+%The objective is the minimisation of the total transition cost of the energy system (\textbf{C\textsubscript{tot,trans}}),
+defined as the sum of the total \gls{CAPEX} (\textbf{C\textsubscript{tot,capex}}) and the \gls{OPEX} (\textbf{C\textsubscript{tot,opex}}), according to Eq.~(\ref{eq:obj_func_v2}). The total \gls{CAPEX} (\textbf{C\textsubscript{tot,capex}}) is the sum of the initial investment in year 2015 (\textbf{C\textsubscript{\emph{inv}}}) and the investment during each phase (\textbf{C\textsubscript{inv,phase}}), Eq.~(\ref{eq:Capex_v2}). These investments account for the installation and dismantlement costs of the technologies. The total \gls{OPEX} (\textbf{C\textsubscript{tot,opex}}) is the sum of the \gls{OPEX} in 2015 and the annualised sum of the \gls{OPEX} during each phase (\textbf{C\textsubscript{opex}}), Eq.~(\ref{eq:Copex_tot_v2}). During a phase, the system \gls{OPEX} is 
+the product of the annualised phase factor, defined in Eq.~(\ref{eq:path_annu_factor}), and the arithmetic average of \gls{OPEX} cost for the representative years before and after the phase.
+%assumed to be the annualised average of its first and last year. The annualised phase factor  ($\tau$\textsubscript{\emph{phase}}) is defined in Eq.~(\ref{eq:path_annu_factor}).
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+\label{eq:opex_yearly}
+&\textbf{C\textsubscript{opex}} (y) = \sum_{\mathclap{\hspace{1cm}i \in \emph{TECH}}} \textbf{C\textsubscript{maint}}(y,i) + \sum_{\mathclap{j \in \emph{RES}}} \textbf{C\textsubscript{op}}(y,j)&\forall y\in \emph{YEARS}
+\end{flalign}
+\endgroup
+
+For each year, the yearly \gls{OPEX} (\textbf{C\textsubscript{opex}}) is the sum of the operating and maintenance costs of technologies (\textbf{C\textsubscript{maint}}) and  the operating cost of the resources (\textbf{C\textsubscript{op}}), Eq.~(\ref{eq:opex_yearly}).
+To calculate the total operation and maintenance costs (\textbf{C\textsubscript{maint}}) and the cost of the resources (\textbf{C\textsubscript{op}}), their equations from the previous  chapter (\ref{eq:c_maint}-\ref{eq:c_op}) are used with an additional dimension: the year.
+
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+\label{eq:PhaseInv}%5
+&\textbf{C\textsubscript{inv,phase}}(p) = \sum_{\mathclap{j \in \emph{TECH}}} \textbf{F\textsubscript{new}}(p,j)\cdot \tau\textsubscript{\emph{phase}}(p)\cdot \left(\emph{c\textsubscript{inv}}(\emph{y\textsubscript{start}},j) + \emph{c\textsubscript{inv}}(\emph{y\textsubscript{stop}},j)\right)/2&\notag\nonumber
+\end{flalign}
+\begin{flalign}
+&&\forall p \in \emph{PHASE} | y\textsubscript{start}\in \emph{P\_START}(p),y\textsubscript{stop}\in \emph{P\_STOP}(p)
+\end{flalign}
+\endgroup
+
+The investment during a phase (\textbf{C\textsubscript{inv,phase}}) results from the multiplication of the new technologies built (\textbf{F\textsubscript{new}}) with their annualised arithmetic averaged specific cost, Eq.~(\ref{eq:PhaseInv}). The annualised phase factor is used, see Eq.~(\ref{eq:path_annu_factor}), and the specific cost during the phase is defined as  the average between the investment cost for the first and last year of the period. %Eq. \ref{eq:PhaseInv_constr} forces the investment per phase to be equals. Without this constraint, massive investment could be done during one phase and authors believe that it is more meaningful to have balanced phases in terms of investments.
+
+
+\subsubsection{\Acrlong{GWP} calculation}
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+\label{eq:gwp_tot_transition}
+&\textbf{GWP\textsubscript{tot,trans}}= \textbf{GWP\textsubscript{tot}}(2015) + \emph{t\textsubscript{phase}}\sum_{\mathclap{p \in \emph{PHASE}|y\textsubscript{start}\in \emph{Y\_START}(p),y\textsubscript{stop}\in \emph{Y\_STOP}(p)}}/2 \left(\textbf{GWP\textsubscript{tot}}(y\textsubscript{start}) +\textbf{GWP\textsubscript{tot}}(y\textsubscript{stop}) \right)&
+\\
+\label{eq:limit_gwp_trans}
+& \textbf{GWP\textsubscript{tot,trans}} \leq \emph{gwp\textsubscript{lim,trans}}&
+\end{flalign}
+\endgroup
+
+The total \acrfull{GWP} emissions during the transition (\textbf{GWP\textsubscript{tot,trans}})  are equal to the sum of the total emissions per period (\textbf{GWP\textsubscript{tot}}), Eq.~(\ref{eq:gwp_tot_transition}). The emissions during a phase is estimated as the arithmetic average of the representative years before and after the phase. Eq.~(\ref{eq:limit_gwp_trans}) limits the total \gls{GWP} emissions during the transition by a maximum (\emph{gwp\textsubscript{lim,trans}}).
+
+
+\subsubsection{Adaptation to the case study}
+
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+\label{eq:use_waste}%5
+%# [Eq. XX] Force the system to consume all the WASTE available.
+%subject to use_all_the_waste {y in YEARS diff {"YEAR_2015"}} : # I don't know why this constraint should be removed.
+& \sum_{\mathclap{t \in T |\{h,td\}\in T\_H\_TD}} \left(\textbf{F\textsubscript{t}}(y,\emph{Waste},h,td)\cdot \emph{t\textsubscript{op}}(h,td) \right)
+ = \emph{avail} (y,\emph{Waste})
+ & \hspace{-2cm} \forall y \in \emph{YEARS}
+%	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"WASTE",h,td] * t_op[h,td]) = avail [y,"WASTE"];
+\end{flalign}
+\endgroup
+
+Endogenous non renewable wastes are constrained to be locally consumed, Eq.~(\ref{eq:use_waste}). 
+
+
+
+\begingroup
+\belowdisplayskip=2pt
+\abovedisplayskip=2pt
+\begin{flalign} 
+\label{eq:delta_tech_during_phase}
+%# [Eq. XX] Define the amount of change between years 
+%subject to delta_change_definition {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], j in TECHNOLOGIES} :
+%	Delta_change [p,j] >= (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_start,j, h,td] * t_op[h,td]) - (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_stop,j, h,td] * t_op[h,td]) ;
+%% GL_correction_v2 %% & \textbf{$\Delta$\textsubscript{change}}(p,i) \geq 
+%% GL_correction_v2 %%   \sum_{\mathclap{t \in T |\{h,td\}\in T\_H\_TD}} \left( \textbf{F\textsubscript{t}}(\emph{y\textsubscript{stop}},j,h,td) \right) 
+%% GL_correction_v2 %%-  \sum_{\mathclap{t \in T |\{h,td\}\in T\_H\_TD}} \left( \textbf{F\textsubscript{t}}(\emph{y\textsubscript{start}},j,h,td) \right)&\notag\nonumber\\
+& \textbf{$\Delta$\textsubscript{change}}(p,i) \geq 
+   \sum_{\mathclap{t \in T |\{h,td\}\in T\_H\_TD}} \left( \textbf{F\textsubscript{t}}(\emph{y\textsubscript{start}},i,h,td) \right) 
+   \sum_{\mathclap{t \in T |\{h,td\}\in T\_H\_TD}} \left( \textbf{F\textsubscript{t}}(\emph{y\textsubscript{stop}},i,h,td) \right)&\notag\nonumber\\
+%% GL_correction_v2 %% &&\hspace{-6cm} \forall p \in \emph{PHASE}, \emph{y\textsubscript{start}} \in \emph{Y\_START}(p), \emph{y\textsubscript{stop}} \in \emph{Y\_STOP}(p)
+&&\hspace{-8cm} \forall j \in \emph{TECH}, p \in \emph{PHASE}, \emph{y\textsubscript{start}} \in \emph{Y\_START}(p), \emph{y\textsubscript{stop}} \in \emph{Y\_STOP}(p)
+ \end{flalign}
+ \begin{flalign}
+\label{eq:limit_reno_LTheat}
+%# [Eq. XX] Limit the amount of change for low temperature heating
+%subject to limit_changes_heat {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
+%	sum {j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DHN"] union TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"]} Delta_change[p,j] <= limit_LT_renovation * (end_uses_input[y_start,"HEAT_LOW_T_HW"] + end_uses_input[y_start,"HEAT_LOW_T_SH"] + sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} Network_losses [y_start,"HEAT_LOW_T_DHN",h,td] * t_op [h,td]);
+&\sum_{\mathclap{\hspace{3cm} euc \in EUT\_OF\_CAT(HeatLowT),i\in \emph{TECH\_OF\_EUT}(euc)}} \textbf{$\Delta$\textsubscript{change}}(p,i) 
+\leq
+ \emph{lim\textsubscript{LT,ren}} \cdot 
+\left(
+{eui}(\emph{y\textsubscript{start}},HotWater) 
++  \emph{eui}(\emph{y\textsubscript{start}},SpaceHeat)
+ \right)\hspace{-1cm}& \\
+\label{eq:limit_reno_passmob}
+%# [Eq. XX] Limit the amount of change for passenger mobility
+%subject to limit_changes_mob {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
+%	sum {j in TECHNOLOGIES_OF_END_USES_TYPE["MOB_PRIVATE"] union TECHNOLOGIES_OF_END_USES_TYPE["MOB_PUBLIC"]} Delta_change[p,j] <= limit_pass_mob_changes * (end_uses_input[y_start,"MOBILITY_PASSENGER"]);
+&\sum_{\mathclap{\hspace{3cm} euc \in EUT\_OF\_CAT(MobPass),i\in \emph{TECH\_OF\_EUT}(euc)
+}} \textbf{$\Delta$\textsubscript{change}}(p,i) 
+\leq
+ \emph{lim\textsubscript{MobPass}} \cdot \emph{eui}(\emph{y\textsubscript{start}},MobPass) )& \\
+\label{eq:limit_reno_freight}
+%# [Eq. XX] Limit the amount of change for freight mobility
+%subject to limit_changes_fright {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :
+%	sum {j in TECHNOLOGIES_OF_END_USES_TYPE["MOB_FREIGHT_RAIL"] union TECHNOLOGIES_OF_END_USES_TYPE["MOB_FREIGHT_BOAT"] union TECHNOLOGIES_OF_END_USES_TYPE["MOB_FREIGHT_ROAD"]} Delta_change[p,j] <= limit_freight_changes * (end_uses_input[y_start,"MOBILITY_FREIGHT"]);
+&\sum_{\mathclap{\hspace{3cm} euc \in EUT\_OF\_CAT(MobFreight),i\in \emph{TECH\_OF\_EUT}(euc)}} \textbf{$\Delta$\textsubscript{change}}(p,i) 
+\leq
+ \emph{lim\textsubscript{MobFreight}} \cdot \emph{eui}(\emph{y\textsubscript{start}},MobFreight) &
+\end{flalign}
+\endgroup
+
+
+To avoid unrealistic changes in the system, additional constraints are needed during the phases for the mobility and low temperature heat sectors. 
+Eq.~(\ref{eq:delta_tech_during_phase}) calculates the upper limit of change (\textbf{$\Delta$\textsubscript{change}}) in terms of supplied demand instead of installed capacity. 
+%% GL_correction_v2 %% Following line added:
+%  Ici on prend la différence entre ystart et ystop (et non pas le contraire), en effet, on est intéressé par la réticence des personnes à se séparer de leur ancienne technologie, plutot que la réticense à accepter une nouvelle techno. 
+%% GL_correction_v2 %% end
+Based on this quantification, the amount of change per phase is limited for low temperature heat (\emph{lim\textsubscript{LT,ren}}), Eq.~(\ref{eq:limit_reno_LTheat}), passenger mobility (\emph{lim\textsubscript{MobPass}}), Eq.~(\ref{eq:limit_reno_passmob}) and freight mobility (\emph{lim\textsubscript{MobFreight}}), Eq.~(\ref{eq:limit_reno_freight}). 
+As an example, setting the maximum change of supplied heat at low temperature to 25\% would limit the change in technology related to heat at low temperature to 25\% during a phase. 
+In this case, if more than 25\% of the low temperature heat was supplied by a technology, it would take more than one phase to replace it by a different one.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\section{Implementation}
+
+The implementation of the proposed formulation is similar  to the one proposed in Section \ref{ssec:estd_implementation} of the previous chapter.
+The definitions of the terms (SETS, Variables and Parameters) as well as the domains of the variables, the constraints and the objective function are defined in a model file. Compared to the \gls{ESTD} implementation, the pathway one has three differences: the model file and data are adapted, the addition of a  model file containing the constraints to set up the starting year (2015), and the files containing the definitions - \emph{a priori} - of the terms \emph{AGE} and \emph{decom\_allowed}. Due to the longer computation time (hours), the solver used is a commercial one: AMPL-CPLEX. The code is available on its repository \cite{PESTD_v1_repo}.

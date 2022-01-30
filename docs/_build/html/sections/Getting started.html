@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Getting started &mdash; EnergyScope_documentation 2.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Model formulation" href="Model%20formulation.html" />
+    <link rel="prev" title="Releases" href="Releases.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> EnergyScope_documentation
+            <img src="../_static/estd_graphical_abstract.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Releases.html">Releases</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#how-to-install-and-run-the-model">How to install and run the model:</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#exercices">Exercices:</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#exercice-1-analyse-the-system">Exercice 1 - analyse the system</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Model%20formulation.html">Model formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Input%20Data.html">Input Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EnergyScope_documentation</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Getting started</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/sections/Getting started.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="getting-started">
+<h1>Getting started<a class="headerlink" href="#getting-started" title="Permalink to this headline"></a></h1>
+<section id="how-to-install-and-run-the-model">
+<h2>How to install and run the model:<a class="headerlink" href="#how-to-install-and-run-the-model" title="Permalink to this headline"></a></h2>
+<p>The model is coded in GLPK, using the open-source solver GLPSOL. To run the model, perform the following 4 steps: install the solver, download the code, execute the code and enjoy the results.</p>
+<p>The model was originally developed in AMPL. Compatible solvers are CPLEX, Gurobi, etc. Running the model in AMPL requires the licences of AMPL and of at least one LP solver.</p>
+<p>However, the following version can be executed with GLPK <a class="footnote-reference brackets" href="#id2" id="id1">1</a>, an open source model.</p>
+<ol class="arabic simple">
+<li><p>Install GLPK:</p></li>
+</ol>
+<p>a) on Mac OS X (Option 1, recommended): use homebrew
+<a class="reference external" href="http://arnab-deka.com/posts/2010/02/installing-glpk-on-a-mac/">http://arnab-deka.com/posts/2010/02/installing-glpk-on-a-mac/</a></p>
+<p>b) on Mac Os X (Option 2)/Linux:
+- Download the latest version of GLPK from: <a class="reference external" href="http://www.gnu.org/software/glpk/#downloading">http://www.gnu.org/software/glpk/#downloading</a>
+- Install GLPK from the command line</p>
+<p>$ cd ~/Downloads
+$ tar -xzf glpk-4.63.tar.gz
+$ cd  glpk-4.63 [or newer version]
+$ ./configure –prefix=/usr/local
+$ make
+$ sudo make install</p>
+<p>See if your system recognises it:</p>
+<p>$ which glpsol</p>
+<p>should reveal:</p>
+<p>$ /usr/local/bin/glpsol</p>
+<p>Now try:</p>
+<p>$ glpsol –help</p>
+<p>Source: <a class="reference external" href="http://hichenwang.blogspot.ch/2011/08/fw-installing-glpk-on-mac.html">http://hichenwang.blogspot.ch/2011/08/fw-installing-glpk-on-mac.html</a></p>
+<ol class="loweralpha simple" start="3">
+<li><p>on Windows:</p></li>
+</ol>
+<ul class="simple">
+<li><p>Download the source files from: <a class="reference external" href="https://sourceforge.net/projects/winglpk/files/latest/download">https://sourceforge.net/projects/winglpk/files/latest/download</a></p></li>
+<li><dl class="simple">
+<dt>Extract the files in a folder. Depending on your operating system use glpsol.exe from:</dt><dd><ul>
+<li><p>./w64 if running on a 64 bit version</p></li>
+<li><p>./w32 if running on a 32 bit version</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><p>For facilitating the access to glpsol.exe you can add the full path (depending on your operating system, see below) from the previous point to the system variables PATH</p></li>
+</ul>
+<ol class="arabic simple" start="2">
+<li><p>Clone/download the content of this folder</p></li>
+<li><p>Navigate to the folder ‘STEP_2_Energy_Model’ folder via terminal/cmd prompt and execute (check glpsol documentation for more options):</p></li>
+</ol>
+<p>$ glpsol -m ESTD_model.mod -d ESTD_data.dat -d ESTD_12TD.dat -o ESTD_output.out
+(You might need to use ‘glspol.exe’ instead of ‘glpsol’ on Windows)</p>
+<p>4. Check the output files:
+if the ESTD_main.out file is correctly generated.
+If the command at point (3) did not run, it might be that glpsol is not on your PATH. Two solutions for that:
+- (not best) instead of “glpsol” use the full path, e.g. on Mac ‘/usr/local/bin/glpsol  -m ESTD_model.mod -d ESTD_data.dat -d ESTD_12TD.dat -o ESTD_output.out’
+- (best) add the folder in which glpsol is installed to the PATH. e.g. on Windows 7 (<a class="reference external" href="http://geekswithblogs.net/renso/archive/2009/10/21/how-to-set-the-windows-path-in-windows-7.aspx">http://geekswithblogs.net/renso/archive/2009/10/21/how-to-set-the-windows-path-in-windows-7.aspx</a>). on mac (from terminal) ‘export PATH=/usr/local/bin:$PATH’ (if glpsol is installed in /usr/local/bin)</p>
+<p>Descriptions of outputs files and folders:</p>
+<ul class="simple">
+<li><p>./assets.txt : Installed capacity of each technology and its specific cost, gwp…</p></li>
+<li><p>./cost_breakdown.txt : Cost of resources and technologies.</p></li>
+<li><p>./gwp_breakdown.txt : GWP of resources and technologies.</p></li>
+<li><p>./losses.txt : Losses in the networks.</p></li>
+<li><p>./hourly_data/ : Folder containing the hourly data for each layer and for each storage technology.</p></li>
+<li><p>./sankey/ : Folder containing the SANKEY diagram.</p></li>
+</ul>
+<p>To open the Sankey diagram, open the <code class="docutils literal notranslate"><span class="pre">ESTD_sankey.html</span></code> file. The browser should indicate the following figure:</p>
+<figure class="align-default">
+<img alt="../_images/sankey_select_file.png" src="../_images/sankey_select_file.png" />
+</figure>
+<p>Click on the <code class="docutils literal notranslate"><span class="pre">Browse</span></code> button and select the Sankey file <code class="docutils literal notranslate"><span class="pre">input2sankey</span></code>. Finally, click on the <code class="docutils literal notranslate"><span class="pre">Show</span> <span class="pre">Sankey</span></code> button.</p>
+<dl class="footnote brackets">
+<dt class="label" id="id2"><span class="brackets"><a class="fn-backref" href="#id1">1</a></span></dt>
+<dd><p>A drawback of GLPK is the long computational time (30 times longer than with AMPL). Thus, most of the code developments are made with AMPL using the CPLEX solver. When computational time are refered, they were obtained with the latter solver.</p>
+</dd>
+</dl>
+</section>
+<section id="exercices">
+<h2>Exercices:<a class="headerlink" href="#exercices" title="Permalink to this headline"></a></h2>
+<section id="exercice-1-analyse-the-system">
+<h3>Exercice 1 - analyse the system<a class="headerlink" href="#exercice-1-analyse-the-system" title="Permalink to this headline"></a></h3>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>TO BE DONE</p>
+</div>
+</section>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Releases.html" class="btn btn-neutral float-left" title="Releases" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Model%20formulation.html" class="btn btn-neutral float-right" title="Model formulation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, G. Limpens.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

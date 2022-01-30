@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; EnergyScope_documentation 2.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Releases" href="Releases.html" />
+    <link rel="prev" title="The EnergyScope model" href="../index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> EnergyScope_documentation
+            <img src="../_static/estd_graphical_abstract.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#features">Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#strengths-of-the-model">Strengths of the model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#whole-energy-system">Whole energy system</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#optimisation-of-hourly-operation-over-a-year">Optimisation of hourly operation over a year</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#open-source">Open source</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#short-computational-time">Short computational time</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#weaknesses-of-the-model">Weaknesses of the model</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#spatial-resolution-1-cell">Spatial resolution: 1 cell</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#low-technico-economico-resolution">Low technico-economico resolution</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#no-market-equilibrium">No market equilibrium</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#deterministic-optimisation">Deterministic optimisation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#year-time-horizon">1 year time horizon</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#current-developments">Current developments</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Releases.html">Releases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Getting%20started.html">Getting started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model%20formulation.html">Model formulation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Input%20Data.html">Input Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EnergyScope_documentation</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Overview</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/sections/Overview.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h1>
+<dl class="field-list simple" id="label-sec-overview">
+<dt class="field-odd">Version</dt>
+<dd class="field-odd"><p> (2.2)</p>
+</dd>
+<dt class="field-even">Date</dt>
+<dd class="field-even"><p>Dec 07, 2021</p>
+</dd>
+<dt class="field-odd">Version main developer</dt>
+<dd class="field-odd"><p>Gauthier Limpens (UCLouvain)</p>
+</dd>
+<dt class="field-even">Short summary</dt>
+<dd class="field-even"><p>One cell <em>whole</em>-energy system with an hourly resolution and data for the Belgian energy system in 2035.</p>
+</dd>
+</dl>
+<p>The EnergyScope model optimises the design and operation of all the energy sectors, with the same level of details. The energy sectors are defined as electricity, heat, mobility and non-energy demand.</p>
+<p>The EnergyScope model is developped through a collaboration between UCLouvain (Belgium) and EPFL (Switerland).
+It was originally created by EPFL (Switzerland) since 2011.</p>
+<p>It is written in an algebraic language which can be compiled with an open source solver (GLPK) but also commercial one (AMPL).</p>
+<section id="features">
+<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline"></a></h2>
+<p>In the energy system community, several criteria are used to compare models.
+EnergyScope TD is a bottom-up energy system model and has been compared to 53 other models in [limpens2021generating].</p>
+<p>Each model is tailored for a different applications. In the following, the strengths and weaknesses of the model is presented.</p>
+<section id="strengths-of-the-model">
+<h3>Strengths of the model<a class="headerlink" href="#strengths-of-the-model" title="Permalink to this headline"></a></h3>
+<section id="whole-energy-system">
+<h4>Whole energy system<a class="headerlink" href="#whole-energy-system" title="Permalink to this headline"></a></h4>
+<p>The current version of the energy system represents the four energy sectors of the Belgian energy system.
+The sectors are coupled, in the sence that electricity can be used for other sectors, such as heat or mobility.
+<a class="reference internal" href="#fig-bes-illustration"><span class="std std-numref">Figure 1</span></a> shows the energy system implemented in the
+model, it accounts for :</p>
+<ul class="simple">
+<li><p>28 energy carriers</p></li>
+<li><p>112 technologies</p></li>
+<li><p>12 end use demands</p></li>
+</ul>
+<figure class="align-default" id="fig-bes-illustration">
+<a class="reference internal image-reference" href="../_images/case_study_energy_system.png"><img alt="Illustrative example of a decentralised heating layer." src="../_images/case_study_energy_system.png" style="width: 16cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 1 </span><span class="caption-text">Application of the EnergyScope TD to the Belgian energy system: overview of the
+resources, technologies and demands implemented. Technologies (in bold) represent groups of
+technologies with different energy inputs (e.g. Boilers include gas boilers, oil boilers …). ‘Decent.’
+represents the group of thermal storage for each decentralised heat production technology. Abbreviations:
+Atm. (atmospheric), battery electric vehicle (BEV), combined cycle gas turbine (CCGT),
+CC (carbon capture), carbon capture and storage (CCS) cogeneration of heat and power (CHP),
+district heating network (DHN), hydrogen (H2), heat pump (HP), integrated gasification combined
+cycle (IGCC), methan. (methanation), natural gas (NG), onshore (on.), offshore (off.), plug-in hybrid
+electric vehicle (PHEV), pumped hydro storage (PHS), photovoltaic (PV) and synthetic liquid fuel
+(SLF).</span><a class="headerlink" href="#fig-bes-illustration" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="optimisation-of-hourly-operation-over-a-year">
+<h4>Optimisation of hourly operation over a year<a class="headerlink" href="#optimisation-of-hourly-operation-over-a-year" title="Permalink to this headline"></a></h4>
+<p>The formulation of the year is based on typical days, which reduces the number of time-slice accounted in the model (usually 288 hours, which represents 12 days).
+However, a reconstruction method enables to capture energy stored at different time scale. <a class="reference internal" href="#fig-estd-time-scale"><span class="std std-numref">Figure 2</span></a> illustrates the different time scales captured by the model.</p>
+<figure class="align-default" id="fig-estd-time-scale">
+<a class="reference internal image-reference" href="../_images/estd_different_time_scales.png"><img alt="Illustrative example of a decentralised heating layer." src="../_images/estd_different_time_scales.png" style="width: 16cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 2 </span><span class="caption-text">Illustration of the different time scale optimised by the model.
+The hourly power balance is resolved on typical days (bottom),
+while the level of charge of storage is captured at week to seasonal level (middle and top).
+This illustration is for the Swiss case study presented in [limpens2019energyScope].</span><a class="headerlink" href="#fig-estd-time-scale" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The model optimises the operation and design, enabling all the differnt configuration to satisfy the imposed demand.</p>
+</section>
+<section id="open-source">
+<h4>Open source<a class="headerlink" href="#open-source" title="Permalink to this headline"></a></h4>
+<p>The model is both open source (github) and documented (this document).
+The choosen plateform foster collaboration and enable several researchers to work together.</p>
+</section>
+<section id="short-computational-time">
+<h4>Short computational time<a class="headerlink" href="#short-computational-time" title="Permalink to this headline"></a></h4>
+<p>The model has a short computational time around <strong>60 seconds</strong> making it an ideal candidate for uncertainty quantification.
+The strengths of the model are:</p>
+</section>
+</section>
+<section id="weaknesses-of-the-model">
+<h3>Weaknesses of the model<a class="headerlink" href="#weaknesses-of-the-model" title="Permalink to this headline"></a></h3>
+<section id="spatial-resolution-1-cell">
+<h4>Spatial resolution: 1 cell<a class="headerlink" href="#spatial-resolution-1-cell" title="Permalink to this headline"></a></h4>
+<p>The presented model represents a single regional area, called a <em>cell</em>.
+This area is connected to neighbouring countries, and assumptions enable
+the representation of imports/exports of electricity and molecules.</p>
+</section>
+<section id="low-technico-economico-resolution">
+<h4>Low technico-economico resolution<a class="headerlink" href="#low-technico-economico-resolution" title="Permalink to this headline"></a></h4>
+<p>The current implementaion has a low level of technico-economic contraints.
+Technically, the technologies can switch from off to full load in one hour (except for Nuclear).
+Economically, the operation is related to the resource purchase and the maintenance cost account for the rest.
+The latter is assumed proportional to the capacity installed.</p>
+</section>
+<section id="no-market-equilibrium">
+<h4>No market equilibrium<a class="headerlink" href="#no-market-equilibrium" title="Permalink to this headline"></a></h4>
+<p>The demand is described by a yearly demand and an hourly profil.
+The yearly demand is exogeneous of the problem, and thus doesn’t result of a offer-demand balance.
+In other words, the system is forced to supply the demand even if the cost of the system soars.</p>
+</section>
+<section id="deterministic-optimisation">
+<h4>Deterministic optimisation<a class="headerlink" href="#deterministic-optimisation" title="Permalink to this headline"></a></h4>
+<p>The mathematical model is written as a linear continuous problem.
+Thus, it is resolved by using linear programming solvers which are deterministic optimisation.
+All the information is known <em>a priori</em> and the solver reaches a single optimum.</p>
+<p>Moreover, linear programming gives chaotics solution, which can vary from white to black when slighlty changing a parameter.
+As an example, one solution could be based on gas cogeneration while another is based on Combined Cycle Gas Turbines.</p>
+<p>Uncertainty quantification techniques enable to overcome this issue by running several time the model under different configuration.
+Therefore, a short computaitonal time is required to enable many sampling.</p>
+</section>
+<section id="year-time-horizon">
+<h4>1 year time horizon<a class="headerlink" href="#year-time-horizon" title="Permalink to this headline"></a></h4>
+<p>EnergyScope TD is a snapshot model, in the sence that it represents the energy system in a target future year, without considering existing system.</p>
+</section>
+</section>
+</section>
+<section id="current-developments">
+<h2>Current developments<a class="headerlink" href="#current-developments" title="Permalink to this headline"></a></h2>
+<ul class="simple">
+<li><p>Multi-region :
+<strong>Main contributors</strong>: Paolo Thiran</p></li>
+<li><p>Myopic pathway transition :
+<strong>Main contributors</strong>: Xavier Rixhon</p></li>
+<li><p>Multi-criteria optimisation:</p></li>
+<li><p>Soft-coupling with a dispatch model:
+<strong>Main contributors</strong>: Paolo Thiran, Matija Pavicevic and Gauthier Limpens</p></li>
+</ul>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../index.html" class="btn btn-neutral float-left" title="The EnergyScope model" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Releases.html" class="btn btn-neutral float-right" title="Releases" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, G. Limpens.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
