@@ -6,11 +6,11 @@ Input Data
 
 **Belgian energy system data in 2035**
 
-..
-   .. caution ::
-      This section is still under construction.
-      It is built from Limpens PhD thesis (2021) available at http://dx.doi.org/10.13140/RG.2.2.25755.18724 
 
+.. caution ::
+   This section is still under construction.
+   It is built from Limpens PhD thesis (2021) available at http://dx.doi.org/10.13140/RG.2.2.25755.18724 
+   Since, new technologies have been added and thus the documentation should be updated.
 
 .. role:: raw-latex(raw)
    :format: latex

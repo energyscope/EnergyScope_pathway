@@ -6,13 +6,12 @@ Overview
 :Version: |version| (|release|)
 :Date: |today|
 :Version main developer: Gauthier Limpens (UCLouvain)
-:Short summary: One cell *whole*-energy system with an hourly resolution and data for the Belgian energy system in 2035.
+:Short summary: One cell *whole*-energy system with an hourly resolution and data for the Belgian energy system transition from 2015 to 2050.
 
-The EnergyScope model optimises the design and operation of all the energy sectors, with the same level of details. The energy sectors are defined as electricity, heat, mobility and non-energy demand. 
-
-
-The EnergyScope model is developped through a collaboration between UCLouvain (Belgium) and EPFL (Switerland). 
-It was originally created by EPFL (Switzerland) since 2011.
+The EnergyScope Pathway model optimises the design and operation of all the energy sectors, with the same level of details for a time horizon of 35 years. 
+The energy sectors are defined as electricity, heat, mobility and non-energy demand. 
+This model is an extension of the EnergyScope model available at https://github.com/energyscope/energyscope. 
+It repeats the yearly model for 8 years between 2015 and 2050 (2015, 2020, ... 2050) and account for the investment strategy between the years.
 
 It is written in an algebraic language which can be compiled with an open source solver (GLPK) but also commercial one (AMPL).
 
@@ -20,7 +19,12 @@ Features
 ========
 
 In the energy system community, several criteria are used to compare models. 
-EnergyScope TD is a bottom-up energy system model and has been compared to 53 other models in [limpens2021generating].
+The EnergyScope pathway is based on a bottom-up energy system model whcih has been compared to 53 other models in :cite:`Limpens2021thesis`.
+According to the literature review of :cite:`prina2019transition` on long-term planning, EnergyScope Pathway is the first open model for long term forecast which have the following characteristics : 
+- Open source and documented
+- Hourly time step over a year
+- Covers all energy sectors
+- Account for many decision variables (all technology sizing and operating) while keeping a computational time below 4 hours on a personnal laptop.
 
 Each model is tailored for a different applications. In the following, the strengths and weaknesses of the model is presented.
 
@@ -87,9 +91,7 @@ The choosen plateform foster collaboration and enable several researchers to wor
 Short computational time
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-The model has a short computational time around **60 seconds** making it an ideal candidate for uncertainty quantification.
-The strengths of the model are:
-
+The model has an acceptable computational time around **4 hours** making it an ideal candidate to assess different energy transition pathways.
 
 Weaknesses of the model
 ---------------------------
@@ -132,26 +134,12 @@ As an example, one solution could be based on gas cogeneration while another is 
 Uncertainty quantification techniques enable to overcome this issue by running several time the model under different configuration. 
 Therefore, a short computaitonal time is required to enable many sampling.
 
-1 year time horizon
-^^^^^^^^^^^^^^^^^^^
-
-EnergyScope TD is a snapshot model, in the sence that it represents the energy system in a target future year, without considering existing system.
-
 
 Current developments
 ====================
 
-- Multi-region : 
-  **Main contributors**: Paolo Thiran
-
 - Myopic pathway transition : 
   **Main contributors**: Xavier Rixhon
-
-- Multi-criteria optimisation: 
-
-- Soft-coupling with a dispatch model: 
-  **Main contributors**: Paolo Thiran, Matija Pavicevic and Gauthier Limpens
-
 
 
 

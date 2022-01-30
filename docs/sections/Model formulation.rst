@@ -5,7 +5,11 @@ Model formulation
 
 .. role:: raw-latex(raw)
    :format: latex
-..
+
+.. caution ::
+    This section is still under construction.
+    The equations have been updated.
+    However, the table of parameters and variable must be updated (TBD)
 
 
 **Model overview:**
@@ -268,7 +272,7 @@ transportation (train, trolley, metro and electrical/hybrid buses),
 electric private transportation including and hydrogen cars [2]_ and
 trains for freight.
 
-.. figure:: /images/model_formulation/Layer_Elec.png
+.. figure:: /images/model_formulation/layer_Elec.png
    :alt: Representation of the Electricity layer.
    :name: fig:LayerElec
    :width: 16cm
@@ -291,7 +295,7 @@ for sets, Tables :numref:`%s <tab:paramsDistributions>` and
 :numref:`%s <tab:variablesdependent>` for variables. On
 this basis, the equations representing the constraints and the objective
 function are formulated in  :numref:`Figure %s <fig:EndUseDemand>` and
-Eqs. :eq:`eq:obj_func` - :eq:`eq:efficiency`
+Eqs. :eq:`eq:c_tot_year` - :eq:`eq:efficiency`
 and described in the following paragraphs.
 
 .. _ssec_sets_params_vars:
@@ -661,8 +665,8 @@ the independent and dependent variables, respectively.
 Energy model formulation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the following, the overall LP formulation is proposed through :numref:`Figure %s <fig:EndUseDemand>` and equations
- :eq:`eq:obj_func` - :eq:`eq:solarAreaLimited`
+In the following, the overall LP formulation is proposed through :numref:`Figure %s <fig:endUseDemand>` and equations
+ :eq:`eq:c_tot_year` - :eq:`eq:solarAreaLimited`
 the constraints are regrouped in paragraphs. It starts with the
 calculation of the EUD. Then, the cost, the GWP and the objective
 functions are introduced. Then, it follows with more specific
@@ -718,33 +722,34 @@ Similarly, **%\ Rail**, **%\ Boat** and **%\ Truck** define the
 penetration of train, boat and trucks for freight mobility,
 respectively.
 
-Cost, emissions and objective function
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Annual cost and emissions
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. math::
-    \text{min} \textbf{C}_{\textbf{tot}} = \sum_{j \in \text{TECH}} \Big(\textbf{$\tau$}(j) \textbf{C}_{\textbf{inv}}(j) + \textbf{C}_{\textbf{maint}} (j)\Big) + \sum_{i \in \text{RES}} \textbf{C}_{\textbf{op}}(i)
-    :label: eq:obj_func
+    \textbf{C}_{\textbf{tot}}(y) = \sum_{j \in \text{TECH}} \Big(\textbf{$\tau$}(y,j) \textbf{C}_{\textbf{inv}}(y,j) + \textbf{C}_{\textbf{maint}} (y,j)\Big) + \sum_{i \in \text{RES}} \textbf{C}_{\textbf{op}}(y,i)
+    ~~~~~~ \forall y \in \text{YEARS}
+    :label: eq:c_tot_year
 
 .. math::
-    \text{s.t. }  \textbf{$\tau$}(j) =  \frac{i_{\text{rate}}(i_{\text{rate}}+1)^{lifetime(j)}}{(i_{\text{rate}}+1)^{lifetime(j)} - 1} ~~~~~~ \forall j \in \text{TECH}\\
+    \text{s.t. }  \textbf{$\tau$}(y,j) =  \frac{i_{\text{rate}}(i_{\text{rate}}+1)^{lifetime(y,j)}}{(i_{\text{rate}}+1)^{lifetime(y,j)} - 1} ~~~~~~ \forall y \in \text{YEARS}, j \in \text{TECH}\\
     :label: eq:tau
 
 .. math::
-    \textbf{C}_{\textbf{inv}}(j) = c_{\text{inv}}(j) \textbf{F}(j) ~~~~~~ \forall j \in \text{TECH}\\
+    \textbf{C}_{\textbf{inv}}(y,j) = c_{\text{inv}}(y,j) \textbf{F}(y,j) ~~~~~~ \forall  y \in \text{YEARS}, j \in \text{TECH}\\
     :label: eq:c_inv
 
 .. math::
-    \textbf{C}_{\textbf{maint}}(j) = c_{\text{maint}}(j) \textbf{F}(j) ~~~~~~ \forall j \in \text{TECH}\\ 
+    \textbf{C}_{\textbf{maint}}(y,j) = c_{\text{maint}}(y,j) \textbf{F}(y,j) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{TECH}\\ 
     :label: eq:c_maint
 
+
 .. math::
-    \textbf{C}_{\textbf{op}}(i) = \sum_{t \in T | \{h,td\} \in T\_H\_TD(t)} c_{\text{op}}(i) \textbf{F}_{\textbf{t}}(i,h,td) t_{op} (h,td)  
-    ~~~~~~ \forall i \in \text{RES}
+    \textbf{C}_{\textbf{op}}(y,i) = \sum_{t \in T | \{h,td\} \in T\_H\_TD(t)} c_{\text{op}}(y,i) \textbf{F}_{\textbf{t}}(y,i,h,td) t_{op} (h,td)  
+    ~~~~~~ \forall y \in \text{YEARS}, i \in \text{RES}
     :label: eq:c_op
 
-The objective, Eq. :eq:`eq:obj_func`, is the
-minimisation of the total annual cost of the energy system (:math:`\textbf{C}_{\textbf{tot}}`),
-defined as the sum of the annualized investment cost of the technologies
+Eq. :eq:`eq:c_tot_year` is the total annual cost of the energy system for a representative year (:math:`\textbf{C}_{\textbf{tot}}`).
+It is defined as the sum of the annualized investment cost of the technologies
 (:math:`\tau\textbf{C}_{\textbf{inv}}`), the operating and maintenance cost of the
 technologies (:math:`\textbf{C}_{\textbf{maint}}`) and the operating cost of the resources
 (:math:`\textbf{C}_{\textbf{op}}`). The total investment cost (:math:`\textbf{C}_{\textbf{inv}}`) of each technology
@@ -763,21 +768,36 @@ Eq. :eq:`eq:c_op`), summing over the typical days using the
 set T_H_TD [4]_ is equivalent to summing over the 8760h of the year.
 
 .. math::
-    \textbf{GWP}_\textbf{tot}  = \sum_{j \in \text{TECH}} \frac{\textbf{GWP}_\textbf{constr} (j)}{lifetime(j)} +   \sum_{i \in \text{RES}} \textbf{GWP}_\textbf{op} (i) 
+    \textbf{GWP}_\textbf{tot} (y) = \sum_{j \in \text{TECH}} \frac{\textbf{GWP}_\textbf{constr} (y,j)}{lifetime(y,j)} +   \sum_{i \in \text{RES}} \textbf{GWP}_\textbf{y,op} (i) 
+    ~~~~~~~\forall y \in \text{YEARS}
     :label: eq:GWP_tot
     
-    \left(\text{in this version of the model} :   \textbf{GWP}_\textbf{tot}  =    \sum_{i \in \text{RES}} \textbf{GWP}_\textbf{op} (i) \right) 
+    \left(\text{in this version of the model} :   \textbf{GWP}_\textbf{tot} (y) =    \sum_{i \in \text{RES}} \textbf{GWP}_\textbf{op} (y,i) \right) 
     
 
 .. math::
-    \textbf{GWP}_\textbf{constr}(j) = gwp_{\text{constr}}(j) \textbf{F}(j) ~~~~~~ \forall j \in \text{TECH}
+    \textbf{GWP}_\textbf{constr}(y,j) = gwp_{\text{constr}}(y,j) \textbf{F}(y,j) ~~~~~~ \forall j \in \text{TECH}, y \in \text{YEARS}
     :label: eq:GWP_constr
 
 .. math::
-    \textbf{GWP}_\textbf{op}(i) = \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} gwp_\text{op}(i) \textbf{F}_\textbf{t}(i,h,td)  t_{op} (h,td )~~~~~~ \forall i \in \text{RES}
+    \textbf{GWP}_\textbf{op}(y,i) = \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} gwp_\text{op}(y,i) \textbf{F}_\textbf{t}(y,i,h,td)  t_{op} (h,td )~~~~~~ \forall i \in \text{RES}, y \in \text{YEARS}
     :label: eq:GWP_op
 
-The global annual GHG emissions are calculated using a LCA approach,
+.. math::
+    \textbf{GWP}_\textbf{tot,trans}(y,i) = \textbf{GWP}_\textbf{tot} ('YEAR\_2015')  + t_{phase}/2 \sum_{\{p, y_{start},y_{stop}\}}     \left(\textbf{GWP}_\textbf{tot}(y_{start}) +\textbf{GWP}_\textbf{tot}(y_{stop}) \right)
+    :label: eq:gwp_tot_transition
+
+.. math::
+    \textbf{GWP}_\textbf{tot,trans} \leq gwp_{lim,trans}
+    :label: eq:limit_gwp_trans
+
+.. math::
+    \sum_{\{p, y_{start},y_{stop}\}} \Leftrightarrow \sum_{p \in PHASE, y_{start} \in 'Y\_START', y_{stop} \in 'Y\_STOP'} 
+
+
+
+
+The global annual GHG emissions are calculated using for each representative year a LCA approach ,
 i.e. taking into account emissions of the technologies and resources
 ‘*from cradle to grave*’. For climate change, the natural choice as
 indicator is the GWP, expressed in ktCO\ :math:`_2`-eq./year. In
@@ -798,13 +818,18 @@ European Commission and the IEA mainly uses resource-related emissions
 :math:`\textbf{GWP}_{\textbf{op}}` while neglecting indirect emissions related to the
 construction of technologies :math:`\textbf{GWP}_{\textbf{constr}}`. To facilitate the
 comparison with their results, a similar implementation is proposed in
-Eq. :eq:`eq:GWP_tot`.
+Eq. :eq:`eq:GWP_tot`. 
+The overall emissions during the transition is calculated by Eq. :eq:`eq:gwp_tot_transition`. 
+It sums the emissions of each year between 2015 and 2050. For the years between representative ones, it is linearly interpolated. 
+The overall emissions can be seen as a carbon budget that the system will emit during the transition. 
+This carbon budget can be limited by a threshold in Eq. :eq:`eq:limit_gwp_trans`.
+
 
 System design and operation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. math::
-    f_{\text{min}} (j) \leq \textbf{F}(j) \leq f_{\text{max}} (j) ~~~~~~ \forall j \in \text{TECH}
+    f_{\text{min}} (y,j) \leq \textbf{F}(y,j) \leq f_{\text{max}} (y,j) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{TECH}
     :label: eq:fmin_fmax
 
 The installed capacity of a technology (**F**) is constrained between
@@ -817,19 +842,18 @@ the existing installed capacity (which will still be available in the
 future), while :math:`f_{max}` represents the maximum potential.
 
 .. math::
-     \textbf{F}_\textbf{t}(i,h,td) \leq \textbf{F}_\textbf{t}(i) \cdot c_{p,t} (i,h,td) ~~~~~~ \forall i \in \text{TECH}, h \in H, td \in TD
+     \textbf{F}_\textbf{t}(y,i,h,td) \leq \textbf{F}_\textbf{t}(y,i) \cdot c_{p,t} (i,h,td) ~~~~~~ \forall y \in \text{YEARS}, i \in \text{TECH}, h \in H, td \in TD
     :label: eq:cp_t
 
 .. math::
-    \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(j,h,td) t_{op}(h,td)  \leq   \textbf{F} (j) c_{p} (j) \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} t_{op} (h,td)  
+    \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,j,h,td) t_{op}(h,td)  \leq   \textbf{F} (y,j) c_{p} (y,j) \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} t_{op} (h,td)  
     :label: eq:c_p
 
-    \forall j \in \text{TECH}
+    \forall y \in \text{YEARS}, j \in \text{TECH}
 
 .. math::
-    \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(i,h,td) t_{op}(h,td)  \leq \text{avail} (i) ~~~~~~ \forall i \in \text{RES}
+    \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,i,h,td) t_{op}(h,td)  \leq \text{avail} (y,i) ~~~~~~ \forall y \in \text{YEARS}, i \in \text{RES}
     :label: eq:res_avail
-
 
 
 The operation of resources and technologies in each period is determined
@@ -846,15 +870,15 @@ Eqs. :eq:`eq:cp_t` and :eq:`eq:c_p` link the
 installed size of a technology to its actual use in each period (:math:`\textbf{F}_{\textbf{t}}`)
 via the two capacity factors. The total use of resources is limited by
 the yearly availability (:math:`avail`),
-Eq. :eq:`eq:res_avail`.
+Eq. :eq:`eq:res_avail`. 
 
 .. math::
-    \sum_{i \in \text{RES}~\cup \text{TECH} \setminus \text{STO}} f(i,l) \textbf{F}_\textbf{t}(i,h,td) + \sum_{j \in \text{STO}} \bigg(\textbf{Sto}_\textbf{out}(j,l,h,td) - \textbf{Sto}_\textbf{in}(j,l,h,td)\bigg)  
+    \sum_{i \in \text{RES}~\cup \text{TECH} \setminus \text{STO}} f(y,i,l) \textbf{F}_\textbf{t}(y,i,h,td) + \sum_{j \in \text{STO}} \bigg(\textbf{Sto}_\textbf{out}(y,j,l,h,td) - \textbf{Sto}_\textbf{in}(y,j,l,h,td)\bigg)  
     :label: eq:layer_balance
 
-    - \textbf{EndUses}(l,h,td) = 0
+    - \textbf{EndUses}(y,l,h,td) = 0
      
-    \forall l \in L, \forall h \in H, \forall td \in TD
+    \forall y \in \text{YEARS}, l \in L, \forall h \in H, \forall td \in TD
   
 The matrix :math:`f` defines for all technologies and resources outputs to
 (positive) and inputs (negative) layers.
@@ -867,22 +891,22 @@ Storage
 ^^^^^^^
 
 .. math::
-    \textbf{Sto}_\textbf{level} (j,t) =    \textbf{Sto}_\textbf{level} (j,t-1)\cdot\left(1 - \%_{sto_{loss}}(j) \right)  
+    \textbf{Sto}_\textbf{level} (y,j,t) =    \textbf{Sto}_\textbf{level} (y,j,t-1)\cdot\left(1 - \%_{sto_{loss}}(y,j) \right)  
    :label: eq:sto_level
 
-    + t_{op} (h,td)\cdot \Big(\sum_{l \in L | \eta_{\text{sto,in} (j,l) > 0}} \textbf{Sto}_\textbf{in} 	(j,l,h,td) \eta_{\text{sto,in}} (j,l) 
+    + t_{op} (h,td)\cdot \Big(\sum_{l \in L | \eta_{\text{sto,in} (y,j,l) > 0}} \textbf{Sto}_\textbf{in} 	(y,j,l,h,td) \eta_{\text{sto,in}} (y,j,l) 
     
-    ~~~~~~ - \sum_{l \in L | \eta_{\text{sto,out} (j,l) > 0}} \textbf{Sto}_\textbf{out} (j,l,h,td) /  \eta_{\text{sto,out}} (j,l)\Big)
+    ~~~~~~ - \sum_{l \in L | \eta_{\text{sto,out} (j,l) > 0}} \textbf{Sto}_\textbf{out} (y,j,l,h,td) /  \eta_{\text{sto,out}} (y,j,l)\Big)
     
-    \forall j \in \text{STO}, \forall t \in \text{T}| \{h,td\} \in T\_H\_TD(t)
+    \forall y \in \text{YEARS}, j \in \text{STO}, \forall t \in \text{T}| \{h,td\} \in T\_H\_TD(t)
 
 
 .. math::
-    \textbf{Sto}_\textbf{level} (j,t) = \textbf{F}_\textbf{t} (j,h,td) ~~~~~~ \forall j \in \text{STO DAILY},\forall t \in \text{T}| \{h,td\} \in T\_H\_TD(t)
+    \textbf{Sto}_\textbf{level} (y,j,t) = \textbf{F}_\textbf{t} (y,j,h,td) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{STO DAILY},\forall t \in \text{T}| \{h,td\} \in T\_H\_TD(t)
     :label: eq:Sto_level_bound_DAILY
 
 .. math::
-    \textbf{Sto}_\textbf{level} (j,t) \leq \textbf{F} (j) ~~~~~~ \forall j \in \text{STO} \setminus \text{STO DAILY},\forall t \in \text{T}  
+    \textbf{Sto}_\textbf{level} (y,j,t) \leq \textbf{F} (y,j) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{STO} \setminus \text{STO DAILY},\forall t \in \text{T}  
     :label: eq:Sto_level_bound
 
 
@@ -902,18 +926,18 @@ Eq. :eq:`eq:Sto_level_bound`. For these units,
 the storage behaviour is thus optimized over 8760h.
 
 .. math::
-    \textbf{Sto}_\textbf{in}(j,l,h,td)\cdot \Big(\lceil  \eta_{sto,in}(j,l)\rceil -1 \Big) = 0  ~~~~~~ \forall j \in \text{STO},\forall l \in \text{L}, \forall h \in \text{H}, \forall td \in \text{TD}
+    \textbf{Sto}_\textbf{in}(y,j,l,h,td)\cdot \Big(\lceil  \eta_{sto,in}(y,j,l)\rceil -1 \Big) = 0  ~~~~~~ \forall j \in \text{STO},\forall l \in \text{L}, \forall y \in \text{YEARS}, h \in \text{H}, \forall td \in \text{TD}
     :label: eq:StoInCeil
 
 .. math::
-    \textbf{Sto}_\textbf{out}(j,l,h,td)\cdot \Big(\lceil  \eta_{sto,out}(j,l)\rceil -1 \Big) = 0  ~~~~~~ \forall j \in \text{STO},\forall l \in \text{L}, \forall h \in \text{H}, \forall td \in \text{TD}
+    \textbf{Sto}_\textbf{out}(y,j,l,h,td)\cdot \Big(\lceil  \eta_{sto,out}(y,j,l)\rceil -1 \Big) = 0  ~~~~~~ \forall j \in \text{STO},\forall l \in \text{L}, \forall y \in \text{YEARS}, h \in \text{H}, \forall td \in \text{TD}
     :label: eq:StoOutCeil
 
 .. math::
-    \Big(\textbf{Sto}_\textbf{in} (j,l,h,td)t_{sto_{in}}(\text{j}) + \textbf{Sto}_\textbf{out}(j,l,h,td)t_{sto_{out}}(\text{j})\Big) \leq \textbf{F} (j)\%_{sto_{avail}}(j)
+    \Big(\textbf{Sto}_\textbf{in} (y,j,l,h,td)t_{sto_{in}}(y,j) + \textbf{Sto}_\textbf{out}(y,j,l,h,td)t_{sto_{out}}(y,j)\Big) \leq \textbf{F} (y,j)\%_{sto_{avail}}(y,j)
     :label: eq:LimitChargeAndDischarge
 
-    \forall j \in STO \setminus {V2G} , \forall l \in L, \forall h \in H, \forall td \in TD
+    \forall y \in \text{YEARS}, j \in STO \setminus {V2G} , \forall l \in L, \forall h \in H, \forall td \in TD
 
 
 Eqs. :eq:`eq:StoInCeil` - :eq:`eq:StoOutCeil`
@@ -943,24 +967,26 @@ Networks
 ^^^^^^^^
 
 .. math::
-    \textbf{Net}_\textbf{loss}(eut,h,td) = \Big(\sum_{i \in \text{RES} \cup \text{TECH} \setminus \text{STO} | f(i,eut) > 0} f(i,eut)\textbf{F}_\textbf{t}(i,h,td) \Big) \%_{\text{net}_{loss}} (eut) 
+    \textbf{Net}_\textbf{loss}(y,eut,h,td) = \Big(\sum_{i \in \text{RES} \cup \text{TECH} \setminus \text{STO} | f(y,i,eut) > 0} f(y,i,eut)\textbf{F}_\textbf{t}(y,i,h,td) \Big) \%_{\text{net}_{loss}} (y,eut) 
     :label: eq:loss
 
-    \forall eut = \text{EUT}, \forall h \in H, \forall td \in TD
+    \forall \forall y \in \text{YEARS}, eut = \text{EUT}, \forall h \in H, \forall td \in TD
 
 .. math::
-    \textbf{F} (Grid) = 1 + \frac{c_{grid,extra}}{c_{inv}(Grid)} 
+    \textbf{F} (y,'Grid') = 1 + \frac{c_{grid,extra}}{c_{inv}(y,'Grid')} 
     \Big(
-    \textbf{F}(Wind_{onshore}) + \textbf{F}(Wind_{offshore}) + \textbf{F}(PV)
+    \textbf{F}(y,'Wind_{onshore}') + \textbf{F}(y,'Wind_{offshore}') + \textbf{F}(y,'PV')
     :label: eq:mult_grid
 
     -\big( 
-    f_{min}(Wind_{onshore}) + f_{min}(Wind_{offshore}) + f_{min}(PV)
+    f_{min}(y,'Wind_{onshore}') + f_{min}(y,'Wind_{offshore}') + f_{min}(y,'PV')
     \big)
-    \Big)
+    \Big) 
+    ~~~~~~~\forall y \in \text{YEARS}
 
 .. math::
-    \textbf{F} (DHN) = \sum_{j \in \text{TECH} \setminus {STO} | f(j,\text{HeatLowTDHN}) >0} f(j,\text{HeatLowTDHN}) \cdot \textbf{F} (j) 
+    \textbf{F} (y,'DHN') = \sum_{j \in \text{TECH} \setminus {STO} | f(y,j,'\text{HeatLowTDHN}') >0} f(y,j,'\text{HeatLowTDHN}') \cdot \textbf{F} (y,j) 
+    ~~~~~~~\forall y \in \text{YEARS}
     :label: eq:DHNCost
 
 Eq. :eq:`eq:loss` calculates network losses as a share
@@ -990,19 +1016,21 @@ be replicated for all other technologies for which a constant operation
 over the year is desired.
 
 .. math::
-    \textbf{F}_\textbf{t} (j,h,td) = \textbf{%}_\textbf{PassMob} (j)   \sum_{l \in EUT\_of\_EUC(PassMob)} \textbf{EndUses}(l,h,td) 
+    \textbf{F}_\textbf{t} (y,j,h,td) = \textbf{%}_\textbf{PassMob} (y,j)   \sum_{l \in EUT\_of\_EUC(PassMob)} \textbf{EndUses}(y,l,h,td) 
+    ~~~~~~~\forall y \in \text{YEARS}
     :label: eq:mob_share_fix
 
     \forall j \in TECH\_OF\_EUC(PassMob) , \forall h \in H, \forall td \in TD
 
 .. math::
-    \textbf{F}_\textbf{t} (j,h,td) = \textbf{%}_\textbf{FreightMob} (j)   \sum_{l \in EUT\_of\_EUC(FreightMob)} \textbf{EndUses}(l,h,td) 
+    \textbf{F}_\textbf{t} (y,j,h,td) = \textbf{%}_\textbf{FreightMob} (y,j)   \sum_{l \in EUT\_of\_EUC(FreightMob)} \textbf{EndUses}(y,l,h,td) 
     :label: eq:freight_share_fix
 
-    \forall j \in TECH\_OF\_EUC(FreightMob) , \forall h \in H, \forall td \in TD
+    \forall y \in \text{YEARS}, j \in TECH\_OF\_EUC(FreightMob) , \forall h \in H, \forall td \in TD
 
 .. math::
-    \textbf{%}_\textbf{Fr,Rail} + \textbf{%}_\textbf{Fr,Train} + \textbf{%}_\textbf{Fr,Boat} = 1
+    \textbf{%}_\textbf{Fr,Rail} (y) + \textbf{%}_\textbf{Fr,Train} (y) + \textbf{%}_\textbf{Fr,Boat} (y) = 1
+    ~~~~~~~\forall y \in \text{YEARS}
     :label: eq:freight_share_constant
 
 
@@ -1020,14 +1048,15 @@ Decentralised heat production
 
 
 .. math::
-    \textbf{F} (Dec_{Solar}) = \sum_{j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \}} \textbf{F}_\textbf{sol} (j)  
+    \textbf{F} (y,'Dec_{Solar}') = \sum_{j \in \text{TECH OF EUT} (y,'\text{HeatLowTDec}') \setminus \{ 'Dec_{Solar}' \}} \textbf{F}_\textbf{sol} (y,j)  
+    ~~~~~~~\forall y \in \text{YEARS}
     :label: eq:de_strategy_dec_total_ST
 
 .. math::
-    \textbf{F}_{\textbf{t}_\textbf{sol}} (j,h,td) \leq  \textbf{F}_\textbf{sol} (j)  c_{p,t}('Dec_{Solar}',h,td)
+    \textbf{F}_{\textbf{t}_\textbf{sol}} (y,j,h,td) \leq  \textbf{F}_\textbf{sol} (y,j)  c_{p,t}('Dec_{Solar}',h,td)
     :label: eq:op_strategy_dec_total_ST
 
-    \forall j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \}, \forall h\in H, \forall td \in TD
+    \forall y \in \text{YEARS}, j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \}, \forall h\in H, \forall td \in TD
 
 
 \endgroup  
@@ -1046,14 +1075,14 @@ links the installed size of each solar thermal capacity
 solar capacity factor (:math:`c_{p,t}('Dec_{solar}')`).
 
 .. math::
-    \textbf{F}_\textbf{t} (j,h,td) + \textbf{F}_{\textbf{t}_\textbf{sol}} (j,h,td)  
+    \textbf{F}_\textbf{t} (y,j,h,td) + \textbf{F}_{\textbf{t}_\textbf{sol}} (y,j,h,td)  
     :label: eq:heat_decen_share
 
-    + \sum_{l \in \text{L}}\Big( \textbf{Sto}_\textbf{out} (i,l,h,td) - \textbf{Sto}_\textbf{in} (i,l,h,td) \Big)
+    + \sum_{l \in \text{L}}\Big( \textbf{Sto}_\textbf{out} (y,i,l,h,td) - \textbf{Sto}_\textbf{in} (y,i,l,h,td) \Big)
 
-    = \textbf{%}_\textbf{HeatDec}(\text{j}) \textbf{EndUses}(HeatLowT,h,td) 
+    = \textbf{%}_\textbf{HeatDec}(y,j) \textbf{EndUses}(HeatLowT,h,td) 
 
-    \forall j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \}, 
+    \forall y \in \text{YEARS}, j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \}, 
 
     i \in \text{TS OF DEC TECH}(j)  , \forall h\in H, \forall td \in TD
 
@@ -1118,7 +1147,7 @@ Vehicle-to-grid
    
 
 .. math::
-    \textbf{F} (i) = \frac{\textbf{F} (j)}{ veh_{capa} (j)} ev_{batt,size} (j)  ~~~~~~ \forall  j \in  V2G, i \in \text{EVs_BATT OF V2G}(j)
+    \textbf{F} (y,i) = \frac{\textbf{F} (y,j)}{ veh_{capa} (y,j)} ev_{batt,size} (y,j)  ~~~~~~ \forall y \in \text{YEARS}, j \in  V2G, i \in \text{EVs_BATT OF V2G}(j)
     :label: eq:SizeOfBEV
 
 Vehicle-to-grid dynamics are included in the model via the *V2G* set.
@@ -1143,10 +1172,10 @@ Leaf (ZE0), thus, the equivalent battery has a capacity of 4.76 GWh.
 
 
 .. math::
-    \textbf{Sto}_\textbf{out} (j,Elec,h,td) \geq - f(i,Elec) \textbf{F}_\textbf{t} (i,h,td) 
+    \textbf{Sto}_\textbf{out} (y,j,'Elec',h,td) \geq - f(y,i,'Elec') \textbf{F}_\textbf{t} (y,i,h,td) 
     :label: eq:BtoBEV
 
-    \forall i \in V2G , \forall j \in \text{EVs_BATT OF V2G}(j), \forall h \in H, td \in TD 
+    \forall  y \in \text{YEARS}, i \in V2G , j \in \text{EVs_BATT OF V2G}(j), \forall h \in H, td \in TD 
 
 
 
@@ -1162,12 +1191,12 @@ associated to a BEV. The battery can either supply the BEV needs or
 sends electricity back to the grid.
 
 .. math::
-    \textbf{Sto}_\textbf{in} (j,l,h,td)t_{sto_{in}}(\text{j}) + \Big(\textbf{Sto}_\textbf{out}(j,l,h,td) + f(i,Elec) \textbf{F}_\textbf{t} (i,h,td) \Big) \cdot t_{sto_{out}}(\text{j})
+    \textbf{Sto}_\textbf{in} (y,j,l,h,td)t_{sto_{in}}(y,j) + \Big(\textbf{Sto}_\textbf{out}(y,j,l,h,td) + f(y,i,'Elec') \textbf{F}_\textbf{t} (y,i,h,td) \Big) \cdot t_{sto_{out}}(y,j)
     :label: eq:LimitChargeAndDischarge_ev
 
-    \leq \Big( \textbf{F} (j) - \frac{\textbf{F} (j)}{ veh_{capa} (j)} ev_{batt,size} (j) \Big) \cdot \%_{sto_{avail}}(j)
+    \leq \Big( \textbf{F} (y,j) - \frac{\textbf{F} (y,j)}{ veh_{capa} (y,j)} ev_{batt,size} (y,j) \Big) \cdot \%_{sto_{avail}}(y,j)
 
-    \forall i \in V2G , \forall j \in \text{EVs_BATT OF V2G}(j) , \forall l \in L, \forall h \in H, \forall td \in TD
+    \forall  y \in \text{YEARS}, i \in V2G , j \in \text{EVs_BATT OF V2G}(j) , l \in L, h \in H,  td \in TD
 
 Eq. :eq:`eq:LimitChargeAndDischarge_ev` limits the availability of batteries to the number of vehicle connected to the grid.
 This equation is similar to the one for other type of storage (see Eq. :eq:`eq:LimitChargeAndDischarge`); 
@@ -1176,10 +1205,10 @@ Therefore, the available output is corrected by removing the electricity powerin
 and the available batteries is corrected by removing the numbers of electric cars running (:math:`\frac{\textbf{F} (j)}{ veh_{capa} (j)} ev_{batt,size} (j)`).
 
 .. math::
-    \textbf{Sto}_\textbf{level} (j,t) \geq \textbf{F}[i] soc_{ev}(i,h)
+    \textbf{Sto}_\textbf{level} (y,j,t) \geq \textbf{F}[i] soc_{ev}(y,i,h)
     :label: eq:EV_min_state_of_charge
 
-    \forall i \in V2G , \forall j \in \text{EVs_BATT OF V2G}(j) , \forall t \in T| \{h,td\} \in T\_H\_TD
+    \forall y \in \text{YEARS}, i \in V2G, j \in \text{EVs_BATT OF V2G}(j) ,  t \in T| \{h,td\} \in T\_H\_TD
 
 For each electric vehicle (:math:`ev`), a minimum state of charge is imposed for each hour of the day \big(:math:`soc_{ev}(i,h)`\big). 
 As an example, we can impose that the state of charge of EV is 60% in the morning, to ensure that cars can be used to go for work. 
@@ -1191,22 +1220,23 @@ Peak demand
 ^^^^^^^^^^^
 
 .. math::
-    \textbf{F} (j) 
+    \textbf{F} (y,j) 
     \geq
-    \%_{Peak_{sh}}\max_{h\in H,td\in TD}\left\{\textbf{F}_\textbf{t}(j,h,td)\right\}
+    \%_{Peak_{sh}}\max_{h\in H,td\in TD}\left\{\textbf{F}_\textbf{t}(y,j,h,td)\right\}
     :label: eq:dec_peak
 
-    \forall j \in \text{TECH OF  EUT} (HeatLowTDEC)   \setminus \{ 'Dec_{Solar}'\}
+    \forall y \in \text{YEARS}, j \in \text{TECH OF  EUT} (HeatLowTDEC)   \setminus \{ 'Dec_{Solar}'\}
 
 .. math::
-    \sum_{\hspace{3cm}j \in \text{TECH OF EUT} (HeatLowTDHN), i \in \text{STO OF EUT}(HeatLowTDHN)}
+    \sum_{\hspace{3cm}j \in \text{TECH OF EUT} ('HeatLowTDHN'), i \in \text{STO OF EUT}('HeatLowTDHN')}
     :label: eq:dhn_peak
     
-    \Big( \textbf{F} (j)+
-    \textbf{F} (i)/t_{sto_{out}}(i,HeatLowTDHN)  \Big)
+    \Big( \textbf{F} (y,j)+
+    \textbf{F} (y,i)/t_{sto_{out}}(y,i,'HeatLowTDHN')  \Big)
     
     \geq
     \%_{Peak_{sh}} \max_{h\in H,td\in TD}  \big\{ \textbf{EndUses}(HeatLowTDHN,h,td) \big\}
+    ~~~~~~~~\forall y \in \text{YEARS}
   
 Finally,
 Eqs. :eq:`eq:dec_peak` - :eq:`eq:dhn_peak`
@@ -1237,15 +1267,17 @@ solar technologies.
 
 
 .. math::
-    \textbf{GWP}_\textbf{tot} \leq gwp_{limit}  
+    \textbf{GWP}_\textbf{tot}(y) \leq gwp_{limit} (y)  
+    ~~~~~~~~\forall y \in \text{YEARS}
     :label: eq:LimitGWP
 
 .. math::
-    \sum_{j \in  \text{RES}_\text{re},t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(j,h,td)  \cdot  t_{op} (h,td)   
+    \sum_{j \in  \text{RES}_\text{re},t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,j,h,td)  \cdot  t_{op} (h,td)   
     :label: eq:LimitRE
     
     \geq 
-    re_{share} \sum_{j \in \text{RES} ,t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(j,h,td) \cdot  t_{op} (h,td)
+    re_{share} \sum_{j \in \text{RES} ,t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,j,h,td) \cdot  t_{op} (h,td)
+    ~~~~~~~~\forall y \in \text{YEARS}
     
 
 To force the Belgian energy system to decrease its emissions, two lever
@@ -1256,16 +1288,16 @@ Eq. :eq:`eq:LimitRE` fixes the minimum renewable primary
 energy share.
 
 .. math::
-    f_{\text{min,\%}}(j) \sum_{j' \in \text{TECH OF EUT} (eut),t \in T|\{h,td\} \in T\_H\_TD(t)}    \textbf{F}_\textbf{t}(j',h,td)\cdot t_{op}(h,td)  
+    f_{\text{min,\%}}(y,j) \sum_{j' \in \text{TECH OF EUT} (eut),t \in T|\{h,td\} \in T\_H\_TD(t)}    \textbf{F}_\textbf{t}(y,j',h,td)\cdot t_{op}(h,td)  
     :label: eq:fmin_max_perc
     
     \leq 
- 	\sum_{t \in T|\{h,td\} \in T\_H\_TD(t)}  \textbf{F}_\textbf{t} (j,h,td)\cdot t_{op}(h,td) 
+ 	\sum_{t \in T|\{h,td\} \in T\_H\_TD(t)}  \textbf{F}_\textbf{t} (y,j,h,td)\cdot t_{op}(h,td) 
     
     \leq 
-    f_{\text{max,\%}}(j) \sum_{j'' \in \text{TECH OF EUT} (eut),t \in T|\{h,td\} \in T\_H\_TD(t)}    \textbf{F}_\textbf{t}(j'',h,td)\cdot t_{op}(h,td) 
+    f_{\text{max,\%}}(y,j) \sum_{j'' \in \text{TECH OF EUT} (eut),t \in T|\{h,td\} \in T\_H\_TD(t)}    \textbf{F}_\textbf{t}(y,j'',h,td)\cdot t_{op}(h,td) 
     
-    \forall eut \in EUT, \forall j \in \text{TECH OF EUT} (eut) 
+    \forall y \in \text{YEARS}, eut \in EUT, j \in \text{TECH OF EUT} (eut) 
 
 
 To represent the Belgian energy system in 2015,
@@ -1282,7 +1314,8 @@ and :math:`f_{max,\%}` are fixed to 0 and 1, respectively, unless otherwise
 indicated.
 
 .. math::
-    \textbf{F}(Efficiency) =  \frac{1}{1+i_{rate}} 
+    \textbf{F}(y,'Efficiency') =  efficiency(y)
+    ~~~~~~~~\forall y \in \text{YEARS} 
     :label: eq:efficiency
 
 To account for efficiency measures from today to the target year,
@@ -1300,11 +1333,11 @@ deployed to :math:`1/ (1+i_{rate})` rather than 1. The investment is
 already expressed in €\ :sub:`2015`.
 
 .. math::
-    \textbf{F}_{\textbf{t}}(Electricity,h,td) \leq  elec_{import,max} ~~~~~~ \forall h \in H, \forall td \in TD
+    \textbf{F}_{\textbf{t}}(y,Electricity,h,td) \leq  elec_{import,max} (y) ~~~~~~ \forall y \in \text{YEARS}, h \in H, \forall td \in TD
     :label: eq:elecImpLimited
 
 .. math::
-    \textbf{F}_{\textbf{t}}(i,h,td) \cdot t_{op} (h,td) =  \textbf{Import}_{\textbf{constant}}(i) ~~~~~~ \forall i \in \text{RES_IMPORT_CONSTANT}, h \in H, \forall td \in TD
+    \textbf{F}_{\textbf{t}}(y,i,h,td) \cdot t_{op} (h,td) =  \textbf{Import}_{\textbf{constant}}(y,i) ~~~~~~ \forall y \in \text{YEARS}, i \in \text{RES_IMPORT_CONSTANT}, h \in H, \forall td \in TD
     :label: eq:import_resources_constant
 
 
@@ -1324,10 +1357,10 @@ In addition to offering a more realistic representation, this implementation mak
 
 
 .. math::
-    \textbf{F}(PV)/power\_density_{pv} 
+    \textbf{F}(y,'PV')/power\_density_{pv} 
     :label: eq:solarAreaLimited
 
-    + \big( \textbf{F}(Dec_{Solar}) + \textbf{F}(DHN_{Solar}) \big)/power\_density_{solar~thermal}  \leq solar_{area}
+    + \big( \textbf{F}(y,'Dec_{Solar}'') + \textbf{F}(y,'DHN_{Solar}') \big)/power\_density_{solar~thermal}  \leq solar_{area}
 
 In this model version, the upper limit for solar based technologies is
 calculated based on the available land area (*solar\ area*) and power
@@ -1351,6 +1384,226 @@ spatial requirements of large scale solar PV relative to the area of the
 solar panels. This ratio is estimated around five
 :cite:`dupont2020global`, which means that for each square
 meter of PV panel installed, four additional square meters are needed.
+
+.. math::
+    \sum_{t \in T|\{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t} (y,'Waste',h,td)\cdot t_{op}(h,td) = avail (y,'Waste')
+    ~~~~~~ \forall y \in \text{YEARS}
+    :label: eq:use_waste    
+
+The Waste produced in the system are forced to be consumed in the system, Eq. :eq:`eq:use_waste`.
+
+
+.. _sssec_lp_techno_link_between_years:
+
+Technology aging
+^^^^^^^^^^^^^^^^
+
+Until the following equations, the model is almost identical to the snapshot one, 
+the exception is the addition of the years as a parameter. 
+
+.. figure:: /images/model_formulation/path_e.g._tech.png
+   :alt: Technology link between years.
+   :name: fig:path_eg_igcc
+   :width: 10cm
+
+   Illustration of the new variables of the pathway version. Example based on a technology with a 20 years lifetime. 
+   Initially 1~GW of capacity exists (:math:`\textbf{F}_\textbf{new}` during phase 2010\_2015). 
+   Then another 1~GW is deployed (:math:`\textbf{F}_\textbf{new}` during phase 2015\_2020). 
+   15 years later, a part of the capacity reaches its lifetime limit and is removed (:math:`\textbf{F}_\textbf{old}` phase 2030\_2035). 
+   Moreover, during the latter phase, additional capacity is decommissioned  prematurely (:math:`\textbf{F}_\textbf{decom}`). 
+   Finally, the technology reaches its expected lifetime ans is fully withdrawn (:math:`\textbf{F}_\textbf{decom}`).
+   
+.. math::
+    \textbf{F} (y_{stop},i) = \textbf{F} (y_{start},i) 
+    + \textbf{F}_\textbf{new} (p,i)
+    - \textbf{F}_\textbf{old} (p,i)
+    - \sum_{p' \in PHASE \cup \text{2010_2015}} \textbf{F}_\textbf{decom} (p,p',i)
+    :label: eq:F_newBuilt    
+    
+    ~~~~~~ \forall i \in \text{TECH}, p \in \text{PHASE}| y_{stop} \in \text{Y_STOP}(p) \& y_{start} \in \text{Y_START}(p)
+    
+.. math::
+    \textbf{F}_\textbf{decom} (p,p',i) = 0
+    ~~~~~~ \forall i \in \text{TECH}, p \in \text{PHASE}, p' \in \text{PHASE} \cup \text{2010_2015}| decom_{allowed}(p,p') = 0 
+    :label: eq:F_decomNonPhysic1    
+ 
+Figure :numref:`Figure %s <fig:path_eg_igcc>` illustrates how a technology varies over the different representative years and phases. 
+The available capacity must be adapted between 2 representative years. Similarly to a mass balance, Eq. :eq:`eq:F_newBuilt` is 
+the balance on the amount of technologies deployed. The constraint forces the installation or withdrawing of capacities between two representative years: 
+at the end of the phase (:math:`y_{stop}`), the available capacity is the one used in the next representative year (\textbf{F}(:math:`y_{stop}`)). 
+This capacity is equal to the one available in the previous representative year (\textbf{F}(:math:`y_{start}`)) plus the new installed capacity 
+(:math:`\textbf{F}_\textbf{new}`) minus the capacity that has reached its lifetime (:math:`\textbf{F}_\textbf{old}`) minus the early decommissioned capacity 
+(:math:`\textbf{F}_\textbf{decom}`).
+To decommission a technology (tech),  two information are required: the phase when it is decommissioned (:math:`p`) and the phase when the decommissioned 
+capacity has been built (:math:`p_{built}`). 
+This mathematical implementation allows a physical non-sence: the decommissioning of a technology which hasn't been built yet 
+(:math:`p < p_{built}`).
+To prevent it, Eq. :eq:`eq:F_decomNonPhysic1` constrains in this case the decommissioning of this technology to zero.
+To do so, a parameter (:math:`decom_{allowed}`) is defined *a priori* and is equal to 0 or 1 when decommissioning is not possible or possible, respectively. 
+
+.. math::
+    \textbf{F}_\textbf{new} (\text{2010_2015},i) =  \textbf{F} (\text{YEAR_2015},i) ~~~~~~ \forall i \in \text{TECH}
+    :label: eq:Phase2015Design    
+
+.. math::
+    \textbf{F}_\textbf{old} (p,i) =  
+    :label: eq:Fold_def    
+
+    \text{if} ( age = '\text{STILL_IN_USE}') \text{then} 0
+    
+    \text{else} \left( \textbf{F}_\textbf{new} (age,i) - \sum_{p' \in \text{PHASE}} \textbf{F}_\textbf{decom} (p',age,i) \right) 
+    
+    ~~~~~~ \forall p \in \text{PHASE} , \forall j \in \text{TECH} | age \in \text{AGE}(p,j)
+
+To initialise the problem in 2015 with the existing design, an additional phase '2010_2015' 
+is created. Eq. :eq:`eq:Phase2015Design` requires that the capacity used in 2015 is installed in the previous phase. 
+Eq. :eq:`eq:Fold_def` defines the capacity reaching its lifetime limit at a certain phase. For each phase, a SET (AGE) is calculated 
+*a priori* and indicates when the technology was built for a given phase.  
+In the case the technology has already reached its lifetime limit, the SET (AGE) returns the phase when the technology has been built 
+(the equation seems more complex than the problem addressed; 
+nevertheless, the second part of the equation is needed to remove the capacity that could have been withdrawn before reaching its expected lifetime). 
+As an example, Figure :numref:`Figure %s <fig:path_eg_igcc>` shows a 20 years lifetime technology with 1~GW of capacity installed before 2015. 
+The technology (:math:`tech`) can be used until 2030_2035 (i.e. :math:`age(tech,\text{2030_2035})=\text{STILL_IN_USE}`), 
+then it must be removed (i.e. :math:`age(tech,\text{2030_2035})=\text{2010_2015} `). 
+Equally, in 2035_2040 the capacity built 20 years before must be removed (:math:`age(tech,\text{2035_2040})=\text{2015_2020}`), and so on.
+
+.. math::
+   \Delta_\textbf{change}(p,i) \geq 
+   \sum_{t \in T |\{h,td\}\in T\_H\_TD}  \textbf{F}_\textbf{t}(y_{start},i,h,td)  
+   - \sum_{t \in T |\{h,td\}\in T\_H\_TD} \textbf{F}_\textbf{t}(y_{stop},i,h,td)  
+   :label: eq:delta_tech_during_phase
+
+    ~~~~~~ \forall j \in \text{TECH}, p \in \text{PHASE}, y_start \in \text{Y_START}(p), y_{stop} \in \text{Y_STOP}(p)
+   
+.. math::
+   \sum_{euc \in \text{EUT_OF_CAT}('HeatLowT'),i \in \text{TECH_OF_EUT}(euc)} \Delta_\textbf{change}(p,i) 
+   \leq lim_{LT,ren} \cdot 
+   \left(
+   eui(y_{start},'HotWater') 
+   +  eui(y_{start},'SpaceHeat')
+   \right)
+   :label: eq:limit_reno_LTheat
+   
+   
+.. math::
+   \sum_{euc \in \text{EUT_OF_CAT}('MobPass'), i \in \text{TECH_OF_EUT}(euc)} \Delta_\textbf{change}(p,i) 
+   \leq
+   lim_{MobPass} \cdot eui(y_{start},'MobPass')
+   :label: eq:limit_reno_passmob
+
+.. math::
+   \sum_{euc \in \text{EUT_OF_CAT}('MobFreight'),i \in \text{TECH_OF_EUT}(euc)} \Delta_\textbf{change}(p,i) 
+   \leq
+   lim_{MobFreight} \cdot eui(y_{start},'MobFreight')
+   :label: eq:limit_reno_freight
+
+To avoid unrealistic changes in the system, additional constraints are
+needed during the phases for the mobility and low temperature heat
+sectors.
+Eq.  :eq:`eq:delta_tech_during_phase`
+calculates the upper limit of change (:math:`\Delta_\textbf{change}`) in
+terms of supplied demand instead of installed capacity. Based on this
+quantification, the amount of change per phase is limited for low
+temperature heat (:math:`lim_{LT,ren}`),
+Eq. :eq:`eq:limit_reno_LTheat`, passenger
+mobility (:math:`lim_{MobPass}`),
+Eq. :eq:`eq:limit_reno_passmob` and freight
+mobility (:math:`lim_{MobFreight}`),
+Eq. :eq:`eq:limit_reno_freight`. As an
+example, setting the maximum change of supplied heat at low temperature
+to 25% would limit the change in technology related to heat at low
+temperature to 25% during a phase. In this case, if more than 25% of the
+low temperature heat was supplied by a technology, it would take more
+than one phase to replace it by a different one.
+
+Transition cost and objective function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. math::
+   \textbf{C}_\textbf{tot,trans} = \textbf{C}_\textbf{tot,capex} + \textbf{C}_\textbf{tot,opex}
+   :label: eq:obj_func_v2
+   
+.. math::
+   \textbf{C}_\textbf{tot,capex} =
+   \sum_{j \in \text{TECH}} \textbf{C}_\textbf{inv}(2015,j) 
+   +
+   \sum_{p \in \text{PHASE}} 
+   \textbf{C}_\textbf{inv,phase}(p)
+   -
+   \sum_{j \in \text{TECH}} 
+   \textbf{C}_\textbf{inv,return}(j)
+   :label: eq:Capex_v2
+
+.. math::
+   \textbf{C}_\textbf{tot,opex} =  \textbf{C}_\textbf{opex}(2015)
+   + t_{phase} \cdot \tau_{phase}(p) \cdot \sum_{\{p, y_{start},y_{stop}\}} 
+    \Big(\textbf{C}_\textbf{opex}(y_{start}) + \textbf{C}_\textbf{opex}(y_{stop}) \Big)/2
+   :label: eq:Copex_tot_v2
+
+.. math::
+   \tau_{phase}(p) = 1/(1+i_{rate})^{diff\_2015\_year(p)} 
+   :label: eq:path_annu_factor
+
+The objective function to be minimised is the total transition cost of
+the energy system (:math:`\textbf{C}_\textbf{tot,trans}`), defined as the sum of the total
+CAPEX (:math:`\textbf{C}_\textbf{tot,capex}`) and the OPEX (:math:`\textbf{C}_\textbf{tot,opex}`), according to
+Eq. :eq:`eq:obj_func_v2`. The total CAPEX
+(:math:`\textbf{C}_\textbf{tot,capex}`) is the sum of the initial investment in year 2015
+(:math:`\textbf{C}_\textbf{inv}`) and the investment during each phase (:math:`\textbf{C}_\textbf{tot,phase}`),
+Eq. :eq:`eq:Capex_v2` to which the residual asset invetsment cost in 2050 is withdrawn (:math:`\textbf{C}_\textbf{inv,return}`). Thus, these investments account for
+the installation and dismantlement costs of the technologies. The total
+OPEX (:math:`\textbf{C}_\textbf{tot,opex}`) is the sum of the OPEX in 2015 and the annualised
+sum of the OPEX during each phase (:math:`\textbf{C}_\textbf{opex}`),
+Eq. :eq:`eq:Copex_tot_v2`. During a phase, the
+system OPEX is the product of the annualised phase factor, defined in
+Eq. :eq:`eq:path_annu_factor`, and the
+arithmetic average of OPEX cost for the representative years before and
+after the phase.
+
+.. math::
+   \textbf{C}_\textbf{opex} (y) = \sum_{i \in \text{TECH}} \textbf{C}_\textbf{maint}(y,i) + \sum_{j \in \text{RES}} \textbf{C}_\textbf{op}(y,j) ~~~~~~~\forall y\in \text{YEARS}
+   :label: eq:opex_yearly
+   
+For each year, the yearly OPEX (:math:`\textbf{C}_\textbf{opex}`) is the sum of the operating
+and maintenance costs of technologies (:math:`\textbf{C}_\textbf{main}`) and the operating
+cost of the resources (:math:`\textbf{C}_\textbf{op}`),
+Eq. :eq:`eq:opex_yearly`. To calculate the total
+operation and maintenance costs (:math:`\textbf{C}_\textbf{maint}`) and the cost of the
+resources (:math:`\textbf{C}_\textbf{op}`), their equations from the snapshot model
+(:eq:`eq:c_maint`-:eq:`eq:c_op`) are used with
+an additional dimension: the year.
+
+.. math::
+   \textbf{C}_\textbf{inv,phase}(p) = \sum_{j \in \text{TECH}} \textbf{F}_\textbf{new}(p,j)\cdot \tau_{phase}(p)\cdot \left(c_{inv}(y_{start},j) + c_{inv}(y_{stop},j)\right)/2
+   :label: eq:PhaseInv
+   
+   \forall p \in \text{PHASE} | y_{start}\in \text{Y_START}(p),y_{stop}\in \text{Y_STOP}(p)
+
+The investment during a phase (:math:`\textbf{C}_\textbf{inv,phase}`) results from the
+multiplication of the new technologies built (:math:`\textbf{F}_\textbf{new}`) with their
+annualised arithmetic averaged specific cost,
+Eq. :eq:`eq:PhaseInv`. The annualised phase factor is
+used, see Eq. :eq:`eq:path_annu_factor`, and
+the specific cost during the phase is defined as the average between the
+investment cost for the first and last year of the period.
+
+.. math::
+   \textbf{C}_\textbf{inv,return}(i) = \sum_{\{p, y_{start},y_{stop}\}} \frac{remaining\_years(i,p)}{liftime(y_start,i)} \textbf{F}_\textbf{new}(p,i)\cdot \tau_{phase}(p)\cdot 
+   \left(c_{inv}(y_{start},j) + c_{inv}(y_{stop},j)\right)/2
+   :label: eq:salvage
+   
+   \forall p \in \text{PHASE} | y_{start}\in \text{Y_START}(p),y_{stop}\in \text{Y_STOP}(p)
+
+A part of the investment will remain after 2050. This residual investment, also called salvage, can be calculated for each technology. 
+A parameter, calculated *a priori*, gives for each technology and construction phase, the remaining amount of years (:math:`remaining\_years`). 
+As an example, if a PV panel has been built in 2045 and has a 20 years lifetime, the parameter will equal 15 years. 
+Thus, the residual value is to a fraction of the investment cost of this technology when it has been built. 
+This fraction is the ratio between the number of remaining years and the lifetime of the technology. 
+In the previous example, the residual investment of the PV built is 75%.
+
+
+
+
 
 .. _ssec_estd_implementation:
 
