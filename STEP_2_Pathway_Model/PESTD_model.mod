@@ -30,6 +30,7 @@ set PHASE_WND within PHASE;
 set YEARS_UP_TO within YEARS;
 set PHASE_UP_TO within PHASE;
 set YEAR_ONE within YEARS;
+set YEAR_ONE_NEXT within YEARS;
 
 #########################
 ###  SETS [Figure 3]  ###
@@ -213,7 +214,7 @@ var F_up_to {YEARS_UP_TO, TECHNOLOGIES} >= 0; # F_up_to: Installed capacity from
 var F_new_up_to {PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase from the start of the optimisation (2015)
 var F_decom_up_to {PHASE_UP_TO,PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase from the start of the optimisation (2015)
 var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output from the start of the optimisation (2015)
-var Res_wnd {YEARS_WND, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
+var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
 var Tech_wnd {YEARS_WND, TECHNOLOGIES diff STORAGE_TECH, setof {i in END_USES_CATEGORIES, j in END_USES_TYPES_OF_CATEGORY [i]} j}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
 var F_t_up_to {YEARS_WND, TECHNOLOGIES, HOURS, TYPICAL_DAYS} >= 0; # F_t: Operation in each period [GW] or, for STORAGE_TECH, storage level [GWh]. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
 var C_inv_wnd {YEARS_WND, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
@@ -282,7 +283,7 @@ subject to op_cost_calc {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
 #-----------
 
 # [Eq. 6]
-subject to totalGWP_calc {y in YEARS_WND}:
+subject to totalGWP_calc {y in YEARS_WND diff YEAR_ONE}:
 	TotalGWP [y] =  sum {i in RESOURCES} GWP_op [y,i];
 	#JUST RESOURCES : TotalGWP [y] =  sum {i in RESOURCES} GWP_op [y,i];
 	#BASED ON LCA:    TotalGWP [y] = sum {j in TECHNOLOGIES} (GWP_constr [y,j] / lifetime [y,j]) + sum {i in RESOURCES} GWP_op [y,i];
@@ -545,12 +546,15 @@ subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE_WND, age in AGE 
 	F_old [p,i] = if (age == "STILL_IN_USE") then  0 #<=> no problem
 					else F_new [age,i]    - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,age,i];
 
+subject to no_decom_if_no_built {i in TECHNOLOGIES, p in PHASE_WND union PHASE_UP_TO union {"2010_2015"}}:
+		F_new [p, i] -  sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i] >= 0;
 
 # Limit renovation rate:
 # [Eq. XX] Define the amount of change between years
-var F_used_year_start{YEAR_WND, TECHNOLOGIES} >= 0;
+var F_used_year_start{YEARS_WND, TECHNOLOGIES} >= 0;
+var F_used_year_start_next{YEAR_ONE_NEXT, TECHNOLOGIES} >= 0;
 subject to compute_F_used_year_start{p in PHASE_WND, y_start in PHASE_START[p] diff YEAR_ONE, j in TECHNOLOGIES} :
-	F_used_year_start[y,j] = (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y,j, h,td] * t_op[h,td])
+	F_used_year_start[y_start,j] = (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_start,j, h,td] * t_op[h,td]);
 
 subject to delta_change_definition {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], j in TECHNOLOGIES} :
 	Delta_change [p,j] >= F_used_year_start[y_start,j] - (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_stop,j, h,td] * t_op[h,td]) ;

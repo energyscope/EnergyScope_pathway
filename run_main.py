@@ -169,8 +169,16 @@ if __name__ == '__main__':
                 curr_years_up_to = years_up_to[i]
                 curr_phases_up_to = phases_up_to[i]
                 
+                if i == len(years_wnd)-1:
+                    next_year_one = False
+                    year_one_next = ''
+                else:
+                    next_year_one = True
+                    year_one_next = years_wnd[i+1][0]
+                
                 wnd.write_seq_opti(curr_window_years, curr_window_phases,\
-                                   curr_years_up_to, curr_phases_up_to, pth_model, year_one, i, n_year_overlap)
+                                   curr_years_up_to, curr_phases_up_to, pth_model, year_one,\
+                                       year_one_next, i, next_year_one)
                 wnd.remaining_update("PESTD_data_remaining.dat",pth_model,curr_window_phases)
                 
                 ampl = AMPL(Environment(pth_ampl))
@@ -187,6 +195,7 @@ if __name__ == '__main__':
                 else:
                     ampl.getConstraint('total_capex_2015').drop()
                     ampl.getConstraint('Opex_tot_cost_calculation_2015').drop()
+                    ampl.getConstraint('F_new_initiatlisation').drop()
 
                 ampl.solve()
                 elapsed = time.time()-t
@@ -228,8 +237,8 @@ if __name__ == '__main__':
                 # F_decom
                 F_decom_up_to = ampl.getVariable('F_decom_up_to')
                 
-                #Delta_change
-                Delta_change_up_to = ampl.getVariable('Delta_change_up_to')
+                #F_used_year_start_next
+                F_used_year_start_next = ampl.getVariable('F_used_year_start_next')
                 
                 
                 # Resources
@@ -251,6 +260,35 @@ if __name__ == '__main__':
                 for y in curr_window_years:
                     Tech_Prod_Cons[y] = Tech_df.loc[y]
                 
+                if GoNextWindow:
+                    fix = os.path.join(pth_model,'fix.mod')
+                    fix_2 = os.path.join(pth_model,'fix_2.mod')
+                    
+                    with open(fix,'w+', encoding='utf-8') as fp:
+                        for index, variable in F_up_to:
+                            print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
+                        print("\n", file = fp)
+                        for index, variable in F_new_up_to:
+                            print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
+                        print("\n", file = fp)
+                        for index, variable in F_old_up_to:
+                            print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
+                        print("\n", file = fp)
+                        for index, variable in F_decom_up_to:
+                            print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
+                        print("\n", file = fp)
+                        
+                        for index, variable in F_used_year_start_next:
+                            print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
+                    
+                    with open(fix) as fin, open(fix_2,'w+', encoding='utf-8') as fout:
+                        for line in fin:
+                            line = line.replace("_up_to","")
+                            line = line.replace("_next","")
+                            fout.write(line)
+                    
+                    year_one = year_one_next
+                
                 if i == len(years_wnd)-1:
                     elapsed0 = time.time()-t0
                     print('Time to solve the whole problem:',elapsed0)
@@ -265,31 +303,7 @@ if __name__ == '__main__':
                     open_file.close()
                     break
                 
-                if GoNextWindow:
-                    fix = os.path.join(pth_model,'fix.mod')
-                    fix_2 = os.path.join(pth_model,'fix_2.mod')
-                    
-                    with open(fix,'w+', encoding='utf-8') as fp:
-                        for index, variable in F_up_to:
-                            print('fix {}:={};'.format(variable.name(),round(variable.value(),3)), file = fp)
-                        print("\n", file = fp)
-                        for index, variable in F_new_up_to:
-                            print('fix {}:={};'.format(variable.name(),round(variable.value(),3)), file = fp)
-                        print("\n", file = fp)
-                        for index, variable in F_old_up_to:
-                            print('fix {}:={};'.format(variable.name(),round(variable.value(),3)), file = fp)
-                        print("\n", file = fp)
-                        for index, variable in F_decom_up_to:
-                            print('fix {}:={};'.format(variable.name(),round(variable.value(),3)), file = fp)
-                        for index, variable in Delta_change_up_to:
-                            print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
-                    
-                    with open(fix) as fin, open(fix_2,'w+', encoding='utf-8') as fout:
-                        for line in fin:
-                            line = line.replace("_up_to","")
-                            fout.write(line)
-                    
-                    year_one = years_wnd[i+1][0]
+                
                     
                 
         
