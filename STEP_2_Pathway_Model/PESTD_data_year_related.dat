@@ -763,14 +763,14 @@ CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1
 ;																																																																																																																	
 																																																																																																																	
 param  storage_charge_time :	PHS	BATT_LI	BEV_BATT	PHEV_BATT	TS_DEC_DIRECT_ELEC 	TS_DEC_HP_ELEC 	TS_DEC_THHP_GAS 	TS_DEC_COGEN_GAS 	TS_DEC_COGEN_OIL 	TS_DEC_ADVCOGEN_GAS 	TS_DEC_ADVCOGEN_H2 	TS_DEC_BOILER_GAS 	TS_DEC_BOILER_WOOD	TS_DEC_BOILER_OIL	TS_DHN_DAILY	TS_DHN_SEASONAL	TS_HIGH_TEMP	GAS_STORAGE	H2_STORAGE	DIESEL_STORAGE	GASOLINE_STORAGE	LFO_STORAGE	AMMONIA_STORAGE	METHANOL_STORAGE	CO2_STORAGE	:=																																																																																							
-YEAR_2015	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2020	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2025	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2030	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2035	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2040	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2045	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
-YEAR_2050	4.8309	4	10	10	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2015	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2020	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2025	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2030	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2035	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2040	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2045	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
+YEAR_2050	4.8309	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	2256	4	168	168	168	168	168	1																																																																																								
 ;																																																																																																																	
 param  storage_discharge_time :	PHS	BATT_LI	BEV_BATT	PHEV_BATT	TS_DEC_DIRECT_ELEC 	TS_DEC_HP_ELEC 	TS_DEC_THHP_GAS 	TS_DEC_COGEN_GAS 	TS_DEC_COGEN_OIL 	TS_DEC_ADVCOGEN_GAS 	TS_DEC_ADVCOGEN_H2 	TS_DEC_BOILER_GAS 	TS_DEC_BOILER_WOOD	TS_DEC_BOILER_OIL	TS_DHN_DAILY	TS_DHN_SEASONAL	TS_HIGH_TEMP	GAS_STORAGE	H2_STORAGE	DIESEL_STORAGE	GASOLINE_STORAGE	LFO_STORAGE	AMMONIA_STORAGE	METHANOL_STORAGE	CO2_STORAGE	:=																																																																																							
 YEAR_2015	4.2955	4	4	4	4	4	4	4	4	4	4	4	4	4	60.3	150	2	752	4	168	168	168	168	168	1																																																																																								

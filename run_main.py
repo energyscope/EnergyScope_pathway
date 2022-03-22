@@ -39,9 +39,9 @@ if __name__ == '__main__':
     # Different actions
     CleanHistory = True
     InitStorage = True
-    RunMyopicOpti = True
+    RunMyopicOpti = False
     GoNextWindow = True
-    PostProcess = False
+    PostProcess = True
     DrawGraphs = False
     
     
@@ -68,20 +68,20 @@ if __name__ == '__main__':
     cplex_options_str = ' '.join(cplex_options)
     ampl_options = {'show_stats': 3,
                     'log_file': os.path.join(pth_model,'log.txt'),
-                    'presolve': 10,
-                    'presolve_eps': 1e-3,
-                    'presolve_fixeps': 1e-3,
+                    'presolve': 0,
+                    'presolve_eps': 1e-7,
+                    'presolve_fixeps': 1e-7,
                     'times': 0,
                     'gentimes': 0,
                     # 'show_boundtol': 0,
                     'cplex_options': cplex_options_str}
     
     
-    N_year_opti = [10] # HERE
-    N_year_overlap = [5]
+    N_year_opti = [35] # HERE
+    N_year_overlap = [0]
     
-    # N_year_opti = [10]
-    # N_year_overlap = [5]
+    # N_year_opti = [20]
+    # N_year_overlap = [10]
     
     for m in range(len(N_year_opti)):    
         n_year_opti = N_year_opti[m]
@@ -127,12 +127,20 @@ if __name__ == '__main__':
             for i in EUD_cat:
                 EUD_demands += EUD_type[i].getValues().toList()
             
+            Tech_Prod = {}
+            
+            for i in EUD_demands:
+                Tech_Prod[i] = Tech_EUD[i].getValues().toList()
+                
+            
             SP_LIST = ['GWP','Layer','EUD']
+            Layer_list = ['ELECTRICITY', 'GASOLINE', 'DIESEL','LFO', 'GAS',
+                          'H2', 'AMMONIA', 'METHANOL']
             
             Shadow_prices = dict.fromkeys(SP_LIST)
             
             Shadow_prices['GWP'] = dict.fromkeys(Years)
-            Shadow_prices['Layer'] = dict.fromkeys(EUD_demands)
+            Shadow_prices['Layer'] = dict.fromkeys(Layer_list)
             Shadow_prices['EUD'] = dict.fromkeys(EUD_demands)
             
             for i in Shadow_prices['Layer']:
@@ -211,16 +219,22 @@ if __name__ == '__main__':
                 for y in curr_wnd_y:
                     Shadow_prices['GWP'][y] = ampl.getConstraint('minimum_GWP_reduction')[y].dual()
                     for l in EUD_demands:
-                        temp_layer = np.zeros((len(Hour),len(TD)))
                         temp_EUD = np.zeros((len(Hour),len(TD)))
                         for h in Hour:
                             for td in TD:
                                 h_i = int(h-1)
                                 td_i = int(td-1)
-                                temp_layer[h_i,td_i] = ampl.getConstraint('layer_balance')[y,l,h,td].dual()
                                 temp_EUD[h_i,td_i] = ampl.getConstraint('end_uses_t')[y,l,h,td].dual()
-                        Shadow_prices['Layer'][l][y] = deepcopy(temp_layer)
                         Shadow_prices['EUD'][l][y] = deepcopy(temp_EUD)
+                    for l in Layer_list:
+                        temp_layer = np.zeros((len(Hour),len(TD)))
+                        for h in Hour:
+                            for td in TD:
+                                h_i = int(h-1)
+                                td_i = int(td-1)
+                                temp_layer[h_i,td_i] = ampl.getConstraint('layer_balance')[y,l,h,td].dual()
+                        Shadow_prices['Layer'][l][y] = deepcopy(temp_layer)
+
                 elapsed_x = time.time()-t_x
                 print('Time to extract shadow prices:',elapsed_x)
                 
@@ -230,9 +244,13 @@ if __name__ == '__main__':
                 
                 # F_new
                 F_new_up_to = ampl.getVariable('F_new_up_to')
+                F_new_up_to_2 = F_new_up_to.getValues()
+                df_F_new_up_to = postp.to_pd_pivot(F_new_up_to_2)
                 
                 # F_old
                 F_old_up_to = ampl.getVariable('F_old_up_to')
+                F_old_up_to_2 = F_old_up_to.getValues()
+                df_F_old_up_to = postp.to_pd_pivot(F_old_up_to_2)
                 
                 # F_decom
                 F_decom_up_to = ampl.getVariable('F_decom_up_to')
@@ -240,6 +258,13 @@ if __name__ == '__main__':
                 #F_used_year_start_next
                 F_used_year_start_next = ampl.getVariable('F_used_year_start_next')
                 
+                #F_decom_p_decom
+                F_decom_p_decom = ampl.getVariable('F_decom_p_decom').getValues()
+                df_temp_F_decom_p_decom = postp.to_pd_pivot(F_decom_p_decom)
+                
+                #F_decom_p_build
+                F_decom_p_build = ampl.getVariable('F_decom_p_build').getValues()
+                df_temp_F_decom_p_build = postp.to_pd_pivot(F_decom_p_build)
                 
                 # Resources
                 Res_wnd = ampl.getVariable('Res_wnd').getValues()
@@ -318,17 +343,25 @@ if __name__ == '__main__':
             Tech_Cap = loaded_list['Tech_Cap']
             Shadow_prices = loaded_list['Shadow_prices']
             
+            
+            
             tyo = time.time()
             Shadow_prices_year = deepcopy(Shadow_prices)
             for y in Years:
                 for l in EUD_demands:
-                    Shadow_prices_year['Layer'][l][y] = postp.TDtoYEAR(Shadow_prices['Layer'][l][y], Dict_TDofP)
-                    Shadow_prices_year['EUD'][l][y] = postp.TDtoYEAR(Shadow_prices['EUD'][l][y], Dict_TDofP)
+                    SP_EUD_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['EUD'][l][y])
+                    Shadow_prices_year['EUD'][l][y] = postp.TDtoYEAR(SP_EUD_scaled, Dict_TDofP)
+                for l in Layer_list:
+                    SP_Layer_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['Layer'][l][y])
+                    Shadow_prices_year['Layer'][l][y] = postp.TDtoYEAR(SP_Layer_scaled, Dict_TDofP)
+
             
             Shadow_prices_av_year = deepcopy(Shadow_prices)
-            for l in Shadow_prices_av_year:
+            for l in Layer_list:
                 for y in Years:
                     Shadow_prices_av_year['Layer'][l][y] = np.average(Shadow_prices_year['Layer'][l][y])
+            for l in EUD_demands:
+                for y in Years:
                     Shadow_prices_av_year['EUD'][l][y] = np.average(Shadow_prices_year['EUD'][l][y])
             
             elapsedyo = time.time()-tyo
@@ -336,45 +369,47 @@ if __name__ == '__main__':
             
         if DrawGraphs:
             
-            for k in ['ELECTRICITY']:#Shadow_prices_year:
-                for y in Years:
-                    NBR_BINS = postp.freedman_diaconis(Shadow_prices_year[k][y], returnas="bins")
-                    plt.figure
-                    # plt.boxplot(Shadow_prices_year[k][y])
-                    density, bins = np.histogram(Shadow_prices_year[k][y], bins=NBR_BINS, density=1)
-                    centers = [(a + b) / 2 for a, b in zip(bins[::1], bins[1::1])]
-                    plt.plot(centers,density)
+            # for k in ['ELECTRICITY']:#Shadow_prices_year:
+            #     for y in Years:
+            #         NBR_BINS = postp.freedman_diaconis(Shadow_prices_year[k][y], returnas="bins")
+            #         plt.figure
+            #         # plt.boxplot(Shadow_prices_year[k][y])
+            #         density, bins = np.histogram(Shadow_prices_year[k][y], bins=NBR_BINS, density=1)
+            #         centers = [(a + b) / 2 for a, b in zip(bins[::1], bins[1::1])]
+            #         plt.plot(centers,density)
                     
-                #     plt.plot(Shadow_prices_year[k][y])
-                # plt.legend(Years)
-                # plt.title(k)
-                # plt.show()
+            #     #     plt.plot(Shadow_prices_year[k][y])
+            #     # plt.legend(Years)
+            #     # plt.title(k)
+            #     # plt.show()
             
             
-            plt.figure()
-            year_plt = [2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
-            # short_list = ['ELECTRICITY', 'HEAT_HIGH_T', 'HEAT_LOW_T_DHN', 'HEAT_LOW_T_DECEN']
-            # short_list = ['MOB_PUBLIC', 'MOB_PRIVATE']
-            short_list = ['MOB_FREIGHT_RAIL', 'MOB_FREIGHT_BOAT','MOB_FREIGHT_ROAD']
-            # short_list = ['AMMONIA', 'HVC', 'METHANOL']
-            for k in short_list:
-                plt.plot(year_plt,Shadow_prices_av_year[k].values())
-            plt.legend(short_list)
-            plt.title('Averaged shadow prices/marginal costs')
+            # plt.figure()
+            # year_plt = [2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
+            # # short_list = ['ELECTRICITY', 'HEAT_HIGH_T', 'HEAT_LOW_T_DHN', 'HEAT_LOW_T_DECEN']
+            # # short_list = ['MOB_PUBLIC', 'MOB_PRIVATE']
+            # short_list = ['MOB_FREIGHT_RAIL', 'MOB_FREIGHT_BOAT','MOB_FREIGHT_ROAD']
+            # # short_list = ['AMMONIA', 'HVC', 'METHANOL']
+            # for k in short_list:
+            #     plt.plot(year_plt,Shadow_prices_av_year[k].values())
+            # plt.legend(short_list)
+            # plt.title('Averaged shadow prices/marginal costs')
             
             
-            for y in Years:
-                Shadow_prices_av_year['GWP'][y] = - Shadow_prices_av_year['GWP'][y]
-            plt.figure()
-            plt.plot(year_plt,Shadow_prices_av_year['GWP'].values())
-            plt.title('CO2 marginal cost')
+            # for y in Years:
+            #     Shadow_prices_av_year['GWP'][y] = - Shadow_prices_av_year['GWP'][y]
+            # plt.figure()
+            # plt.plot(year_plt,Shadow_prices_av_year['GWP'].values())
+            # plt.title('CO2 marginal cost')
             
             
             resol = 8.53e-10
             
             RES = RES[RES > resol]
             RES = postp.cleanDF(RES)
+            RES[RES < 1e-3] = 0
             RES.pop("CO2_EMISSIONS")
+            RES.pop("CO2_ATM")
             plt.figure()
             RES.plot.bar(stacked=True)
     

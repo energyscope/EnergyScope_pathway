@@ -131,7 +131,7 @@ param c_op {YEARS,RESOURCES} >= 0 default 0; # cost of resources in the differen
 param vehicule_capacity {YEARS,TECHNOLOGIES} >=0, default 0; #  veh_capa [capacity/vehicles] Average capacity (pass-km/h or t-km/h) per vehicle. It makes the link between F and the number of vehicles
 param peak_sh_factor >= 0;   # %_Peak_sh [-]: ratio between highest yearly demand and highest TDs demand
 param layers_in_out {YEARS,RESOURCES union TECHNOLOGIES diff STORAGE_TECH , LAYERS}; # f: input/output Resources/Technologies to Layers. Reference is one unit ([GW] or [Mpkm/h] or [Mtkm/h]) of (main) output of the resource/technology. input to layer (output of technology) > 0.
-param c_inv {YEARS,TECHNOLOGIES} >= 0 default 0; # Specific investment cost [MCHF/GW].[MCHF/GWh] for STORAGE_TECH
+param c_inv {YEARS,TECHNOLOGIES} >= 0 default 0; # Specific investment cost [Meuros/GW].[Meuros/GWh] for STORAGE_TECH
 param c_maint {YEARS,TECHNOLOGIES} >= 0 default 0; # O&M cost [MCHF/GW/year]: O&M cost does not include resource (fuel) cost. [MCHF/GWh/year] for STORAGE_TECH
 param lifetime {YEARS,TECHNOLOGIES} >= 0 default 0; # n: lifetime [years]
 param tau {y in YEARS, i in TECHNOLOGIES} := i_rate * (1 + i_rate)^lifetime [y,i] / (((1 + i_rate)^lifetime [y,i]) - 1); # Annualisation factor ([-]) for each different technology [Eq. 2]
@@ -217,6 +217,9 @@ var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacit
 var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
 var Tech_wnd {YEARS_WND, TECHNOLOGIES diff STORAGE_TECH, setof {i in END_USES_CATEGORIES, j in END_USES_TYPES_OF_CATEGORY [i]} j}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
 var F_t_up_to {YEARS_WND, TECHNOLOGIES, HOURS, TYPICAL_DAYS} >= 0; # F_t: Operation in each period [GW] or, for STORAGE_TECH, storage level [GWh]. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
+var F_decom_p_decom{PHASE_UP_TO, TECHNOLOGIES} >= 0;
+var F_decom_p_build{{"2010_2015"} union PHASE_UP_TO, TECHNOLOGIES} >= 0;
+
 var C_inv_wnd {YEARS_WND, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
 var C_op_maint_wnd {YEARS_WND, TECHNOLOGIES union RESOURCES}; #[€] Variable to store operational costs of resources or maintenance costs of technologies
 
@@ -533,7 +536,7 @@ subject to phase_new_build {p in PHASE_WND, y_start in PHASE_START[p], y_stop in
 
 # [Eq. XX] Impose decom_allowed to 0 when not physical
 # --> Check p_built HERE --> Check if p_decom in PHASE ne change pas les résultats !!!!!!!!
-subject to define_f_decom_properly {p_decom in PHASE_WND, p_built in PHASE union {"2010_2015"}, i in TECHNOLOGIES}:
+subject to define_f_decom_properly {p_decom in PHASE, p_built in PHASE union {"2010_2015"}, i in TECHNOLOGIES}:
 	if decom_allowed[p_decom,p_built,i] == 0 then F_decom [p_decom,p_built,i] = 0;
 
 # [Eq. XX] Intialise the first phase based on YEAR_2015 results
@@ -547,7 +550,7 @@ subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE_WND, age in AGE 
 					else F_new [age,i]    - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,age,i];
 
 subject to no_decom_if_no_built {i in TECHNOLOGIES, p in PHASE_WND union PHASE_UP_TO union {"2010_2015"}}:
-		F_new [p, i] -  sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i] >= 0;
+	F_new [p, i] -  sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i] >= 0;
 
 # Limit renovation rate:
 # [Eq. XX] Define the amount of change between years
@@ -611,11 +614,11 @@ subject to Opex_tot_cost_calculation_no_2015 :# category: COST_calc
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 
 # [Eq. XX] Compute operating cost for years
-subject to Opex_cost_calculation{y in YEARS_WND diff YEAR_ONE} : # category: COST_calc
+subject to Opex_cost_calculation{y in YEARS_WND} : # category: COST_calc
 	C_opex [y] = sum {j in TECHNOLOGIES} C_maint [y,j] + sum {i in RESOURCES} C_op [y,i]; #In â‚¬_y
 
 # [Eq. XX] We could either limit the max investment on a period or fix that these investments must be equals in â‚¬_2015
-subject to maxInvestment {p in PHASE_WND diff YEAR_ONE}:
+subject to maxInvestment {p in PHASE_WND}:
 	 C_inv_phase [p] <= max_inv_phase[p]; #In bÃ¢â€šÂ¬
 # subject to sameInvestmentPerPhase {p in PHASE}:
 # 	 C_inv_phase [p] = Fixed_phase_investment; #In bÃ¢â€šÂ¬

@@ -144,6 +144,48 @@ def freedman_diaconis(data, returnas="width"):
         datrng = datmax - datmin
         result = int((datrng / bw) + 1)
     return(result)
+
+
+def scale_marginal_cost(Dict_TDofP,sp):
+    L = list(Dict_TDofP.values())
+    unique = set(L)
+    freq_TD = [0 for i in range(len(unique))]
+    for i in unique:
+        freq_TD[int(i)-1] = 1/(L.count(i)/24)
+    
+    
+    sp_scaled = (sp*freq_TD)
+    return sp_scaled
+    
+
+# def scale_marginal_cost(config: dict):
+#     """Reads the marginal cost, scale it according to the number of days represented by each TD and prints it as 'mc_scaled.txt'
+#     Parameters
+#     ----------
+#     config: dict()
+#     Dictionnary of configuration of the EnegyScope case study
+
+#     Returns
+#     -------
+#     mc_sclaed: pd.DataFrame()
+#     Scaled dataframe of marginal cost
+
+#     """
+#     td = pd.read_csv(config['step1_output'], header=None)
+#     td[1] = 1
+#     a = td.groupby(0).sum()
+#     a = a.set_index(np.arange(1,13))
+#     b = np.repeat(a[1],24)
+#     path = Path(__file__).parents[2]
+#     cs = path/'case_studies'/config['case_study']/'output'
+#     mc = pd.read_csv(cs/'marginal_cost.txt', sep='\t', index_col=[0,1])
+#     h = np.resize(np.arange(1,25),288)
+#     b = b.reset_index()
+#     b['hour'] = h
+#     b = b.set_index(['index','hour'])
+#     mc_scaled = mc.div(b[1],axis=0)
+#     mc_scaled.to_csv(cs / 'mc_scaled.txt', sep='\t')
+#     return mc_scaled
         
     
     

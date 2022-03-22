@@ -18,6 +18,12 @@ subject to store_F_old_up_to {p in PHASE_UP_TO, j in TECHNOLOGIES}:
 subject to store_F_decom_up_to {p_decom in PHASE_UP_TO, p_built in PHASE_UP_TO union {"2010_2015"}, j in TECHNOLOGIES}:
 	F_decom_up_to[p_decom,p_built,j] = F_decom[p_decom,p_built,j];
 
+subject to store_F_decom_for_each_p_decom {p in PHASE_UP_TO, j in TECHNOLOGIES}:
+	F_decom_p_decom[p, j] = sum {p2 in {"2010_2015"} union PHASE_UP_TO} F_decom[p,p2,j];
+
+subject to store_F_decom_for_each_p_build {p in {"2010_2015"} union PHASE_UP_TO, j in TECHNOLOGIES}:
+	F_decom_p_build[p, j] = sum {p2 in PHASE_UP_TO} F_decom[p2,p,j];
+
 subject to store_F_used_year_start_next {y in YEAR_ONE_NEXT, j in TECHNOLOGIES}:
 	F_used_year_start_next[y, j] = F_used_year_start[y,j];
 
