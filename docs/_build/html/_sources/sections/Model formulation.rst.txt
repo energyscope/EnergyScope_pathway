@@ -5,12 +5,11 @@ Model formulation
 
 .. role:: raw-latex(raw)
    :format: latex
-..
-..
-   .. caution ::
-      This section is still under construction.
-      The equations have been updated.
-      However, the table of parameters and variable must be updated (TBD)
+
+.. caution ::
+    This section is still under construction.
+    The equations have been updated.
+    However, the table of parameters and variable must be updated (TBD)
 
 
 **Model overview:**
@@ -273,7 +272,7 @@ transportation (train, trolley, metro and electrical/hybrid buses),
 electric private transportation including and hydrogen cars [2]_ and
 trains for freight.
 
-.. figure:: /images/model_formulation/Layer_Elec.png
+.. figure:: /images/model_formulation/layer_Elec.png
    :alt: Representation of the Electricity layer.
    :name: fig:LayerElec
    :width: 16cm
@@ -666,7 +665,7 @@ the independent and dependent variables, respectively.
 Energy model formulation
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-In the following, the overall LP formulation is proposed through :numref:`Figure %s <fig:EndUseDemand>` and equations
+In the following, the overall LP formulation is proposed through :numref:`Figure %s <fig:endUseDemand>` and equations
  :eq:`eq:c_tot_year` - :eq:`eq:solarAreaLimited`
 the constraints are regrouped in paragraphs. It starts with the
 calculation of the EUD. Then, the cost, the GWP and the objective
@@ -789,7 +788,7 @@ set T_H_TD [4]_ is equivalent to summing over the 8760h of the year.
     :label: eq:gwp_tot_transition
 
 .. math::
-    \textbf{GWP}_\textbf{tot,trans}} \leq gwp_{lim,trans}
+    \textbf{GWP}_\textbf{tot,trans} \leq gwp_{lim,trans}
     :label: eq:limit_gwp_trans
 
 .. math::
@@ -971,7 +970,7 @@ Networks
     \textbf{Net}_\textbf{loss}(y,eut,h,td) = \Big(\sum_{i \in \text{RES} \cup \text{TECH} \setminus \text{STO} | f(y,i,eut) > 0} f(y,i,eut)\textbf{F}_\textbf{t}(y,i,h,td) \Big) \%_{\text{net}_{loss}} (y,eut) 
     :label: eq:loss
 
-    \forall \forall y \in \text{YEARS}, eut = \text{EUT}, \forall h \in H, \forall td \in TD
+    \forall y \in \text{YEARS}, eut = \text{EUT}, \forall h \in H, \forall td \in TD
 
 .. math::
     \textbf{F} (y,'Grid') = 1 + \frac{c_{grid,extra}}{c_{inv}(y,'Grid')} 
@@ -1137,7 +1136,7 @@ Vehicle-to-grid
 .. figure:: /images/model_formulation/v2gAndBatteries.png
    :alt: Illustrative example of a V2G implementation.
    :name: fig:V2GAndBatteries
-   :width: 7cm
+   :width: 12cm
 
    Illustrative example of a V2G implementation. The battery can
    interact with the electricity layer. 
@@ -1361,7 +1360,7 @@ In addition to offering a more realistic representation, this implementation mak
     \textbf{F}(y,'PV')/power\_density_{pv} 
     :label: eq:solarAreaLimited
 
-    + \big( \textbf{F}(y,'Dec_{Solar}'') + \textbf{F}(y,'DHN_{Solar}') \big)/power\_density_{solar~thermal}  \leq solar_{area}
+    + \big( \textbf{F}(y,'Dec_{Solar}') + \textbf{F}(y,'DHN_{Solar}') \big)/power\_density_{solar~thermal}  \leq solar_{area}
 
 In this model version, the upper limit for solar based technologies is
 calculated based on the available land area (*solar\ area*) and power
@@ -1408,8 +1407,8 @@ the exception is the addition of the years as a parameter.
    :width: 10cm
 
    Illustration of the new variables of the pathway version. Example based on a technology with a 20 years lifetime. 
-   Initially 1~GW of capacity exists (:math:`\textbf{F}_\textbf{new}` during phase 2010\_2015). 
-   Then another 1~GW is deployed (:math:`\textbf{F}_\textbf{new}` during phase 2015\_2020). 
+   Initially 1 GW of capacity exists (:math:`\textbf{F}_\textbf{new}` during phase 2010\_2015). 
+   Then another 1 GW is deployed (:math:`\textbf{F}_\textbf{new}` during phase 2015\_2020). 
    15 years later, a part of the capacity reaches its lifetime limit and is removed (:math:`\textbf{F}_\textbf{old}` phase 2030\_2035). 
    Moreover, during the latter phase, additional capacity is decommissioned  prematurely (:math:`\textbf{F}_\textbf{decom}`). 
    Finally, the technology reaches its expected lifetime ans is fully withdrawn (:math:`\textbf{F}_\textbf{decom}`).
@@ -1463,7 +1462,7 @@ Eq. :eq:`eq:Fold_def` defines the capacity reaching its lifetime limit at a cert
 In the case the technology has already reached its lifetime limit, the SET (AGE) returns the phase when the technology has been built 
 (the equation seems more complex than the problem addressed; 
 nevertheless, the second part of the equation is needed to remove the capacity that could have been withdrawn before reaching its expected lifetime). 
-As an example, Figure :numref:`Figure %s <fig:path_eg_igcc>` shows a 20 years lifetime technology with 1~GW of capacity installed before 2015. 
+As an example, Figure :numref:`Figure %s <fig:path_eg_igcc>` shows a 20 years lifetime technology with 1 GW of capacity installed before 2015. 
 The technology (:math:`tech`) can be used until 2030_2035 (i.e. :math:`age(tech,\text{2030_2035})=\text{STILL_IN_USE}`), 
 then it must be removed (i.e. :math:`age(tech,\text{2030_2035})=\text{2010_2015} `). 
 Equally, in 2035_2040 the capacity built 20 years before must be removed (:math:`age(tech,\text{2035_2040})=\text{2015_2020}`), and so on.

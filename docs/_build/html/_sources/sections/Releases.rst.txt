@@ -37,10 +37,10 @@ Unless required by applicable law or agreed to in writing, software distributed 
 
 Codes versions
 ==============
-This work is an extension of the original EnergyScope model (see ).
+This work is an extension of the original EnergyScope model (see https://github.com/energyscope/EnergyScope).
 
 
-- first release (v1) of the EnergyScope Pathway: https://github.com/energyscope/EnergyScope_pathway  . See :cite:t:`Limpens2021thesis`.
+- first release (v1) of the EnergyScope Pathway: https://github.com/energyscope/EnergyScope_pathway. See :cite:t:`Limpens2021thesis`.
 
 Authors: 
 

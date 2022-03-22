@@ -970,7 +970,7 @@ Networks
     \textbf{Net}_\textbf{loss}(y,eut,h,td) = \Big(\sum_{i \in \text{RES} \cup \text{TECH} \setminus \text{STO} | f(y,i,eut) > 0} f(y,i,eut)\textbf{F}_\textbf{t}(y,i,h,td) \Big) \%_{\text{net}_{loss}} (y,eut) 
     :label: eq:loss
 
-    \forall \forall y \in \text{YEARS}, eut = \text{EUT}, \forall h \in H, \forall td \in TD
+    \forall y \in \text{YEARS}, eut = \text{EUT}, \forall h \in H, \forall td \in TD
 
 .. math::
     \textbf{F} (y,'Grid') = 1 + \frac{c_{grid,extra}}{c_{inv}(y,'Grid')} 
@@ -1136,7 +1136,7 @@ Vehicle-to-grid
 .. figure:: /images/model_formulation/v2gAndBatteries.png
    :alt: Illustrative example of a V2G implementation.
    :name: fig:V2GAndBatteries
-   :width: 7cm
+   :width: 12cm
 
    Illustrative example of a V2G implementation. The battery can
    interact with the electricity layer. 
@@ -1360,7 +1360,7 @@ In addition to offering a more realistic representation, this implementation mak
     \textbf{F}(y,'PV')/power\_density_{pv} 
     :label: eq:solarAreaLimited
 
-    + \big( \textbf{F}(y,'Dec_{Solar}'') + \textbf{F}(y,'DHN_{Solar}') \big)/power\_density_{solar~thermal}  \leq solar_{area}
+    + \big( \textbf{F}(y,'Dec_{Solar}') + \textbf{F}(y,'DHN_{Solar}') \big)/power\_density_{solar~thermal}  \leq solar_{area}
 
 In this model version, the upper limit for solar based technologies is
 calculated based on the available land area (*solar\ area*) and power
@@ -1404,11 +1404,11 @@ the exception is the addition of the years as a parameter.
 .. figure:: /images/model_formulation/path_e.g._tech.png
    :alt: Technology link between years.
    :name: fig:path_eg_igcc
-   :width: 10cm
+   :width: 14cm
 
    Illustration of the new variables of the pathway version. Example based on a technology with a 20 years lifetime. 
-   Initially 1~GW of capacity exists (:math:`\textbf{F}_\textbf{new}` during phase 2010\_2015). 
-   Then another 1~GW is deployed (:math:`\textbf{F}_\textbf{new}` during phase 2015\_2020). 
+   Initially 1 GW of capacity exists (:math:`\textbf{F}_\textbf{new}` during phase 2010\_2015). 
+   Then another 1 GW is deployed (:math:`\textbf{F}_\textbf{new}` during phase 2015\_2020). 
    15 years later, a part of the capacity reaches its lifetime limit and is removed (:math:`\textbf{F}_\textbf{old}` phase 2030\_2035). 
    Moreover, during the latter phase, additional capacity is decommissioned  prematurely (:math:`\textbf{F}_\textbf{decom}`). 
    Finally, the technology reaches its expected lifetime ans is fully withdrawn (:math:`\textbf{F}_\textbf{decom}`).
@@ -1462,7 +1462,7 @@ Eq. :eq:`eq:Fold_def` defines the capacity reaching its lifetime limit at a cert
 In the case the technology has already reached its lifetime limit, the SET (AGE) returns the phase when the technology has been built 
 (the equation seems more complex than the problem addressed; 
 nevertheless, the second part of the equation is needed to remove the capacity that could have been withdrawn before reaching its expected lifetime). 
-As an example, Figure :numref:`Figure %s <fig:path_eg_igcc>` shows a 20 years lifetime technology with 1~GW of capacity installed before 2015. 
+As an example, Figure :numref:`Figure %s <fig:path_eg_igcc>` shows a 20 years lifetime technology with 1 GW of capacity installed before 2015. 
 The technology (:math:`tech`) can be used until 2030_2035 (i.e. :math:`age(tech,\text{2030_2035})=\text{STILL_IN_USE}`), 
 then it must be removed (i.e. :math:`age(tech,\text{2030_2035})=\text{2010_2015} `). 
 Equally, in 2035_2040 the capacity built 20 years before must be removed (:math:`age(tech,\text{2035_2040})=\text{2015_2020}`), and so on.
@@ -1588,11 +1588,11 @@ the specific cost during the phase is defined as the average between the
 investment cost for the first and last year of the period.
 
 .. math::
-   \textbf{C}_\textbf{inv,return}(i) = \sum_{\{p, y_{start},y_{stop}\}} \frac{remaining\_years(i,p)}{liftime(y_start,i)} \textbf{F}_\textbf{new}(p,i)\cdot \tau_{phase}(p)\cdot 
-   \left(c_{inv}(y_{start},j) + c_{inv}(y_{stop},j)\right)/2
+   \textbf{C}_\textbf{inv,return}(i) = \sum_{\{p, y_{start},y_{stop}\}} \frac{remaining\_years(i,p)}{lifetime(y_{start},i)} \textbf{F}_\textbf{new}(p,i)\cdot \tau_{phase}(p)\cdot 
+   \left(c_{inv}(y_{start},i) + c_{inv}(y_{stop},i)\right)/2
    :label: eq:salvage
    
-   \forall p \in \text{PHASE} | y_{start}\in \text{Y_START}(p),y_{stop}\in \text{Y_STOP}(p)
+   \forall i \in TECH
 
 A part of the investment will remain after 2050. This residual investment, also called salvage, can be calculated for each technology. 
 A parameter, calculated *a priori*, gives for each technology and construction phase, the remaining amount of years (:math:`remaining\_years`). 
@@ -1600,6 +1600,13 @@ As an example, if a PV panel has been built in 2045 and has a 20 years lifetime,
 Thus, the residual value is to a fraction of the investment cost of this technology when it has been built. 
 This fraction is the ratio between the number of remaining years and the lifetime of the technology. 
 In the previous example, the residual investment of the PV built is 75%.
+
+The proposed implementation has a limitation: in the particular case where a technology could have been used after 2050 and has been decommissioned, the residual investment will be accounted. 
+Ones could suggest to remove the decommissioned part (:math:`\textbf{F}_\textbf{decom}`). However, this implementation would disadvantage the decommissioning. 
+Indeed, in the previous particular case, the solver would prefer to keep the technology and not use it to recover a part of its cost. 
+Thus, in both cases, the technology cost will be recovered, however in the second case, the technology capacity will remain until 2050. 
+We preferred the first implementaion rather the second one. 
+
 
 
 
