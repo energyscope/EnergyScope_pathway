@@ -208,21 +208,6 @@ var GWP_op {YEARS, RESOURCES} >= 0; #  GWP_op [ktCO2-eq.]: Total yearly emission
 var Network_losses {YEARS, END_USES_TYPES, HOURS, TYPICAL_DAYS} >= 0; # Net_loss [GW]: Losses in the networks (normally electricity grid and DHN)
 var Storage_level {YEARS, STORAGE_TECH, PERIODS} >= 0; # Sto_level [GWh]: Energy stored at each period
 
-# NEW VARIABLE FOR MYOPIC
-var F_wnd {YEARS_WND, TECHNOLOGIES} >= 0; # F_wnd: Installed capacity during the window of interest
-var F_up_to {YEARS_UP_TO, TECHNOLOGIES} >= 0; # F_up_to: Installed capacity from the start of the optimisation (2015)
-var F_new_up_to {PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase from the start of the optimisation (2015)
-var F_decom_up_to {PHASE_UP_TO,PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase from the start of the optimisation (2015)
-var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output from the start of the optimisation (2015)
-var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
-var Tech_wnd {YEARS_WND, TECHNOLOGIES diff STORAGE_TECH, setof {i in END_USES_CATEGORIES, j in END_USES_TYPES_OF_CATEGORY [i]} j}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
-var F_t_up_to {YEARS_WND, TECHNOLOGIES, HOURS, TYPICAL_DAYS} >= 0; # F_t: Operation in each period [GW] or, for STORAGE_TECH, storage level [GWh]. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
-var F_decom_p_decom{PHASE_UP_TO, TECHNOLOGIES} >= 0;
-var F_decom_p_build{{"2010_2015"} union PHASE_UP_TO, TECHNOLOGIES} >= 0;
-
-var C_inv_wnd {YEARS_WND, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
-var C_op_maint_wnd {YEARS_WND, TECHNOLOGIES union RESOURCES}; #[€] Variable to store operational costs of resources or maintenance costs of technologies
-
 #########################################
 ###      CONSTRAINTS Eqs [1-42]       ###
 #########################################
@@ -540,7 +525,7 @@ subject to define_f_decom_properly {p_decom in PHASE, p_built in PHASE union {"2
 	if decom_allowed[p_decom,p_built,i] == 0 then F_decom [p_decom,p_built,i] = 0;
 
 # [Eq. XX] Intialise the first phase based on YEAR_2015 results
-subject to F_new_initiatlisation {tech in TECHNOLOGIES}:
+subject to F_new_initialisation {tech in TECHNOLOGIES}:
 	F_new ["2010_2015",tech] = F["YEAR_2015",tech]; # Generate F_new2010_2015
 
 # [Eq. XX] Impose the exact capacity that reaches its lifetime
@@ -586,31 +571,23 @@ subject to New_totalTransitionCost_calculation :
 	TotalTransitionCost = C_tot_capex + C_tot_opex;
 	
 # [Eq. XX] Compute capital expenditure for transition
-subject to total_capex_2015: # category: COST_calc
+subject to total_capex: # category: COST_calc
 	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2015",i] # 2015 investment
-				 + sum{p in PHASE_WND} C_inv_phase [p]
-				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
-
-subject to total_capex_no_2015: # category: COST_calc
-	C_tot_capex = sum{p in PHASE_WND} C_inv_phase [p]
+				 + sum{p in PHASE_WND union PHASE_UP_TO} C_inv_phase [p]
 				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
 
 # [Eq. XX] Compute the total investment cost per phase
-subject to investment_computation {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
+subject to investment_computation {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
 	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
 
 # [Eq. XX] 
 subject to investment_return {i in TECHNOLOGIES}:
-	C_inv_return [i] = sum {p in PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
+	C_inv_return [i] = sum {p in PHASE_WND union PHASE_UP_TO,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * (F_new [p,i] - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i])  * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
 
 # [Eq. XX] Compute operating cost for transition
-subject to Opex_tot_cost_calculation_2015 :# category: COST_calc
+subject to Opex_tot_cost_calculation :# category: COST_calc
 	C_tot_opex = C_opex["YEAR_2015"] 
-				 + t_phase *  sum {p in PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
-					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
-
-subject to Opex_tot_cost_calculation_no_2015 :# category: COST_calc
-	C_tot_opex = t_phase *  sum {p in PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
+				 + t_phase *  sum {p in PHASE_WND union PHASE_UP_TO,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 
 # [Eq. XX] Compute operating cost for years

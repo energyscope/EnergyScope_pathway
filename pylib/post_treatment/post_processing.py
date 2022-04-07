@@ -10,6 +10,10 @@ import pandas as pd
 from .dict_color import dict_color as dc
 import numpy as np
 from scipy import stats
+import matplotlib.pyplot as plt
+import plotly.express as px
+from plotly.offline import plot
+
 
 def toPandasDF(matrix):
     headers = matrix.getHeaders()
@@ -115,37 +119,6 @@ def to_pd_pivot(amplpy_df, in_type = 'Def'):
     
     return df
 
-# From http://www.jtrive.com/determining-histogram-bin-width-using-the-freedman-diaconis-rule.html
-def freedman_diaconis(data, returnas="width"):
-    """
-    Use Freedman Diaconis rule to compute optimal histogram bin width. 
-    ``returnas`` can be one of "width" or "bins", indicating whether
-    the bin width or number of bins should be returned respectively. 
-
-
-    Parameters
-    ----------
-    data: np.ndarray
-        One-dimensional array.
-
-    returnas: {"width", "bins"}
-        If "width", return the estimated width for each histogram bin. 
-        If "bins", return the number of bins suggested by rule.
-    """
-    data = np.asarray(data, dtype=np.float_)
-    IQR  = stats.iqr(data, rng=(25, 75), scale="raw", nan_policy="omit")
-    N    = data.size
-    bw   = (2 * IQR) / np.power(N, 1/3)
-
-    if returnas=="width":
-        result = bw
-    else:
-        datmin, datmax = data.min(), data.max()
-        datrng = datmax - datmin
-        result = int((datrng / bw) + 1)
-    return(result)
-
-
 def scale_marginal_cost(Dict_TDofP,sp):
     L = list(Dict_TDofP.values())
     unique = set(L)
@@ -156,37 +129,41 @@ def scale_marginal_cost(Dict_TDofP,sp):
     
     sp_scaled = (sp*freq_TD)
     return sp_scaled
-    
-
-# def scale_marginal_cost(config: dict):
-#     """Reads the marginal cost, scale it according to the number of days represented by each TD and prints it as 'mc_scaled.txt'
-#     Parameters
-#     ----------
-#     config: dict()
-#     Dictionnary of configuration of the EnegyScope case study
-
-#     Returns
-#     -------
-#     mc_sclaed: pd.DataFrame()
-#     Scaled dataframe of marginal cost
-
-#     """
-#     td = pd.read_csv(config['step1_output'], header=None)
-#     td[1] = 1
-#     a = td.groupby(0).sum()
-#     a = a.set_index(np.arange(1,13))
-#     b = np.repeat(a[1],24)
-#     path = Path(__file__).parents[2]
-#     cs = path/'case_studies'/config['case_study']/'output'
-#     mc = pd.read_csv(cs/'marginal_cost.txt', sep='\t', index_col=[0,1])
-#     h = np.resize(np.arange(1,25),288)
-#     b = b.reset_index()
-#     b['hour'] = h
-#     b = b.set_index(['index','hour'])
-#     mc_scaled = mc.div(b[1],axis=0)
-#     mc_scaled.to_csv(cs / 'mc_scaled.txt', sep='\t')
-#     return mc_scaled
         
+def graph_prod_cons(Tech_Prod_Cons, Plot_list, n_year_opti,n_year_overlap, mode = 'Prod_Cons'):
+    
+    index = Tech_Prod_Cons.index.names
+    
+    px.defaults.template = "simple_white"
+    
+    t = 100
+    
+    DF_prod = pd.DataFrame(columns=index + ['Value'])
+    DF_cons = pd.DataFrame(columns=index + ['Value'])
+    
+    for l in Plot_list:
+        df = Tech_Prod_Cons.loc(axis=0)[slice(None),l,slice(None)]
+        
+        tresh_prod = df.max()/t
+        df_prod = df.loc[(df>tresh_prod).any(axis=1)]
+        df_prod = df_prod.reset_index(index)
+
+        fig_prod = px.area(df_prod, x='Year', y='Value', color='Technology', title=l+'_prod_{}_{}'.format(n_year_opti,n_year_overlap),
+                           category_orders={'Year': df_prod["Year"]})
+        fig_prod.update_traces(mode='none')
+        plot(fig_prod)
+        
+        tresh_cons = df.min()/t
+        df_cons = df.loc[(df<tresh_cons).any(axis=1)]
+        df_cons = df_cons.reset_index(index)
+        
+        fig_cons = px.area(df_cons, x='Year', y='Value', color='Technology', title=l+'_cons_{}_{}'.format(n_year_opti,n_year_overlap),
+                           category_orders={'Year': df_cons["Year"]})
+        fig_cons.update_traces(mode='none')
+        plot(fig_cons)
+        
+        DF_prod = pd.concat([DF_prod, df_prod], ignore_index = True, axis = 0)
+        DF_cons = pd.concat([DF_cons, df_cons], ignore_index = True, axis = 0)
     
     
     

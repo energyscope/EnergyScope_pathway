@@ -21,8 +21,6 @@ from pylib.pre_treatment import Pathway_window as wnd
 from pylib.pre_treatment import set_up_ampl as sua
 from pylib.post_treatment import post_processing as postp
 
-import pylib.opti_probl as op
-
 import numpy as np
 
 
@@ -39,20 +37,20 @@ if __name__ == '__main__':
     # Different actions
     CleanHistory = True
     InitStorage = True
-    RunMyopicOpti = False
+    RunMyopicOpti = True
     GoNextWindow = True
-    PostProcess = True
+    PostProcess = False
     DrawGraphs = False
     
     
     ## Pickled results: preparation
-    PKL_list = ['Resources','Tech_Prod_Cons','Tech_Cap','Shadow_prices']
+    PKL_list = ['Resources','Tech_Prod_Cons','Tech_Cap','Shadow_prices', 'EUD', 
+                'C_INV', 'C_OP_MAINT']
     PKL_dict = dict.fromkeys(PKL_list)
     
     
     ## Paths
     pth_model = os.path.join(os.getcwd(),'STEP_2_Pathway_Model')
-    pth_ampl = '/Users/xrixhon/Documents/Software/AMPL'
     pth_output = os.path.join(os.getcwd(),'outputs')
     
     ## Options for ampl and cplex
@@ -60,37 +58,33 @@ if __name__ == '__main__':
                  'predual=-1',
                  'barstart=4',
                  'timelimit 64800',
-                 'crossover=0',
+                 'crossover=1',
                  'bardisplay=0',
                  'prestats=0',
-                 'presolve=0', # Not a good idea to put it to 0 if the model is too big
+                 'presolve=1', # Not a good idea to put it to 0 if the model is too big
                  'display=0']
     cplex_options_str = ' '.join(cplex_options)
     ampl_options = {'show_stats': 3,
                     'log_file': os.path.join(pth_model,'log.txt'),
-                    'presolve': 0,
+                    'presolve': 10,
                     'presolve_eps': 1e-7,
                     'presolve_fixeps': 1e-7,
                     'times': 0,
                     'gentimes': 0,
-                    # 'show_boundtol': 0,
-                    'cplex_options': cplex_options_str}
+                    'show_boundtol': 0,
+                    'cplex_options': cplex_options_str,
+                    '_log_input_only': False}
     
     
-    N_year_opti = [35] # HERE
-    N_year_overlap = [0]
-    
-    # N_year_opti = [20]
-    # N_year_overlap = [10]
+    N_year_opti = [10]
+    N_year_overlap = [5]
+
     
     for m in range(len(N_year_opti)):    
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
-        # n_year_opti = 10
-        # n_year_overlap = 5
     
-    
-        file_name = os.path.join(pth_output,'pickle_{}_{}.pkl'.format(n_year_opti,n_year_overlap))
+        file_name = os.path.join(pth_output,'pickle_{}_{}_minus_F_decom_coal_inf.pkl'.format(n_year_opti,n_year_overlap))
     
         [years_wnd, phases_wnd, years_up_to, phases_up_to] = wnd.pathway_window(n_year_opti,n_year_overlap)
             
@@ -101,11 +95,7 @@ if __name__ == '__main__':
             
         if InitStorage:
             
-            ampl0 = AMPL(Environment(pth_ampl))
-            # ampl0 = AMPL(Environment(pth_ampl,'ampldev'))
-            # ampl0 = op.OptiProbl(pth_model, pth_model, pth_ampl, ampl_options)
-            
-            
+            ampl0 = AMPL()
             
             sua.set_up_ampl(ampl0, pth_model, ampl_options)
             
@@ -115,6 +105,11 @@ if __name__ == '__main__':
             
             Res = S['RESOURCES'].getValues().toList()
             Tech = S['TECHNOLOGIES'].getValues().toList()
+            Storage = S['STORAGE_TECH'].getValues().toList()
+            Tech_minus_sto = [x for x in Tech if x not in Storage]
+            Tech_plus_res = Tech_minus_sto + Res
+            
+            
             Layers = S['LAYERS'].getValues().toList()
             
             Tech_EUD = S['TECHNOLOGIES_OF_END_USES_TYPE']
@@ -126,15 +121,10 @@ if __name__ == '__main__':
             EUD_demands = []
             for i in EUD_cat:
                 EUD_demands += EUD_type[i].getValues().toList()
-            
-            Tech_Prod = {}
-            
-            for i in EUD_demands:
-                Tech_Prod[i] = Tech_EUD[i].getValues().toList()
                 
             
             SP_LIST = ['GWP','Layer','EUD']
-            Layer_list = ['ELECTRICITY', 'GASOLINE', 'DIESEL','LFO', 'GAS',
+            Layer_list = ['ELECTRICITY', 'GAS',
                           'H2', 'AMMONIA', 'METHANOL']
             
             Shadow_prices = dict.fromkeys(SP_LIST)
@@ -160,10 +150,15 @@ if __name__ == '__main__':
             TDofP = S['TYPICAL_DAY_OF_PERIOD']
             Dict_TDofP = postp.toPandasDict_H_TD_ofP(Periods, TDofP)
             
-            Tech_Prod_Cons = dict.fromkeys(Years)
+            index_Tech = pd.MultiIndex.from_product([Years, Layers, Tech_plus_res],names = ['Year','Layer','Technology'])
+            index_eud = pd.MultiIndex.from_product([Years, Layers, ['EUD']],names = ['Year','Layer','Technology'])
             
-            RES = pd.DataFrame(0,index = Years,columns = Res)
-            Tech_Cap = pd.DataFrame(0,index = Years,columns = Tech)
+            RES = pd.DataFrame(0,index = Res,columns = Years).T
+            Tech_Cap = pd.DataFrame(0,index = Tech,columns = Years).T
+            Tech_Prod_Cons = pd.DataFrame(0, index=index_Tech, columns=['Value'])
+            EUD = pd.DataFrame(0, index=index_eud, columns = ['Value'])
+            C_INV = pd.DataFrame(0,index = Tech, columns = Years).T
+            C_OP_MAINT = pd.DataFrame(0,index = Res + Tech, columns = Years).T
             
         
         t0 = time.time()
@@ -187,9 +182,9 @@ if __name__ == '__main__':
                 wnd.write_seq_opti(curr_window_years, curr_window_phases,\
                                    curr_years_up_to, curr_phases_up_to, pth_model, year_one,\
                                        year_one_next, i, next_year_one)
-                wnd.remaining_update("PESTD_data_remaining.dat",pth_model,curr_window_phases)
+                wnd.remaining_update("PESTD_data_remaining.dat",pth_model,curr_window_phases, curr_phases_up_to, n_year_overlap)
                 
-                ampl = AMPL(Environment(pth_ampl))
+                ampl = AMPL()
                 
                 sua.set_up_ampl(ampl, pth_model, ampl_options)
                 
@@ -197,13 +192,6 @@ if __name__ == '__main__':
                 ampl.setOption('_log_input_only', False)
                 
                 t = time.time()
-                if i==0:
-                    ampl.getConstraint('total_capex_no_2015').drop()
-                    ampl.getConstraint('Opex_tot_cost_calculation_no_2015').drop()
-                else:
-                    ampl.getConstraint('total_capex_2015').drop()
-                    ampl.getConstraint('Opex_tot_cost_calculation_2015').drop()
-                    ampl.getConstraint('F_new_initiatlisation').drop()
 
                 ampl.solve()
                 elapsed = time.time()-t
@@ -238,7 +226,6 @@ if __name__ == '__main__':
                 elapsed_x = time.time()-t_x
                 print('Time to extract shadow prices:',elapsed_x)
                 
-                
                 # F
                 F_up_to = ampl.getVariable('F_up_to')
                 
@@ -270,20 +257,38 @@ if __name__ == '__main__':
                 Res_wnd = ampl.getVariable('Res_wnd').getValues()
                 df_temp_res = postp.to_pd_pivot(Res_wnd)
                 RES.update(df_temp_res)
+                
+                # C_inv
+                C_inv_wnd = ampl.getVariable('C_inv_wnd').getValues()
+                df_temp_c_inv_wnd = postp.to_pd_pivot(C_inv_wnd)
+                C_INV.update(df_temp_c_inv_wnd)
+                
+                # C_op_maint
+                C_op_maint_wnd = ampl.getVariable('C_op_maint_wnd').getValues()
+                df_temp_c_op_maint_wnd = postp.to_pd_pivot(C_op_maint_wnd)
+                C_OP_MAINT.update(df_temp_c_op_maint_wnd)
     
-                # Tech
+                # Tech cap
                 F_wnd = ampl.getVariable('F_wnd').getValues()
                 df_temp_F = postp.to_pd_pivot(F_wnd)
                 Tech_Cap.update(df_temp_F)
                 
+                # Tech prod and cons
                 Tech_wnd = ampl.getVariable('Tech_wnd').getValues()
-                Tech_dict = postp.to_pd_pivot(Tech_wnd, 'F_t')
                 Tech_df = postp.to_pd(Tech_wnd)
-                # Tech_df = Tech_df.loc[Tech_df['Tech_wnd.val'] !=0]
+                Tech_df = Tech_df.rename(columns = {'Tech_wnd.val':'Value'})
                 Tech_df = Tech_df.set_index(['index0','index1','index2'])
+                Tech_Prod_Cons.loc[(curr_wnd_y,slice(None),slice(None))] = Tech_df.loc[(curr_wnd_y,slice(None),slice(None))]
                 
-                for y in curr_window_years:
-                    Tech_Prod_Cons[y] = Tech_df.loc[y]
+                # End-use demands
+                EUD_wnd = ampl.getVariable('EUD_wnd').getValues()
+                df_temp_eud = postp.to_pd(EUD_wnd)
+                df_temp_eud = df_temp_eud.rename(columns = {'EUD_wnd.val':'Value'})
+                df_temp_eud = df_temp_eud.set_index(['index0','index1'])
+                df_temp_eud = - pd.concat({'EUD': df_temp_eud}, names=['Technology'])
+                df_temp_eud = df_temp_eud.reorder_levels(['index0','index1','Technology']).sort_index()
+                EUD.loc[(curr_wnd_y,slice(None),slice(None))] = df_temp_eud.loc[(curr_wnd_y,slice(None),slice(None))]
+
                 
                 if GoNextWindow:
                     fix = os.path.join(pth_model,'fix.mod')
@@ -322,50 +327,74 @@ if __name__ == '__main__':
                     PKL_dict['Tech_Prod_Cons'] = Tech_Prod_Cons
                     PKL_dict['Tech_Cap'] = Tech_Cap
                     PKL_dict['Shadow_prices'] = Shadow_prices
+                    PKL_dict['EUD'] = EUD
+                    PKL_dict['C_INV'] = C_INV
+                    PKL_dict['C_OP_MAINT'] = C_OP_MAINT
                     
                     open_file = open(file_name,"wb")
                     pickle.dump(PKL_dict,open_file)
                     open_file.close()
                     break
                 
-                
-                    
-                
         
         if PostProcess:
+            
+            print(file_name)
             
             open_file = open(file_name,"rb")
             loaded_list = pickle.load(open_file)
             open_file.close()
             
-            RES = loaded_list['Resources']
+            RES = loaded_list['Resources'].T
             Tech_Prod_Cons = loaded_list['Tech_Prod_Cons']
-            Tech_Cap = loaded_list['Tech_Cap']
+            Tech_Cap = loaded_list['Tech_Cap'].T
             Shadow_prices = loaded_list['Shadow_prices']
+            EUD = loaded_list['EUD']
+            C_INV = loaded_list['C_INV'].T
+            C_OP_MAINT = loaded_list['C_OP_MAINT'].T
+            
+            no_plot = ['GASOLINE', 'DIESEL', 'LFO', 'WOOD', 'WET_BIOMASS',
+                       'COAL','URANIUM','WASTE','RES_WIND','RES_SOLAR',
+                       'RES_GEO','RES_HYDRO','CO2_ATM','CO2_INDUSTRY',
+                       'CO2_CAPTURED']
+            
+            Plot_list = [x for x in Layers if x not in no_plot]
+            # Plot_list = ['ELECTRICITY', 'HEAT_HIGH_T']
+            
+            Plot_Layer = pd.concat([EUD,Tech_Prod_Cons])
+            
+            postp.graph_prod_cons(Plot_Layer,Plot_list, n_year_opti, n_year_overlap)
             
             
+            # Tech_Prod_layer = dict.fromkeys(EUD_demands)
+            # Tech_Cons_layer = dict.fromkeys(EUD_demands)
             
-            tyo = time.time()
-            Shadow_prices_year = deepcopy(Shadow_prices)
-            for y in Years:
-                for l in EUD_demands:
-                    SP_EUD_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['EUD'][l][y])
-                    Shadow_prices_year['EUD'][l][y] = postp.TDtoYEAR(SP_EUD_scaled, Dict_TDofP)
-                for l in Layer_list:
-                    SP_Layer_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['Layer'][l][y])
-                    Shadow_prices_year['Layer'][l][y] = postp.TDtoYEAR(SP_Layer_scaled, Dict_TDofP)
+            # for l in EUD_demands:
+            #     Tech_Prod_layer[l] = pd.DataFrame(0,index = Tech_minus_sto,columns = Years)
+            #     for y in Years:
+            #         Tech_Prod_layer[l][:,y] = Tech_Prod_Cons[y].loc[l,:]
+            
+            # tyo = time.time()
+            # Shadow_prices_year = deepcopy(Shadow_prices)
+            # for y in Years:
+            #     for l in EUD_demands:
+            #         SP_EUD_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['EUD'][l][y])
+            #         Shadow_prices_year['EUD'][l][y] = postp.TDtoYEAR(SP_EUD_scaled, Dict_TDofP)
+            #     for l in Layer_list:
+            #         SP_Layer_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['Layer'][l][y])
+            #         Shadow_prices_year['Layer'][l][y] = postp.TDtoYEAR(SP_Layer_scaled, Dict_TDofP)
 
             
-            Shadow_prices_av_year = deepcopy(Shadow_prices)
-            for l in Layer_list:
-                for y in Years:
-                    Shadow_prices_av_year['Layer'][l][y] = np.average(Shadow_prices_year['Layer'][l][y])
-            for l in EUD_demands:
-                for y in Years:
-                    Shadow_prices_av_year['EUD'][l][y] = np.average(Shadow_prices_year['EUD'][l][y])
+            # Shadow_prices_av_year = deepcopy(Shadow_prices)
+            # for l in Layer_list:
+            #     for y in Years:
+            #         Shadow_prices_av_year['Layer'][l][y] = np.average(Shadow_prices_year['Layer'][l][y])
+            # for l in EUD_demands:
+            #     for y in Years:
+            #         Shadow_prices_av_year['EUD'][l][y] = np.average(Shadow_prices_year['EUD'][l][y])
             
-            elapsedyo = time.time()-tyo
-            print('Time to get all shadow prices from TD to year:',elapsedyo)
+            # elapsedyo = time.time()-tyo
+            # print('Time to get all shadow prices from TD to year:',elapsedyo)
             
         if DrawGraphs:
             
