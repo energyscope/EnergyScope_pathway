@@ -303,7 +303,7 @@ YEAR_2035	27567.31134	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infi
 YEAR_2040	29180.97512	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	23400	38900	33354.99944	Infinity	17800	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	0	0																																																																																					
 YEAR_2045	30869.377	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	23400	38900	33354.99944	Infinity	17800	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	0	0																																																																																					
 YEAR_2050	32439.8697	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	23400	38900	33354.99944	Infinity	17800	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	Infinity	0	0																																																																																					
-;																																																																																																																	
+;
 																																																																																																																	
 param c_op :	ELECTRICITY	GASOLINE	DIESEL	BIOETHANOL	BIODIESEL	LFO	GAS	GAS_RE	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	H2_RE	AMMONIA	METHANOL	AMMONIA_RE	METHANOL_RE	ELEC_EXPORT	CO2_EMISSIONS	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO	CO2_ATM 	CO2_INDUSTRY 	CO2_CAPTURED	:=																																																																																				
 YEAR_2015	0.056866	0.058881227	0.057006647	0.126229051	0.135167338	0.043	0.03	0.137018848	0.028508853	0.005001899	0.0145	0.003876456	0.020052021	0.073701999	0.144058419	0.064208462	0.072906869	0.09639402	0.126229051	0	0	0	0	0	0	0	0	0																																																																																					
@@ -815,7 +815,9 @@ YEAR_2035	0.047	0.05
 YEAR_2040	0.047	0.05																																																																																																															
 YEAR_2045	0.047	0.05																																																																																																															
 YEAR_2050	0.047	0.05																																																																																																															
-;																																																																																																																	
+;
+
+# elec_max_import_capa [GW]
 param 	elec_max_import_capa	:=																																																																																																															
 YEAR_2015	4.5																																																																																																																
 YEAR_2020	4.5																																																																																																																

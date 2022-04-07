@@ -1,7 +1,9 @@
 import os
 import re
 
-def pathway_window(years_window = 35, years_overlap = 0):
+from copy import deepcopy  
+
+def pathway_window(years_window = 10, years_overlap = 5):
 
 
     list_year = ['YEAR_2015','YEAR_2020','YEAR_2025','YEAR_2030',	
@@ -89,15 +91,19 @@ def write_seq_opti(curr_window_y, curr_window_p, years_up_to, phases_up_to, fold
             f.write(';')
                 
 
-def remaining_update(file, pth_model,PHASE_WND):
-    n_phase = len(PHASE_WND)
+def remaining_update(file, pth_model,PHASE_WND, PHASE_UP_TO, n_year_overlap):
+    PHASE_list = deepcopy(PHASE_UP_TO)
+    if n_year_overlap > 0 and PHASE_WND[-1] != '2045_2050':
+        n_phase_extra = int(n_year_overlap/5)
+        PHASE_list += PHASE_WND[-n_phase_extra:]
+    n_phase = len(PHASE_list)
     with open(os.path.join(pth_model,file),encoding='utf-8') as fp:
         next(fp)
         l = fp.readlines()
         n = len(re.split(r'\t+', l[0].rstrip('\t')))
     with open(os.path.join(pth_model,'PESTD_data_remaining_wnd.dat'),'w+', encoding='utf-8') as f:
         f.write('param remaining_years : ' )
-        for phase in PHASE_WND:
+        for phase in PHASE_list:
             f.write('%s ' %phase)
         f.write(':= \n')
         with open(os.path.join(pth_model,file),encoding='utf-8') as fp:
