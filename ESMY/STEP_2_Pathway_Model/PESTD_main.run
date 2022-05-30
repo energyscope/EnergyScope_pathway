@@ -1,0 +1,1297 @@
+################################################################################
+################################################################################                                                    
+##																			  ##
+##                     			SETTING PROBLEM								  ##                                                    
+##																			  ##
+################################################################################
+################################################################################
+
+model PESTD_model.mod;
+
+data PESTD_data_year_related.dat; # data specific to representative years
+data PESTD_data_all_years.dat; # data for all years
+data PESTD_data_efficiencies.dat; # data for efficiencies over all years
+data PESTD_12TD.dat; # TDs depending data. Used for all representative years
+data PESTD_data_remaining.dat;  # Defining the params remaining_years depending on the lifetime of technologies
+data PESTD_data_set_AGE.dat;  # Defining the set AGE depending on the lifetime of technologies
+data PESTD_data_decom_allowed.dat;  # Defining the params decom_allowed depending on the lifetime of technologies
+
+#Initilaisation:
+model PESTD_initialise_2015.mod;
+
+################################################################################
+################################################################################                                                    
+##																			  ##
+##                      	SOLVER OPTIONS       							  ##                                                    
+##																			  ##
+################################################################################
+################################################################################
+
+#Set up of options identical to ESMC (from https://github.com/energyscope/EnergyScope_multi_cells/blob/Multi_cell/esmc/preprocessing/esmc.py line 121)
+option solver cplex;
+
+option log_file './log.txt';   #write the log in a .txt file. Create the file before running.
+option presolve 0;
+option times 0;
+option gentimes 0;
+
+option cplex_options $cplex_options 'baropt predual=-1 crossover=0 barstart= 4';
+option cplex_options $cplex_options 'bardisplay=0';
+option cplex_options $cplex_options 'prestats=0';
+option cplex_options $cplex_options 'display=0';
+option cplex_options $cplex_options 'timelimit 64800 ';
+# Hello
+
+
+################################################################################
+################################################################################                                                    
+##																			  ##
+##                      	RUN & SAVE PATH      							  ##                                                    
+##																			  ##
+################################################################################
+################################################################################
+
+
+param PathName symbolic default "output";
+
+
+
+		print PathName;
+
+		# Saving and starting from last solution. Starting from last solution is not very efficient.
+		# option cplex_options $cplex_options 'startsol ./output/solution.sol '; # to read previously existing file
+		option cplex_options $cplex_options 'endsol ./output/solution.sol '; # to write file 
+		
+		# option cplex_options $cplex_options 'startbasis ./output/solution.bas '; # to read previously existing path
+		# option cplex_options $cplex_options 'endbasis ./output/solution.bas '; # to write how to solve
+		
+		solve;
+
+		display solve_result_num;
+		display _solve_elapsed_time;
+
+		## Saving sets and parameters to output file
+
+		option times 0; # show time
+		option gentimes 0; # show time
+
+		
+		if solve_result = "limit" # To avoid post treatment error
+		then print "TIME OUT"; 
+		else {
+		
+		print "%f\n",sum {y in YEARS} TotalGWP [y] * t_phase;
+		print "Total emissions:", TotalGWPTransition;
+		
+			let PathName := "output";
+			## Print Phase info to txt file.
+			print "--------------SAVING PHASE -----------";
+			printf "%s\t%s\t%s\t%s\n", "Phase", "Inv.", "Inv. max", "YEAR - 2015 = ?" > (PathName & "/phase.txt"); 
+			for {p in PHASE}{
+				printf "%s\t%.6f\t%.6f\t%.6f\n", p, C_inv_phase[p], max_inv_phase[p], diff_2015_phase[p]   >> (PathName & "/phase.txt");
+			}
+			## Print F_new info to txt file.
+			print "--------------SAVING F_new (phase) -----------";
+			printf "TECH\t" > (PathName & "/FnewCost.txt");
+			for {p in PHASE }{
+				printf "%s\t", p >> (PathName & "/FnewCost.txt");
+			}
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t",j  >> (PathName & "/FnewCost.txt");
+				for {p in PHASE, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}{
+				
+					 printf " %.6f\t", F_new[p,j] * (c_inv[y_start,j]+c_inv[y_stop,j])/2 *annualised_factor[p] >> (PathName & "/FnewCost.txt");
+					#printf " %.6f\t", F_new[p,j] *  c_inv[y_stop,j]                     *annualised_factor[p] >> (PathName & "/FnewCost.txt");
+					#printf " %.6f\t", F_new[p,j]  >> (PathName & "/FnewCost.txt");
+				}
+			}
+			## Print F_new info to txt file.
+			print "--------------SAVING F_new (phase) -----------"; 
+			printf "TECH\t" > (PathName & "/Fnew.txt");
+			for {p in PHASE }{
+				printf "%s\t", p >> (PathName & "/Fnew.txt");
+			}
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t",j  >> (PathName & "/Fnew.txt");
+				for {p in PHASE, y_stop in PHASE_STOP[p]}{
+					#printf " %.6f\t", F_new[p,j]*c_inv[y_stop,j]*annualised_factor[p] >> (PathName & "/Fnew.txt");
+					printf " %.6f\t", F_new[p,j]  >> (PathName & "/Fnew.txt");
+				}
+			}
+						## Print F_old info to txt file.
+			print "--------------SAVING F_old (phase) -----------";
+			printf "TECH\t" > (PathName & "/F_old.txt");
+			for {p in PHASE }{
+				printf "%s\t", p >> (PathName & "/F_old.txt");
+			}
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t",j  >> (PathName & "/F_old.txt");
+				for {p in PHASE, y_stop in PHASE_STOP[p]}{
+					printf " %.6f\t", F_old[p,j] >> (PathName & "/F_old.txt");
+					#printf " %.6f\t", F_old[p,j]  >> (PathName & "/F_old.txt");
+				}
+			}
+			## Print Operating costs info to txt file.
+			print "--------------SAVING OPEX YEARLY costs -----------";
+			printf "TECH\t" > (PathName & "/OpAndMaint.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/OpAndMaint.txt");
+			}
+			for {j in TECHNOLOGIES union RESOURCES}{
+				printf "\n %s\t",j  >> (PathName & "/OpAndMaint.txt");
+				for {y in YEARS}{
+					printf " %.6f\t", if j in TECHNOLOGIES then C_maint [y,j] else C_op [y,j] >> (PathName & "/OpAndMaint.txt");
+					#printf " %.6f\t", F_new[p,j]  >> (PathName & "/OpAndMaint.txt");
+				}
+			}
+			## Print Operating costs info to txt file.
+			print "--------------SAVING CAPEX YEARLY (annualised) -----------";
+			printf "TECH\t" > (PathName & "/CAPEX_annualised.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/CAPEX_annualised.txt");
+			}
+			for {j in TECHNOLOGIES union RESOURCES}{
+				printf "\n %s\t",j  >> (PathName & "/CAPEX_annualised.txt");
+				for {y in YEARS}{
+					printf " %.6f\t", if j in TECHNOLOGIES then tau[y,j] * C_inv[y,j] else 0 >> (PathName & "/CAPEX_annualised.txt");
+				}
+			}			
+			## Print investment cost return because techno can be used after 2050.
+			print "--------------SAVING Cinv return -----------";
+			printf "TECH\t Cinv_return" > (PathName & "/Cinv_return.txt");
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t%.6f\t",j, C_inv_return [j] >> (PathName & "/Cinv_return.txt");
+			}
+			## Print Operating costs info to txt file.
+			print "--------------SAVING GWP YEARLY (based on RES) -----------";
+			printf "Emissions [ktCO2]\t" > (PathName & "/GWP_YEARLY.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/GWP_YEARLY.txt");
+			}
+			printf "\n RES based \t"  >> (PathName & "/GWP_YEARLY.txt");
+				for {y in YEARS}{
+					printf " %.6f\t", sum {i in RESOURCES} GWP_op [y,i] >> (PathName & "/GWP_YEARLY.txt");
+			}
+			printf "\n ALL \t"  >> (PathName & "/GWP_YEARLY.txt");
+				for {y in YEARS}{
+					printf " %.6f\t", sum {j in TECHNOLOGIES} (GWP_constr [y,j] / lifetime [y,j]) + sum {i in RESOURCES} GWP_op [y,i] >> (PathName & "/GWP_YEARLY.txt");
+			}
+			## Print F_decomm info to txt file.
+			print "--------------SAVING F_new (phase) -----------";
+			printf "TECH\t" > (PathName & "/F_decomm.txt");
+			for {p in {{"2010_2015"} union PHASE}}{
+				printf "%s\t", p >> (PathName & "/F_decomm.txt");
+			}
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t",j  >> (PathName & "/F_decomm.txt");
+				for {p in PHASE }{
+					for {pbuilt in {{"2010_2015"} union PHASE}}{
+						printf " %.6f\t", F_decom[p,pbuilt,j]  >> (PathName & "/F_decomm.txt");
+					}
+				}
+			}
+			## Print F_decomm_ALL info to txt file.
+			print "--------------SAVING F_decomm_ALL (phase) -----------";
+			printf "TECH\t" > (PathName & "/F_decomm_ALL.txt");
+			for {p in PHASE }{
+				printf "%s\t", p >> (PathName & "/F_decomm_ALL.txt");
+			}
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t",j  >> (PathName & "/F_decomm_ALL.txt");
+				for {p in PHASE }{
+
+					printf " %.6f\t", sum {p2 in PHASE} F_decom[p,p2,j]  >> (PathName & "/F_decomm_ALL.txt");
+				}
+			}
+			
+			## Print F_years info to txt file.
+			print "--------------SAVING F (years) -----------";
+			printf "TECH\t" > (PathName & "/F_years.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/F_years.txt");
+			}
+			for {j in TECHNOLOGIES}{
+				printf "\n %s\t",j  >> (PathName & "/F_years.txt");
+				for {y in YEARS }{
+					printf " %.6f\t", F [y,j]  >> (PathName & "/F_years.txt");
+				}
+			}
+			
+			
+			## Print Ressources over Phase info to txt file.
+			print "--------------SAVING Ressources over phase -----------";
+			printf "RESOURCES\t MAX [TWh]\t" > (PathName & "/RES.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/RES.txt");
+			}
+			for {i in RESOURCES}{
+				printf "\n %s\t",i  >> (PathName & "/RES.txt");
+				printf "%.6f\t",avail ["YEAR_2015",i]   >> (PathName & "/RES.txt"); 
+				for {y in YEARS}{
+					printf " %.6f\t",sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,i,h,td] * t_op [h, td])  >> (PathName & "/RES.txt");
+				}
+			}
+			## Print mobility shares over YEARS info to txt file.
+			print "--------------SAVING Mob public shares -----------";
+			printf "Tech\t" > (PathName & "/Mob_shares.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/Mob_shares.txt");
+			}
+			for {tech in TECHNOLOGIES_OF_END_USES_TYPE["MOB_PUBLIC"]}{
+				printf "\n %s \t", tech >> (PathName & "/Mob_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					F_t [y,tech, h, td] >> (PathName & "/Mob_shares.txt");
+			}}
+			for {tech in TECHNOLOGIES_OF_END_USES_TYPE["MOB_PRIVATE"]}{
+				printf "\n %s \t", tech >> (PathName & "/Mob_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					F_t [y,tech, h, td] >> (PathName & "/Mob_shares.txt");
+			}}
+			for {euc in END_USES_TYPES_OF_CATEGORY["MOBILITY_FREIGHT"], tech in TECHNOLOGIES_OF_END_USES_TYPE[euc]}{
+				printf "\n %s \t", tech >> (PathName & "/Mob_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					F_t [y,tech, h, td] >> (PathName & "/Mob_shares.txt");
+			}}
+			##
+			print "--------------SAVING Elec shares -----------";
+			printf "Tech\t" > (PathName & "/Elec_shares.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/Elec_shares.txt");
+			}
+			for {tech in TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", tech >> (PathName & "/Elec_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					layers_in_out [y,tech,"ELECTRICITY"] * F_t [y,tech, h, td] >> (PathName & "/Elec_shares.txt");
+			}}
+			## 
+			print "--------------SAVING HT shares -----------";
+			printf "Tech\t" > (PathName & "/HT_shares.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/HT_shares.txt");
+			}
+			for {tech in TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", tech >> (PathName & "/HT_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					layers_in_out [y,tech,"HEAT_HIGH_T"] * F_t [y,tech, h, td] >> (PathName & "/HT_shares.txt");
+			}}
+			## 
+			print "--------------SAVING LT_DEC shares -----------";
+			printf "Tech\t" > (PathName & "/LTDec_shares.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/LTDec_shares.txt");
+			}
+			for {tech in TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", tech >> (PathName & "/LTDec_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					layers_in_out [y,tech,"HEAT_LOW_T_DHN"] * F_t [y,tech, h, td] >> (PathName & "/LTDec_shares.txt");
+			}}
+			## 
+			print "--------------SAVING LT_DHN shares -----------";
+			printf "Tech\t" > (PathName & "/LTDHN_shares.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/LTDHN_shares.txt");
+			}
+			for {tech in TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", tech >> (PathName & "/LTDHN_shares.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					layers_in_out [y,tech,"HEAT_LOW_T_DECEN"] * F_t [y,tech, h, td] >> (PathName & "/LTDHN_shares.txt");
+			}}
+			## 
+			print "--------------SAVING EnergyStored shares -----------";
+			printf "Tech_sto\t" > (PathName & "/E_stored.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/E_stored.txt");
+			}
+			for {tech in STORAGE_TECH}{
+				printf "\n %s \t", tech >> (PathName & "/E_stored.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t], l in LAYERS}
+					(if ((Storage_in [y,tech,l,h,td] - Storage_out [y,tech,l,h,td])<0) then (Storage_in [y,tech,l,h,td] - Storage_out [y,tech,l,h,td]) else 0) >> (PathName & "/E_stored.txt");
+			}}
+			## 
+			print "--------------SAVING synthetic fuels -----------";
+			printf "Infrastructure\t" > (PathName & "/Infrastructure.txt");
+			for {y in YEARS }{
+				printf "%s\t", y >> (PathName & "/Infrastructure.txt");
+			}
+			for {tech in INFRASTRUCTURE}{
+				printf "\n %s \t", tech >> (PathName & "/Infrastructure.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					F_t [y,tech, h, td] >> (PathName & "/Infrastructure.txt");
+			}}
+			for {tech in TECHNOLOGIES_OF_END_USES_TYPE["AMMONIA"] union TECHNOLOGIES_OF_END_USES_TYPE["METHANOL"] union TECHNOLOGIES_OF_END_USES_TYPE["HVC"]}{
+				printf "\n %s \t", tech >> (PathName & "/Infrastructure.txt");
+				for {y in YEARS }{
+					printf " %f\t",  sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					F_t [y,tech, h, td] >> (PathName & "/Infrastructure.txt");
+			}}				
+		
+			 
+			for {y in YEARS}{ 
+			################################################################################
+			################################################################################                                                    
+			##																			  ##
+			##                     			SAVING RESULTS								  ##                                                    
+			##																			  ##
+			################################################################################
+			################################################################################
+			
+			let PathName := "output/"&y;	
+			print PathName;
+
+
+			## Saving sets and parameters to output file
+			option show_stats 0; # show statistics
+			option times 0; # show time
+			option gentimes 0; # show time
+
+			## Print cost breakdown to txt file.
+			print "--------------SAVING COSTS -----------";
+			printf "%s\t%s\t%s\t%s\n", "Name", "C_inv", "C_maint", "C_op" > (PathName & "/cost_breakdown.txt"); 
+			for {i in TECHNOLOGIES union RESOURCES}{
+				printf "%s\t%.6f\t%.6f\t%.6f\n", i, if i in TECHNOLOGIES then (tau[y,i] * C_inv[y,i]) else 0, if i in TECHNOLOGIES then C_maint [y,i] else 0, if i in RESOURCES then C_op [y,i] else 0 >> (PathName & "/cost_breakdown.txt");
+			}
+			## Print GWP tech breakdown
+			print "--------------SAVING GWP_TECH -----------";
+			printf "Tech\t" > (PathName & "/cost_op_tech.txt");
+			for {i in RESOURCES diff BIOFUELS diff EXPORT}{
+				printf "%s\t",i >> (PathName & "/cost_op_tech.txt");
+			}
+			for {j in TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", j >> (PathName & "/cost_op_tech.txt");
+				for {i in RESOURCES diff BIOFUELS diff EXPORT}{
+					printf " %f\t",if layers_in_out[y, j, i] == 0 then 0 
+									else
+										sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} 
+										((c_op [y,i] * F_t [y,i, h, td] * t_op [h, td]) * (layers_in_out[y,j, i] * F_t [y,j, h, td]) # The specific resources emissions times the share of the technology
+										/(min(-0.000001,
+										sum{j2 in TECHNOLOGIES diff STORAGE_TECH } 
+										(layers_in_out[y,j2, i] * F_t [y,j2, h, td]) 
+										+ sum {j2 in STORAGE_TECH} ( Storage_out [y,j2, i, h, td] - Storage_in [y,j2, i, h, td] )) #The total share of technologies
+										))
+					>> (PathName & "/cost_op_tech.txt");
+				}
+			}
+						
+			## Print resources breakdown to txt file.
+			print "--------------SAVING RESOURCES -----------";
+			printf "%s\t%s\t%s\n", "Name", "Used", "Potential" > (PathName & "/resources_breakdown.txt"); 
+			for {i in RESOURCES}{
+				printf "%s\t%.6f\t%.6f\n", i, sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,i, h, td] * t_op [h, td]) , avail [y,i] >> (PathName & "/resources_breakdown.txt");
+			}
+
+
+			## Print GWP breakdown
+			print "--------------SAVING GWP -----------";
+			printf "%s\t%s\t%s\n", "Name", "GWP_constr", "GWP_op" > (PathName & "/gwp_breakdown.txt"); 
+			for {i in TECHNOLOGIES union RESOURCES}{
+				printf "%s\t%.6f\t%.6f\n", i, if i in TECHNOLOGIES then GWP_constr [y,i] / lifetime [y,i] else 0, if i in RESOURCES then GWP_op [y,i] else 0 >> (PathName & "/gwp_breakdown.txt");
+			}
+			
+			## Print GWP tech breakdown
+			print "--------------SAVING GWP_TECH -----------";
+			printf "Tech\t" > (PathName & "/gwp_tech.txt");
+			for {i in RESOURCES diff BIOFUELS diff EXPORT}{
+				printf "%s\t",i >> (PathName & "/gwp_tech.txt");
+			}
+			for {j in TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", j >> (PathName & "/gwp_tech.txt");
+				for {i in RESOURCES diff BIOFUELS diff EXPORT}{
+					printf " %f\t",if layers_in_out[y,j, i] == 0 then 0 
+									else
+										sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} 
+										((gwp_op [y,i] * F_t [y,i, h, td] * t_op [h, td]) * (layers_in_out[y,j, i] * F_t [y,j, h, td]) # The specific resources emissions times the share of the technology
+										/(min(-0.000001,
+										sum{j2 in TECHNOLOGIES diff STORAGE_TECH } 
+										(layers_in_out[y,j2, i] * F_t [y,j2, h, td]) 
+										+ sum {j2 in STORAGE_TECH} ( Storage_out [y,j2, i, h, td] - Storage_in [y,j2, i, h, td] )) #The total share of technologies
+										))
+					>> (PathName & "/gwp_tech.txt");
+				}
+			}
+						
+			## Print resources breakdown to txt file.
+			print "--------------SAVING RESOURCES -----------";
+			printf "%s\t%s\t%s\n", "Name", "Used", "Potential" > (PathName & "/resources_breakdown.txt"); 
+			for {i in RESOURCES}{
+				printf "%s\t%.6f\t%.6f\n", i, sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,i, h, td] * t_op [h, td]) , avail [y,i] >> (PathName & "/resources_breakdown.txt");
+			}
+
+
+			## Print GWP breakdown
+			print "--------------SAVING GWP -----------";
+			printf "%s\t%s\t%s\n", "Name", "GWP_constr", "GWP_op" > (PathName & "/gwp_breakdown.txt"); 
+			for {i in TECHNOLOGIES union RESOURCES}{
+				printf "%s\t%.6f\t%.6f\n", i, if i in TECHNOLOGIES then GWP_constr [y,i] / lifetime [y,i] else 0, if i in RESOURCES then GWP_op [y,i] else 0 >> (PathName & "/gwp_breakdown.txt");
+			}
+
+			## Print losses to txt file
+			print "--------------SAVING Losses -----------";
+			printf "%s\t%s\n", "End use", "Losses" > (PathName & "/losses.txt");
+			for {i in END_USES_TYPES}{
+					printf "%s\t%.3f\n",i,  sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t] }(Network_losses [y,i,h,td] * t_op [h,td])  >> (PathName & "/losses.txt");
+			}
+
+			## Print ASSETS to txt file
+			print "--------------SAVING ASSETS -----------";
+			printf "TECHNOLOGIES\t c_inv\t c_maint\t lifetime\t  f_min\t f\t f_max\t fmin_perc\t" > (PathName & "/assets.txt"); 
+			printf "f_perc\t fmax_perc\t c_p\t c_p_max\t tau\t gwp_constr" > (PathName & "/assets.txt"); # Must be split in 2 parts, otherwise too long for GLPK
+			printf "\n UNITS\t[MCHCapitalf/GW]\t [MCHCapitalf/GW]\t [y]\t [GW or GWh]\t" >> (PathName & "/assets.txt"); 
+			printf " [GW or GWh]\t [GW or GWh]\t [0-1]\t [0-1]\t [0-1]\t [0-1]\t [0-1]\t [-]\t [ktCO2-eq./GW or GWh] " >> (PathName & "/assets.txt"); 
+			for {i in END_USES_TYPES, tech in TECHNOLOGIES_OF_END_USES_TYPE[i]}{
+				printf "\n%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t",tech,
+			C_inv[y,tech],C_maint[y,tech],lifetime[y,tech],f_min[y,tech],F[y,tech],f_max[y,tech],
+			fmin_perc[y,tech],
+			sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,tech,h,td] ) / sum {j2 in 
+			TECHNOLOGIES_OF_END_USES_TYPE[i], t2 in PERIODS, h2 in HOUR_OF_PERIOD[t2], td2 in TYPICAL_DAY_OF_PERIOD[t2]} max((F_t [y,j2, h2, 
+			td2] ),0.0001),fmax_perc[y,tech],
+			sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,tech,h,td] * t_op[h,td]) / 8760 / max(F[y,tech],0.0001),
+			c_p[y,tech],tau[y,tech],GWP_constr[y,tech] >> (PathName & "/assets.txt");
+			}
+			for {tech in STORAGE_TECH}{
+				printf "\n%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t",tech,
+			C_inv[y,tech],C_maint[y,tech],lifetime[y,tech],f_min[y,tech],F[y,tech],f_max[y,tech],
+			fmin_perc[y,tech],
+			-1,
+			fmax_perc[y,tech],
+			sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t],l in LAYERS: storage_eff_out [y,tech,l] > 0} -min(0,Storage_out [y,tech, l, h, td] / storage_eff_out [y,tech, l] - Storage_in [y,tech, l, h, td] * storage_eff_in [y,tech, l]) / 8760 / max(F[y,tech],0.0001)
+			,c_p[y,tech],tau[y,tech],GWP_constr[y,tech] >> (PathName & "/assets.txt"); 
+			}
+			for {tech in INFRASTRUCTURE}{
+				printf "\n%s\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t",tech,
+			C_inv[y,tech],C_maint[y,tech],lifetime[y,tech],f_min[y,tech],F[y,tech],f_max[y,tech],
+			fmin_perc[y,tech],
+			-1,
+			fmax_perc[y,tech],
+			sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,tech,h,td] * t_op[h,td]) / 8760 / max(F[y,tech],0.0001)
+			,c_p[y,tech],tau[y,tech],GWP_constr[y,tech] >> (PathName & "/assets.txt"); 
+			}
+
+			# To save time 
+			#    STORAGE distribution CURVES
+			print "--------------SAVING STORAGE -----------";
+			printf "Time\t" > (PathName & "/hourly_data/energy_stored.txt");
+			for {i in STORAGE_TECH }{
+				printf "%s\t", i >> (PathName & "/hourly_data/energy_stored.txt");
+			}
+			for {i in STORAGE_TECH }{
+				printf "%s_in\t" , i >> (PathName & "/hourly_data/energy_stored.txt");
+				printf "%s_out\t", i >> (PathName & "/hourly_data/energy_stored.txt");
+			}
+			for {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}{
+				printf "\n %d\t",t  >> (PathName & "/hourly_data/energy_stored.txt");
+				for {i in STORAGE_TECH}{
+					if F[y,i]=0 then
+						printf "\t" >> (PathName & "/hourly_data/energy_stored.txt");
+					else
+						printf "%f\t", Storage_level[y,i, t] >> (PathName & "/hourly_data/energy_stored.txt");
+				}
+				for {i in STORAGE_TECH}{
+					if F[y,i]=0 then
+						printf "\t\t" >> (PathName & "/hourly_data/energy_stored.txt");
+					else {
+						printf "%f\t", (sum {l in LAYERS: storage_eff_in [y,i,l] > 0}-(Storage_in [y,i, l, h, td] * storage_eff_in [y,i, l]))	>> (PathName & "/hourly_data/energy_stored.txt");
+						printf "%f\t", (sum {l in LAYERS: storage_eff_in [y,i,l] > 0}	(Storage_out [y,i, l, h, td] / storage_eff_out [y,i, l]))	>> (PathName & "/hourly_data/energy_stored.txt");
+					}
+				}
+			}
+
+			# LAYERS FLUXES
+			print "--------------SAVING LAYERS -----------";
+				for {l in LAYERS}{
+				printf "Td \t Time\t" > (PathName & "/hourly_data/layer_" & l &".txt"); 
+				for {i in RESOURCES union TECHNOLOGIES diff STORAGE_TECH }{
+					printf "%s\t",i >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+				}
+				for {j in STORAGE_TECH }{
+					printf "%s_Pin\t",j >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+					printf "%s_Pout\t",j >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+				}
+				printf "END_USE\t" >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+	
+				for {td in TYPICAL_DAYS, h in HOURS}{
+					printf "\n %d \t %d\t",td,h   >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+					for {i in RESOURCES}{
+						if layers_in_out[y, i, l] = 0 then # Incompatible
+							printf "\t" >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+						else 	
+							printf "%f\t",(layers_in_out [y, i, l] * F_t [y,i, h, td]) >> (PathName & "/hourly_data/layer_" & l &".txt"); 								
+					}
+					for {i in TECHNOLOGIES diff STORAGE_TECH}{
+						if layers_in_out [y, i, l] = 0 then # Incompatible
+							printf "\t" >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+						else{ 	
+							if F[y,i] = 0 then #No technology installed
+								printf "\t" >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+							else {
+								printf "%f\t",(layers_in_out [y, i, l] * F_t [y,i, h, td]) >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+						}}							
+					}
+					for {j in STORAGE_TECH}{
+						if storage_eff_in[y,j, l] = 0 then # Incompatible
+							printf "\t\t" >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+						else { 	
+							if F[y,j] = 0 then #No storage
+								printf "\t\t" >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+							else {
+								printf "%f\t",(-Storage_in [y,j, l, h, td]) >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+								printf "%f\t", (Storage_out [y,j, l, h, td])>> (PathName & "/hourly_data/layer_" & l &".txt"); 
+						}}		
+					}
+					printf "%f\t", -End_uses [y,l, h, td]  >> (PathName & "/hourly_data/layer_" & l &".txt"); 
+				}
+			}
+			 
+
+			
+			## Energy yearly balance
+			printf "Tech\t" > (PathName & "/year_balance.txt");
+			for {l in LAYERS}{
+				printf "%s\t",l >> (PathName & "/year_balance.txt");
+			}
+			for {i in RESOURCES union TECHNOLOGIES diff STORAGE_TECH}{
+				printf "\n %s \t", i >> (PathName & "/year_balance.txt");
+				for {l in LAYERS}{
+					printf " %f\t", sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+			layers_in_out [y, i, l] * F_t [y,i, h, td] >> (PathName & "/year_balance.txt");
+				}
+			}
+			for {j in STORAGE_TECH}{
+				printf "\n %s \t", j >> (PathName & "/year_balance.txt");
+				for {l in LAYERS}{
+					printf " %f\t", sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+			(Storage_out [y,j, l, h, td] - Storage_in [y,j, l, h, td]) >> (PathName & "/year_balance.txt");
+				}
+			}
+			printf "\n END_USES_DEMAND \t" >> (PathName & "/year_balance.txt");
+			for {l in LAYERS}{
+				printf " %f\t", sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					End_uses [y,l, h, td] >> (PathName & "/year_balance.txt");
+			}
+
+
+			
+
+			
+
+			################################################################################
+			################################################################################                                                    
+			##																			  ##
+			##                     			    SANKEY 	     							  ##                                                    
+			##																			  ##
+			################################################################################
+			################################################################################
+
+
+			print "--------- SAVING SANKEY --------";
+
+			## Generate CSV file to be used as input to Sankey diagram
+			# Notes:
+			# - Assuming that SNG and BioOil are used in boilers
+			printf "%s,%s,%s,%s,%s,%s\n", "source" , "target", "realValue", "layerID", "layerColor", "layerUnit" > (PathName & "/input2sankey.csv");
+			
+			#------------------------------------------
+			# SANKEY - RESOURCES
+			#------------------------------------------
+## Ammonia
+				# AMMONIA and AMMONIA_RE
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "AMMONIA", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Ammonia" , "Ammonia", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "AMMONIA","AMMONIA"] * F_t [y, "AMMONIA", h, td]  ) / 1000 , "Ammonia", 
+				"#000ECD", "TWh" >> (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "AMMONIA_RE", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. RE Ammonia" , "Ammonia", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "AMMONIA_RE","AMMONIA"] * F_t [y, "AMMONIA_RE", h, td]  ) / 1000 , "Ammonia", 
+				"#000ECD", "TWh" >> (PathName & "/input2sankey.csv"); 
+			}
+				# AMMONIA to NED
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (End_uses [y, "AMMONIA", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Ammonia" , "Non-energy demand", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										End_uses [y, "AMMONIA", h, td]   / 1000 , "Ammonia", 
+				"#000ECD", "TWh" >> (PathName & "/input2sankey.csv");
+			}
+				# HABER_BOSCH
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "HABER_BOSCH", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Haber-Bosch", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(-layers_in_out [y, "HABER_BOSCH","H2"] * F_t [y, "HABER_BOSCH", h, td]  ) / 1000 , "H2", 
+				"#FF00FF", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Haber-Bosch", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(-layers_in_out [y, "HABER_BOSCH","ELECTRICITY"] * F_t [y, "HABER_BOSCH", h, td]  ) / 1000 , "Electricity", 
+				"#00BFFF", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Haber-Bosch" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "HABER_BOSCH","HEAT_LOW_T_DHN"] * F_t [y, "HABER_BOSCH", h, td]  ) / 1000 , "DHN", 
+				"#FA8072", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Haber-Bosch" , "Ammonia", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "HABER_BOSCH","AMMONIA"] * F_t [y, "HABER_BOSCH", h, td]  ) / 1000 , "Ammonia", 
+				"#000ECD", "TWh" >> (PathName & "/input2sankey.csv");
+			}			
+				# AMMONIA to CCGT
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "CCGT_AMMONIA", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Ammonia" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(-layers_in_out [y, "CCGT_AMMONIA","AMMONIA"] * F_t [y, "CCGT_AMMONIA", h, td]  ) / 1000 , "Ammonia", 
+				"#000ECD", "TWh" >> (PathName & "/input2sankey.csv");
+			}		
+				# AMMONIA to H2
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "AMMONIA_TO_H2", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Ammonia" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(-layers_in_out [y, "AMMONIA_TO_H2","AMMONIA"] * F_t [y, "AMMONIA_TO_H2", h, td]  ) / 1000 , "H2",
+				"#FF00FF", "TWh" >> (PathName & "/input2sankey.csv");
+			}
+		
+			## Methanol
+				# METHANOL and METHANOL_RE
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "METHANOL", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Methanol" , "Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "METHANOL","METHANOL"] * F_t [y, "METHANOL", h, td]  ) / 1000 , "Methanol", 
+				"#CC0066", "TWh" >> (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "METHANOL_RE", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. RE Methanol" , "Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "METHANOL_RE","METHANOL"] * F_t [y, "METHANOL_RE", h, td]  ) / 1000 , "Methanol", 
+				"#CC0066", "TWh" >> (PathName & "/input2sankey.csv");
+			}
+
+				# METHANE_TO_METHANOL
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "METHANE_TO_METHANOL", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "Methane-to-Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "METHANE_TO_METHANOL","GAS"] * F_t [y, "METHANE_TO_METHANOL", h, td]  ) / 1000 , "Gas", "#FFD700", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methane-to-Methanol" , "Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "METHANE_TO_METHANOL","METHANOL"] * F_t [y, "METHANE_TO_METHANOL", h, td]  ) / 1000 , "Methanol", "#CC0066", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				}
+			
+				# BIOMASS_TO_METHANOL
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "BIOMASS_TO_METHANOL", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "Gasifi. to Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "BIOMASS_TO_METHANOL","WOOD"] * F_t [y, "BIOMASS_TO_METHANOL", h, td]  ) / 1000 , "Wood", "#CD853F", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi. to Methanol" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "BIOMASS_TO_METHANOL","ELECTRICITY"] * F_t [y, "BIOMASS_TO_METHANOL", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" >>
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi. to Methanol" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "BIOMASS_TO_METHANOL","HEAT_LOW_T_DHN"] * F_t [y, "BIOMASS_TO_METHANOL", h, td]  ) / 1000 , "DHN", "#FA8072", "TWh" >>
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi. to Methanol" , "Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "BIOMASS_TO_METHANOL","METHANOL"] * F_t [y, "BIOMASS_TO_METHANOL", h, td]  ) / 1000 , "Methanol", "#CC0066", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				}
+
+				# SYN_METHANOLATION
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "SYN_METHANOLATION", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Methanolation", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "SYN_METHANOLATION","WOOD"] * F_t [y, "SYN_METHANOLATION", h, td]  ) / 1000 , "H2", "#FF00FF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Methanolation", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "SYN_METHANOLATION","ELECTRICITY"] * F_t [y, "SYN_METHANOLATION", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanolation" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "SYN_METHANOLATION","HEAT_LOW_T_DHN"] * F_t [y, "SYN_METHANOLATION", h, td]  ) / 1000 , "DHN", "#FA8072", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanolation" , "Methanol", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "SYN_METHANOLATION","METHANOL"] * F_t [y, "SYN_METHANOLATION", h, td]  ) / 1000 , "Methanol", "#CC0066", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				}
+
+				# METHANOL_TO_NED
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (End_uses [y, "METHANOL", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanol" , "Non-energy demand", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										End_uses [y, "METHANOL", h, td]   / 1000 , "Methanol", 
+				"#CC0066", "TWh" >> (PathName & "/input2sankey.csv");
+			}
+
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "CAR_METHANOL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanol" , "Mob priv", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "CAR_METHANOL","METHANOL"] * F_t [y, "CAR_METHANOL", h, td]  ) / 1000 , "Methanol", 
+					"#CC0066", "TWh" >> (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} ((F_t [y, "BUS_COACH_DIESEL", h, td] + 
+			F_t[y, "BUS_COACH_HYDIESEL", h, td])  ) > 10 then
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} ((F_t [y, "BOAT_FREIGHT_METHANOL", h, td] + F_t [y, "BOAT_FREIGHT_METHANOL", h, td] )  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanol" , "Freight", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "BOAT_FREIGHT_METHANOL","METHANOL"] * F_t [y, "BOAT_FREIGHT_METHANOL", h, td]  -layers_in_out [y, "BOAT_FREIGHT_METHANOL","METHANOL"] * F_t [y, "BOAT_FREIGHT_METHANOL", h, td]  ) / 1000 , "Methanol", "#CC0066", "TWh" 
+					> (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} ((F_t [y, "TRUCK_METHANOL", h, td] + F_t [y, "TRUCK_METHANOL", h, td] )  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanol" , "Freight", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "TRUCK_METHANOL","METHANOL"] * F_t [y, "TRUCK_METHANOL", h, td]  -layers_in_out [y, "TRUCK_METHANOL","METHANOL"] * F_t [y, "TRUCK_METHANOL", h, td]  ) / 1000 , "Methanol", "#CC0066", "TWh" 
+					> (PathName & "/input2sankey.csv");
+
+			## HVC
+				# OIL_TO_HVC
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y, "OIL_TO_HVC", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Oil", "NSC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(-layers_in_out [y, "OIL_TO_HVC","LFO"] * F_t [y, "OIL_TO_HVC", h, td]  ) / 1000 , "Naphtha", 
+				"#8B008B", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "NSC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(-layers_in_out [y, "OIL_TO_HVC","ELECTRICITY"] * F_t [y, "OIL_TO_HVC", h, td]  ) / 1000 , "Electricity", 
+				"#00BFFF", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HT ?" , "NSC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(- layers_in_out [y, "OIL_TO_HVC","HEAT_HIGH_T"] * F_t [y, "OIL_TO_HVC", h, td]  ) / 1000 ,
+					"Heat HT", "#DC143C", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "NSC", "HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out [y, "OIL_TO_HVC","HVC"] * F_t [y, "OIL_TO_HVC", h, td]  ) / 1000 , "HVC", 
+				"#00FFFF", "TWh" >> (PathName & "/input2sankey.csv");
+				}
+
+				# GAS_TO_HVC
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "GAS_TO_HVC", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "OCM", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "GAS_TO_HVC","GAS"] * F_t [y, "GAS_TO_HVC", h, td]  ) / 1000 , "Gas", "#FFD700", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "OCM", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "GAS_TO_HVC","ELECTRICITY"] * F_t [y, "GAS_TO_HVC", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "OCM" , "HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "GAS_TO_HVC","HVC"] * F_t [y, "GAS_TO_HVC", h, td]  ) / 1000 , "HVC", "#00FFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				}
+				
+				# BIOMASS_TO_HVC
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "BIOMASS_TO_HVC", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "Gasifi. to HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "BIOMASS_TO_HVC","WOOD"] * F_t [y, "BIOMASS_TO_HVC", h, td]  ) / 1000 , "Wood", "#CD853F", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Gasifi. to HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "BIOMASS_TO_HVC","ELECTRICITY"] * F_t [y, "BIOMASS_TO_HVC", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HT ?" , "Gasifi. to HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(- layers_in_out [y, "BIOMASS_TO_HVC","HEAT_HIGH_T"] * F_t [y, "BIOMASS_TO_HVC", h, td]  ) / 1000 ,
+					"Heat HT", "#DC143C", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi. to HVC" , "HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "BIOMASS_TO_HVC","HVC"] * F_t [y, "BIOMASS_TO_HVC", h, td]  ) / 1000 , "HVC", "#00FFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				}
+
+				# METHANOL_TO_HVC
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, "METHANOL_TO_HVC", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Methanol" , "MTO", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out [y, "METHANOL_TO_HVC","METHANOL"] * F_t [y, "METHANOL_TO_HVC", h, td]  ) / 1000 , "Methanol", "#CC0066", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HT ?" , "MTO", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(- layers_in_out [y, "METHANOL_TO_HVC","HEAT_HIGH_T"] * F_t [y, "METHANOL_TO_HVC", h, td]  ) / 1000 ,
+					"Heat HT", "#DC143C", "TWh" >> (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "MTO" , "HVC", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out [y, "METHANOL_TO_HVC","HVC"] * F_t [y, "METHANOL_TO_HVC", h, td]  ) / 1000 , "HVC", "#00FFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				}
+				# HVC_TO_NED
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (End_uses [y, "HVC", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HVC" , "Non-energy demand", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										End_uses [y, "HVC", h, td]   / 1000 , "HVC", "#00FFFF", "TWh"
+				>> (PathName & "/input2sankey.csv");
+			}
+			
+			## Gasoline
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"GASOLINE", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Gasoline" , "Gasoline", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out[y,"GASOLINE","GASOLINE"] * F_t [y,"GASOLINE", h, td]  ) / 1000 , "Gasoline", 
+				"#808080", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasoline", "Mob priv", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out[y,"CAR_GASOLINE","GASOLINE"] * F_t [y,"CAR_GASOLINE", h, td]  + layers_in_out[y,"CAR_HEV","GASOLINE"] * F_t [y,"CAR_HEV", h, td]   + layers_in_out[y,"CAR_PHEV","GASOLINE"] * F_t [y,"CAR_PHEV", h, td]  ) / 1000 , "Gasoline", 
+				"#808080", "TWh" > (PathName & "/input2sankey.csv");
+				}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"BIOETHANOL", h, td]  ) > 10 then 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Bio-ethanol" , "Gasoline", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+										(layers_in_out[y,"BIOETHANOL","GASOLINE"] * F_t [y,"BIOETHANOL", h, td]  ) / 1000 , "Gasoline", 
+				"#808080", "TWh" > (PathName & "/input2sankey.csv");
+				
+			## Diesel
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DIESEL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Diesel" , "Diesel", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"DIESEL","DIESEL"] * F_t [y,"DIESEL", h, td]  ) / 1000 , "Diesel", 
+					"#D3D3D3", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"BIODIESEL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Bio-diesel" , "Diesel", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"BIODIESEL","DIESEL"] * F_t [y,"BIODIESEL", h, td]  ) / 1000 , "Diesel", 
+					"#D3D3D3", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"CAR_DIESEL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Diesel" , "Mob priv", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"CAR_DIESEL","DIESEL"] * F_t [y,"CAR_DIESEL", h, td]  ) / 1000 , "Diesel", 
+					"#D3D3D3", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} ((F_t [y,"BUS_COACH_DIESEL", h, td] + 
+			F_t [y,"BUS_COACH_HYDIESEL", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Diesel" , "Mob public", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"BUS_COACH_DIESEL","DIESEL"] * F_t [y,"BUS_COACH_DIESEL", h, td]   - 
+					layers_in_out[y,"BUS_COACH_HYDIESEL","DIESEL"] * F_t [y,"BUS_COACH_HYDIESEL", h, td]   ) / 1000 , "Diesel", "#D3D3D3", "TWh" 
+					> (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} ((F_t [y,"TRUCK_DIESEL", h, td] + F_t [y,"BOAT_FREIGHT_DIESEL", h, td] )  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Diesel" , "Freight", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"TRUCK_DIESEL","DIESEL"] * F_t [y,"TRUCK_DIESEL", h, td]  -layers_in_out[y,"BOAT_FREIGHT_DIESEL","DIESEL"] * F_t [y,"BOAT_FREIGHT_DIESEL", h, td]  ) / 1000 , "Diesel", "#D3D3D3", "TWh" 
+					> (PathName & "/input2sankey.csv");
+			
+			## Gas (natural & synthetic)
+			if sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"GAS", h, td] * t_op [h, td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. NG" , "Gas", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"GAS", h, td] * t_op [h, td]) / 1000 , "Gas", "#FFD700", "TWh" > 
+					(PathName & "/input2sankey.csv");
+					
+			if sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"GAS_RE", h, td] * t_op [h, td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. SNG" , "Gas", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"GAS_RE", h, td] * t_op [h, td]) / 1000 , "Gas", "#FFD700", "TWh" > 
+					(PathName & "/input2sankey.csv");
+					# SNG use: 
+			 # Storage? 
+			if F [y,"GAS_STORAGE"] > 0.001 then {
+					printf "%s,%s,%.2f,%s,%s,%s\n", "Gas Prod" , "SNG sto.", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(Storage_in [y,"GAS_STORAGE", "GAS", h, td]  ) / 1000 , 
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+					printf "%s,%s,%.2f,%s,%s,%s\n", "SNG sto." , "Gas", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(Storage_out [y,"GAS_STORAGE", "GAS", h, td]*storage_eff_out [y,"GAS_STORAGE","GAS"]  ) / 1000 , 
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+					printf "%s,%s,%.2f,%s,%s,%s\n", "Gas Prod" , "Gas", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"GASIFICATION_SNG","GAS"] * F_t [y,"GASIFICATION_SNG", h, td] + layers_in_out[y,"BIOMETHANATION","GAS"] * F_t [y,"BIOMETHANATION", h, td] + layers_in_out[y,"BIO_HYDROLYSIS","GAS"] * F_t [y,"BIO_HYDROLYSIS", h, td] + layers_in_out[y,"SYN_METHANATION","GAS"] * F_t [y,"SYN_METHANATION", h, td]
+											  - Storage_in [y,"GAS_STORAGE", "GAS", h, td] ) / 1000 , 
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+					
+			}
+			if F [y,"GAS_STORAGE"] <= 0.001 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas Prod" , "Gas", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"GASIFICATION_SNG","GAS"] * F_t [y,"GASIFICATION_SNG", h, td] + layers_in_out[y,"BIOMETHANATION","GAS"] * F_t [y,"BIOMETHANATION", h, td] + layers_in_out[y,"BIO_HYDROLYSIS","GAS"] * F_t [y,"BIO_HYDROLYSIS", h, td] + layers_in_out[y,"SYN_METHANATION","GAS"] * F_t [y,"SYN_METHANATION", h, td]
+											  - Storage_in [y,"GAS_STORAGE", "GAS", h, td] ) / 1000 , 
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"CAR_NG", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "Mob priv", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"CAR_NG","GAS"] * F_t [y,"CAR_NG", h, td]  ) / 1000 , "GAS", "#FFD700", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"BUS_COACH_CNG_STOICH", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "Mob public", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"BUS_COACH_CNG_STOICH","GAS"] * F_t [y,"BUS_COACH_CNG_STOICH", h, td]  ) / 1000 , 
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"BOAT_FREIGHT_NG", h, td] + F_t [y,"TRUCK_NG", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "Freight", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"BOAT_FREIGHT_NG","GAS"] * F_t [y,"BOAT_FREIGHT_NG", h, td] -layers_in_out[y,"TRUCK_NG","GAS"] * F_t [y,"TRUCK_NG", h, td]  ) / 1000 , 
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"SMR", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "H2 prod", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"SMR","GAS"] * F_t [y,"SMR", h, td]  ) / 1000 , "GAS", "#FFD700", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"CCGT", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"CCGT","GAS"] * F_t [y,"CCGT", h, td]  ) / 1000 , "GAS", "#FFD700", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_COGEN_GAS", h, td] + F_t [y,"DHN_COGEN_GAS", h, 
+				td] + F_t [y,"DEC_COGEN_GAS", h, td] + F_t [y,"DEC_ADVCOGEN_GAS", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "CHP", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_COGEN_GAS","GAS"] * F_t [y,"IND_COGEN_GAS", h, td]   - 
+					layers_in_out[y,"DHN_COGEN_GAS","GAS"] * F_t [y,"DHN_COGEN_GAS", h, td]   - layers_in_out[y,"DEC_COGEN_GAS","GAS"] * F_t 
+					[y,"DEC_COGEN_GAS", h, td]   - layers_in_out[y,"DEC_ADVCOGEN_GAS","GAS"] * F_t [y,"DEC_ADVCOGEN_GAS", h, td]  ) / 
+					1000 , "GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DEC_THHP_GAS", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "HPs", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"DEC_THHP_GAS","GAS"] * F_t [y,"DEC_THHP_GAS", h, td]  ) / 1000 , "GAS", "#FFD700", 
+					"TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_BOILER_GAS", h, td] + F_t [y,"DHN_BOILER_GAS", h, td] + F_t [y,"DEC_BOILER_GAS", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gas" , "Boilers", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_BOILER_GAS","GAS"] * F_t [y,"IND_BOILER_GAS", h, td]   - 
+					layers_in_out[y,"DHN_BOILER_GAS","GAS"] * F_t [y,"DHN_BOILER_GAS", h, td]   - layers_in_out[y,"DEC_BOILER_GAS","GAS"] * F_t 
+					[y,"DEC_BOILER_GAS", h, td]  ) / 1000 , "GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+			
+			## Electricity production
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"ELECTRICITY", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Electricity" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"ELECTRICITY","ELECTRICITY"] * F_t [y,"ELECTRICITY", h, td]  ) / 1000 , 
+					"Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"NUCLEAR", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Uranium" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( - layers_in_out[y,"NUCLEAR","URANIUM"] * F_t [y,"NUCLEAR", h, td]  ) / 1000 , "Nuclear", 
+					"#FFC0CB", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"WIND_ONSHORE", h, td] + F_t [y,"WIND_OFFSHORE", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wind" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"WIND_ONSHORE","ELECTRICITY"] * F_t [y,"WIND_ONSHORE", h, td] + layers_in_out[y,"WIND_OFFSHORE","ELECTRICITY"] * F_t [y,"WIND_OFFSHORE", h, td]  ) / 1000 , "Wind", "#27AE34", "TWh" 
+					> (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"HYDRO_RIVER", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Hydro River" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"HYDRO_RIVER","ELECTRICITY"] * F_t [y,"HYDRO_RIVER", h, td]   ) / 1000 , "Hydro River", "#0000FF", 
+					"TWh" > (PathName & "/input2sankey.csv");
+			
+			# Coal
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"COAL_US", h, td] + F_t [y,"COAL_IGCC", h, td]) ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Coal" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"COAL_US","COAL"] * F_t [y,"COAL_US", h, td]   - layers_in_out[y,"COAL_IGCC","COAL"] 
+					* F_t [y,"COAL_IGCC", h, td]  ) / 1000 , "Coal", "#A0522D", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"IND_BOILER_COAL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Coal" , "Boilers", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_BOILER_COAL","COAL"] * F_t [y,"IND_BOILER_COAL", h, td]  ) / 1000 , "Coal", 
+					"#A0522D", "TWh" > (PathName & "/input2sankey.csv");
+			
+			# Solar
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"PV", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Solar" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"PV","ELECTRICITY"] * F [y,"PV"] * c_p_t["PV",h,td]  ) / 1000 , "Solar", "#FFFF00", "TWh" > #From F_t -> F <=> taking into account curtailment
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DEC_SOLAR", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Solar" , "Dec. sto", sum{i in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"},j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					                                                            (layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td]/max((layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]) + layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td],0.0001)
+																				* max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 ))/1000,
+					 "Solar", "#FFFF00", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Solar" , "Heat LT Dec", sum{i in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"},j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td] - (layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td]/max((layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td])  + layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td],0.0001) 
+																				* max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 )))/1000,
+					 "Solar", "#FFFF00", "TWh" > (PathName & "/input2sankey.csv");
+					}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DHN_SOLAR", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Solar" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"DHN_SOLAR","HEAT_LOW_T_DHN"] * F [y,"DHN_SOLAR"] * c_p_t["DHN_SOLAR",h,td]  ) / 1000 , "Solar", "#FFFF00", "TWh" > #From F_t -> F <=> taking into account curtailment
+					(PathName & "/input2sankey.csv");		
+
+			# Geothermal
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"GEOTHERMAL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Geothermal" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+			TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"GEOTHERMAL","ELECTRICITY"] * F_t [y,"GEOTHERMAL", h, td]  ) / 1000 , "Geothermal", 
+			"#FF0000", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DHN_DEEP_GEO", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Geothermal" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+			TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"DHN_DEEP_GEO","HEAT_LOW_T_DHN"] * F_t [y,"DHN_DEEP_GEO", h, td]  ) / 1000 , 
+			"Geothermal", "#FF0000", "TWh" > (PathName & "/input2sankey.csv");
+			
+			# Waste
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_COGEN_WASTE", h, td] + F_t 
+			[y,"DHN_COGEN_WASTE", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Waste" , "CHP", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_COGEN_WASTE","WASTE"] * F_t [y,"IND_COGEN_WASTE", h, td]   
+					-layers_in_out[y,"DHN_COGEN_WASTE","WASTE"] * F_t [y,"DHN_COGEN_WASTE", h, td]  ) / 1000 , "Waste", "#808000", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"IND_BOILER_WASTE", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Waste" , "Boilers", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_BOILER_WASTE","WASTE"] * F_t [y,"IND_BOILER_WASTE", h, td]  ) / 1000 , 
+					"Waste", "#808000", "TWh" > (PathName & "/input2sankey.csv");
+			
+			# Oil
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"LFO", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. Oil" , "Oil", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(-layers_in_out[y,"LFO","LFO"] * F_t [y,"LFO", h, td]  ) / 1000 , "Oil", 
+					"#8B008B", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"DEC_COGEN_OIL", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Oil" , "CHP", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"DEC_COGEN_OIL","LFO"] * F_t [y,"DEC_COGEN_OIL", h, td]  ) / 1000 , "Oil", 
+					"#8B008B", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_BOILER_OIL", h, td] + F_t [y,"DHN_BOILER_OIL", 
+			h, td] + F_t [y,"DEC_BOILER_OIL", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Oil" , "Boilers", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_BOILER_OIL","LFO"] * F_t [y,"IND_BOILER_OIL", h, td]   - 
+					layers_in_out[y,"DHN_BOILER_OIL","LFO"] * F_t [y,"DHN_BOILER_OIL", h, td]   - layers_in_out[y,"DEC_BOILER_OIL","LFO"] * 
+					F_t [y,"DEC_BOILER_OIL", h, td]  ) / 1000 , "Oil", "#8B008B", "TWh" > (PathName & "/input2sankey.csv");
+			
+			# Wood
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"H2_BIOMASS", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "H2 prod", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"H2_BIOMASS","WOOD"] * F_t [y,"H2_BIOMASS", h, td]  ) / 1000 , "Wood", "#CD853F", 
+					"TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_COGEN_WOOD", h, td] + F_t [y,"DHN_COGEN_WOOD", 
+			h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "CHP", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_COGEN_WOOD","WOOD"] * F_t [y,"IND_COGEN_WOOD", h, td]   - 
+					layers_in_out[y,"DHN_COGEN_WOOD","WOOD"] * F_t [y,"DHN_COGEN_WOOD", h, td]  ) / 1000 , "Wood", "#CD853F", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_BOILER_WOOD", h, td] + F_t 
+			[y,"DHN_BOILER_WOOD", h, td] + F_t [y,"DEC_BOILER_WOOD", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "Boilers", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"IND_BOILER_WOOD","WOOD"] * F_t [y,"IND_BOILER_WOOD", h, td]   - 
+					layers_in_out[y,"DHN_BOILER_WOOD","WOOD"] * F_t [y,"DHN_BOILER_WOOD", h, td]   - layers_in_out[y,"DEC_BOILER_WOOD","WOOD"] * 
+					F_t [y,"DEC_BOILER_WOOD", h, td]  ) / 1000 , "Wood", "#CD853F", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"GASIFICATION_SNG", h, td] )  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "Gasifi.", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"GASIFICATION_SNG","WOOD"]           * F_t [y,"GASIFICATION_SNG", h, td] ) / 1000 , "Wood", "#CD853F", "TWh" >(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi." , "Gas Prod" , sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"GASIFICATION_SNG","GAS"]        * F_t [y,"GASIFICATION_SNG", h, td] ) / 1000 , "GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi." , "DHN" , sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"GASIFICATION_SNG","HEAT_LOW_T_DHN"] * F_t [y,"GASIFICATION_SNG", h, td] ) / 1000 , "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv"); 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Gasifi." , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"GASIFICATION_SNG","ELECTRICITY"]    * F_t [y,"GASIFICATION_SNG", h, td] ) / 1000 , "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			
+			# WET Biomass
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DHN_COGEN_WET_BIOMASS", h, td] + F_t [y,"DHN_COGEN_BIO_HYDROLYSIS", h, td]) > 10 then 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wet biomass" , "CHP", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"DHN_COGEN_WET_BIOMASS","WET_BIOMASS"] * F_t [y,"DHN_COGEN_WET_BIOMASS", h, td] -layers_in_out[y,"DHN_COGEN_BIO_HYDROLYSIS","WET_BIOMASS"] * F_t [y,"DHN_COGEN_BIO_HYDROLYSIS", h, td] ) / 1000 
+					, "Wood", "#CD853F", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"BIOMETHANATION", h, td] + F_t [y,"BIO_HYDROLYSIS", h, td] ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wet biomass" , "Biomethanation", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(- layers_in_out[y,"BIOMETHANATION","WET_BIOMASS"] * F_t [y,"BIOMETHANATION", h, td] - layers_in_out[y,"BIO_HYDROLYSIS","WET_BIOMASS"] * F_t [y,"BIO_HYDROLYSIS", h, td] ) / 1000 
+					, "Wood", "#CD853F", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Biomethanation" , "Gas Prod", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(  layers_in_out[y,"BIOMETHANATION","GAS"]          * F_t [y,"BIOMETHANATION", h, td] + layers_in_out[y,"BIO_HYDROLYSIS","GAS"]          * F_t [y,"BIO_HYDROLYSIS", h, td] ) / 1000 ,
+					"GAS", "#FFD700", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"BIO_HYDROLYSIS", h, td] ) > 10 then 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Biomethanation" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"BIO_HYDROLYSIS","ELECTRICITY"] * F_t [y,"BIO_HYDROLYSIS", h, td] ) / 1000 
+					, "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+
+			#------------------------------------------
+			# SANKEY - Electricity use
+			#------------------------------------------
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"CAR_PHEV", h, td] + F_t [y,"CAR_BEV", h, td]) ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Mob priv", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"CAR_PHEV","ELECTRICITY"] * F_t [y,"CAR_PHEV", h, td]   - 
+					layers_in_out[y,"CAR_BEV","ELECTRICITY"] * F_t [y,"CAR_BEV", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"TRAIN_PUB", h, td] + F_t [y,"TRAMWAY_TROLLEY", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Mob public", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"TRAIN_PUB","ELECTRICITY"] * F_t [y,"TRAIN_PUB", h, td]   - 
+					layers_in_out[y,"TRAMWAY_TROLLEY","ELECTRICITY"] * F_t [y,"TRAMWAY_TROLLEY", h, td]  ) / 1000 , "Electricity", "#00BFFF", 
+					"TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"TRAIN_FREIGHT", h, td] + F_t [y,"TRUCK_ELEC", h, td])  > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Freight", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"TRAIN_FREIGHT","ELECTRICITY"] * F_t [y,"TRAIN_FREIGHT", h, td] -layers_in_out[y,"TRUCK_ELEC","ELECTRICITY"] * F_t [y,"TRUCK_ELEC", h, td]  ) / 1000 , 
+					"Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(Network_losses [y,"ELECTRICITY", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Exp & Loss", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(Network_losses 
+					[y,"ELECTRICITY", h, td]     ) / 1000 
+					, "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"ELEC_EXPORT", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Curt.", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(-layers_in_out[y,"ELEC_EXPORT","ELECTRICITY"] * F_t [y,"ELEC_EXPORT", h, td]     ) / 1000 
+					, "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(End_uses [y,"ELECTRICITY", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Elec demand", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(End_uses 
+					[y,"ELECTRICITY", h, td]  - Network_losses [y,"ELECTRICITY", h, td] - sum {i in STORAGE_OF_END_USES_TYPES["ELECTRICITY"]} (max(Storage_out [y,i, "ELECTRICITY", h, td] - Storage_in [y,i, "ELECTRICITY", h, td],0))   
+					)/ 1000 , "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");		
+			#In case of curtailment ( F_t < F * c_p_t) solar & wind
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F [y,"PV"] * c_p_t["PV",h,td] -  F_t [y,"PV",h,td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Solar" , "Curt.", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(F[y,"PV"]*c_p_t["PV",h,td] -  F_t [y,"PV",h,td])  / 1000 
+					, "Solar", "#FFFF00", "TWh" > (PathName & "/input2sankey.csv");	
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F [y,"WIND_ONSHORE"]*c_p_t["WIND_ONSHORE",h,td] -  F_t [y,"WIND_ONSHORE",h,td] + F [y,"WIND_OFFSHORE"]*c_p_t["WIND_OFFSHORE",h,td] -  F_t [y,"WIND_OFFSHORE",h,td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wind" , "Curt.", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(F [y,"WIND_ONSHORE"]*c_p_t["WIND_ONSHORE",h,td] -  F_t [y,"WIND_ONSHORE",h,td] + F [y,"WIND_OFFSHORE"]*c_p_t["WIND_OFFSHORE",h,td] -  F_t [y,"WIND_OFFSHORE",h,td])  / 1000 
+					, "Wind", "#27AE34", "TWh"  > (PathName & "/input2sankey.csv");		
+			# New boxes for Electricity storage
+			if sum{i in STORAGE_OF_END_USES_TYPES["ELECTRICITY"], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(Storage_in [y,i, "ELECTRICITY", h, td]) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Storage", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}       (sum {i 
+					in STORAGE_OF_END_USES_TYPES["ELECTRICITY"] } max(- Storage_out [y,i, "ELECTRICITY", h, td] + Storage_in [y,i, "ELECTRICITY", h, td] ,0))/ 1000 , "Electricity", "#00BFFF", 
+					"TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Storage" , "Elec demand", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(sum {i 
+					in STORAGE_OF_END_USES_TYPES["ELECTRICITY"] } max(+ Storage_out [y,i, "ELECTRICITY", h, td] - Storage_in [y,i, "ELECTRICITY", h, td] ,0))/ 1000 , "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			# Electrification of heat
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"DHN_HP_ELEC", h, td] + F_t [y,"DEC_HP_ELEC", h, td]) ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "HPs", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(-layers_in_out[y,"DHN_HP_ELEC","ELECTRICITY"] * F_t [y,"DHN_HP_ELEC", h, td]   
+					 -layers_in_out[y,"DEC_HP_ELEC","ELECTRICITY"] * F_t [y,"DEC_HP_ELEC", h, td]  ) 
+					 / 1000 , "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DEC_DIRECT_ELEC", h, td]  ) > 10 then {
+				if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} max(Storage_in [y,"DEC_DIRECT_ELEC" , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,"DEC_DIRECT_ELEC" , "HEAT_LOW_T_DECEN", h, td],0 ) > 10 then {
+					printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Dec. sto", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+																											((layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t [y,"DEC_DIRECT_ELEC",h,td]/max((layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t [y,"DEC_DIRECT_ELEC",h,td]) + layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t_solar [y,"DEC_DIRECT_ELEC",h,td],0.0001)
+																											* max(Storage_in [y,"DEC_DIRECT_ELEC" , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,"DEC_DIRECT_ELEC" , "HEAT_LOW_T_DECEN", h, td],0 )))/1000,
+					"Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+				}
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Heat LT Dec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					((layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t [y,"DEC_DIRECT_ELEC",h,td]) - (layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t [y,"DEC_DIRECT_ELEC",h,td]/max((layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t [y,"DEC_DIRECT_ELEC",h,td]) + layers_in_out[y,"DEC_DIRECT_ELEC","HEAT_LOW_T_DECEN"] * F_t_solar [y,"DEC_DIRECT_ELEC",h,td],0.0001)
+																										* max(Storage_in [y,"DEC_DIRECT_ELEC" , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,"DEC_DIRECT_ELEC" , "HEAT_LOW_T_DECEN", h, td],0 )))/1000,
+					  "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"IND_DIRECT_ELEC", h, td]  ) > 10 then {
+				if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} max(Storage_in [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td] - Storage_out [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td],0 ) > 10 then {
+					printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "HT sto", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+																											max(storage_eff_in [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T"] * Storage_in [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td] - Storage_out [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td],0 )/1000,
+						   "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");	
+					printf "%s,%s,%.2f,%s,%s,%s\n", "HT sto", "Heat HT", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+																											max(storage_eff_out [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T"] * Storage_out [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td] - Storage_in [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td],0 )/1000,
+						   "Heat HT", "#DC143C", "TWh", "TWh" > (PathName & "/input2sankey.csv");	
+				}
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Heat HT", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+									                                     (F_t [y,"IND_DIRECT_ELEC", h, td]	  - max(storage_eff_in [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T"] * Storage_in [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td] - Storage_out [y,"TS_HIGH_TEMP" , "HEAT_HIGH_T", h, td],0 ))/1000,
+					   "Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");	
+			}
+			# Electrolysis
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"H2_ELECTROLYSIS", h, td]  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Elec" , "Electrolyser", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"H2_ELECTROLYSIS","ELECTRICITY"] * F_t [y,"H2_ELECTROLYSIS", h, td]  ) / 1000 , 
+					"Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HT ?" , "Electrolyser", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(- layers_in_out[y,"H2_ELECTROLYSIS","HEAT_HIGH_T"] * F_t [y,"H2_ELECTROLYSIS", h, td]  ) / 1000 ,
+					"Heat HT", "#DC143C", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Electrolyser" , "H2 prod", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"H2_ELECTROLYSIS","H2"] * F_t [y,"H2_ELECTROLYSIS", h, td]  ) / 1000 , 
+					"Electricity", "#00BFFF", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Electrolyser" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,"H2_ELECTROLYSIS","HEAT_LOW_T_DHN"] * F_t [y,"H2_ELECTROLYSIS", h, td]  ) / 1000 ,
+					"Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			
+			#------------------------------------------
+			# Synthetic fuels use
+			#------------------------------------------
+			## H2 use
+			if sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"H2", h, td] * t_op [h, td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. H2" , "H2", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"H2", h, td] * t_op [h, td]) / 1000 , "H2", "#FF00FF", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"H2_RE", h, td] * t_op [h, td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Imp. H2_RE" , "H2_RE", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"H2_RE", h, td] * t_op [h, td]) / 1000 , "H2", "#FF00FF", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if F [y,"H2_STORAGE"] > 0.001 then { 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2 prod" , "H2 sto.", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(Storage_in [y,"H2_STORAGE", "H2", h, td]  ) / 1000 , 
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2 sto." , "H2", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(Storage_out [y,"H2_STORAGE", "H2", h, td]*storage_eff_out [y,"H2_STORAGE","H2"]  ) / 1000 , 
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2 prod" , "H2", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"SMR","H2"] * F_t [y,"SMR", h, td] + layers_in_out[y,"H2_BIOMASS","H2"] * F_t [y,"H2_BIOMASS", h, td] + layers_in_out[y,"H2_ELECTROLYSIS","H2"] * F_t [y,"H2_ELECTROLYSIS", h, td]
+												- Storage_in [y,"H2_STORAGE", "H2", h, td]) / 1000 ,
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+				}
+			else{if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}( F_t [y,"SMR", h, td] + F_t [y,"H2_BIOMASS", h, td] + F_t [y,"H2_ELECTROLYSIS", h, td]) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2 prod" , "H2", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( layers_in_out[y,"SMR","H2"] * F_t [y,"SMR", h, td] + layers_in_out[y,"H2_BIOMASS","H2"] * F_t [y,"H2_BIOMASS", h, td] + layers_in_out[y,"H2_ELECTROLYSIS","H2"] * F_t [y,"H2_ELECTROLYSIS", h, td]) / 1000 ,
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"DEC_ADVCOGEN_H2", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "CHP", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"DEC_ADVCOGEN_H2","H2"] * F_t [y,"DEC_ADVCOGEN_H2", h, td]  ) / 1000 , "H2", 
+					"#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"CAR_FUEL_CELL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Mob priv", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"CAR_FUEL_CELL","H2"] * F_t [y,"CAR_FUEL_CELL", h, td]  ) / 1000 , "H2", 
+					"#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"BUS_COACH_FC_HYBRIDH2", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Mob public", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"BUS_COACH_FC_HYBRIDH2","H2"] * F_t [y,"BUS_COACH_FC_HYBRIDH2", h, td]  ) / 1000 , 
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"TRUCK_FUEL_CELL", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Freight", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"TRUCK_FUEL_CELL","H2"] * F_t [y,"TRUCK_FUEL_CELL", h, td]  ) / 1000 , 
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"SYN_METHANATION", h, td]  ) > 10 then 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Gas Prod", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"SYN_METHANATION","H2"] * F_t [y,"SYN_METHANATION", h, td]  ) / 1000 , 
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y,"SYN_METHANOLATION", h, td]  ) > 10 then 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "H2" , "Biofuels Prod", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(-layers_in_out[y,"SYN_METHANOLATION","H2"] * F_t [y,"SYN_METHANOLATION", h, td]  ) / 1000 , 
+					"H2", "#FF00FF", "TWh" > (PathName & "/input2sankey.csv");
+			
+			#------------------------------------------
+			# SANKEY - HEATING
+			#------------------------------------------
+			# CHP
+			if sum{i in COGEN, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(F_t [y, i, h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "CHP" , "Elec", sum{i in COGEN, t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,i,"ELECTRICITY"] * F_t [y,i, h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"DEC_COGEN_GAS", h, td] + F_t [y,"DEC_COGEN_OIL", h,td] + F_t [y,"DEC_ADVCOGEN_GAS", h, td] + F_t [y,"DEC_ADVCOGEN_H2", h, td])  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "CHP" , "Dec. sto", sum{i in {"DEC_COGEN_GAS","DEC_COGEN_OIL","DEC_ADVCOGEN_GAS","DEC_ADVCOGEN_H2"}, j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+																				(layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]/max((layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]) + layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td],0.0001)
+																										* max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 ))/1000,
+					 "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "CHP" , "Heat LT Dec", sum{i in {"DEC_COGEN_GAS","DEC_COGEN_OIL","DEC_ADVCOGEN_GAS","DEC_ADVCOGEN_H2"}, j in TS_OF_DEC_TECH[i],t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+						(layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td] - (layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]/max((layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]) + layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td],0.0001)
+																										* max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 ))) /1000,
+					 "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"DHN_COGEN_GAS", h, td] + F_t [y,"DHN_COGEN_WOOD", 
+			h, td] + F_t [y,"DHN_COGEN_WASTE", h, td]) + F_t [y,"DHN_COGEN_WET_BIOMASS", h, td] + F_t [y,"DHN_COGEN_BIO_HYDROLYSIS", h, td])   > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "CHP" , "DHN", sum{i in COGEN, t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,i,"HEAT_LOW_T_DHN"] * F_t [y,i, h, td]  ) / 1000 , "Heat LT", "#FA8072", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_COGEN_GAS", h, td] + F_t [y,"IND_COGEN_WOOD", 
+			h, td] + F_t [y,"IND_COGEN_WASTE", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "CHP" , "Heat HT", sum{i in COGEN, t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,i,"HEAT_HIGH_T"] * F_t [y,i, h, td]  ) / 1000 , "Heat HT", "#DC143C", "TWh" > 
+					(PathName & "/input2sankey.csv");
+			
+			# HPs
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} ((F_t [y,"DEC_HP_ELEC", h, td] + F_t [y,"DEC_THHP_GAS", h, td])  ) > 10 then {
+				if sum{i in {"DEC_HP_ELEC","DEC_THHP_GAS"}, j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 )) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HPs" , "Dec. sto", sum{i in {"DEC_HP_ELEC","DEC_THHP_GAS"}, j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+																				(layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]/max((layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]) + layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td],0.0001)
+																										* max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 ))/1000,
+					 "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+				}
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HPs" , "Heat LT Dec", sum{i in {"DEC_HP_ELEC","DEC_THHP_GAS"}, j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+						(layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td] - (layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]/max((layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td]) + layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t_solar [y,i,h,td],0.0001)
+																										* max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0 )))/1000,
+					 "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y,"DHN_HP_ELEC", h, td]  > 10 then 
+				printf "%s,%s,%.2f,%s,%s,%s\n", "HPs" , "DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(layers_in_out[y,"DHN_HP_ELEC","HEAT_LOW_T_DHN"] * F_t [y,"DHN_HP_ELEC",h,td])/1000,
+					 "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			
+			# Biofuels
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y, "PYROLYSIS_TO_LFO", h, td])  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "Pyrolysis", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( - layers_in_out[y, "PYROLYSIS_TO_LFO","WOOD"] * F_t [y, "PYROLYSIS_TO_LFO", h, td]  ) / 1000 , "Wood", "#CD853F", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Pyrolysis" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y, "PYROLYSIS_TO_LFO","ELECTRICITY"] * F_t [y, "PYROLYSIS_TO_LFO", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");	
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Pyrolysis" , "Oil", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y, "PYROLYSIS_TO_LFO","OIL"] * F_t [y, "PYROLYSIS_TO_LFO", h, td]  ) / 1000 , "Oil", "#8B008B", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+			}			
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y, "PYROLYSIS_TO_FUELS", h, td])  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Wood" , "Pyrolysis", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}( - layers_in_out[y, "PYROLYSIS_TO_FUELS","WOOD"] * F_t [y, "PYROLYSIS_TO_FUELS", h, td]  ) / 1000 , "Wood", "#CD853F", "TWh" >> 
+					(PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Pyrolysis" , "Elec", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y, "PYROLYSIS_TO_FUELS","ELECTRICITY"] * F_t [y, "PYROLYSIS_TO_FUELS", h, td]  ) / 1000 , "Electricity", "#00BFFF", "TWh" >> 
+					(PathName & "/input2sankey.csv");	
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Pyrolysis" , "Diesel", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y, "PYROLYSIS_TO_FUELS","DIESEL"]   * F_t [y, "PYROLYSIS_TO_FUELS", h, td]  ) / 1000 , "Diesel", "#D3D3D3", "TWh" >> 
+					(PathName & "/input2sankey.csv");	
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Pyrolysis" , "Gasoline", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y, "PYROLYSIS_TO_FUELS","GASOLINE"] * F_t [y, "PYROLYSIS_TO_FUELS", h, td]  ) / 1000 , "Diesel", "#808080", "TWh" >> 
+					(PathName & "/input2sankey.csv");	
+			}
+
+			
+			# Boilers
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"DEC_BOILER_GAS", h, td] + F_t [y,"DEC_BOILER_WOOD", 
+			h, td] + F_t [y,"DEC_BOILER_OIL", h, td])  ) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Boilers" , "Dec. sto", 
+					sum{i in {"DEC_BOILER_GAS","DEC_BOILER_OIL","DEC_BOILER_WOOD"}, j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+						max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0)/1000,
+					"Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Boilers" , "Heat LT Dec", 
+					sum{i in {"DEC_BOILER_GAS","DEC_BOILER_OIL","DEC_BOILER_WOOD"}, j in TS_OF_DEC_TECH[i], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+						(layers_in_out[y,i,"HEAT_LOW_T_DECEN"] * F_t [y,i,h,td] - max(Storage_in [y,j , "HEAT_LOW_T_DECEN", h, td] - Storage_out [y,j , "HEAT_LOW_T_DECEN", h, td],0))/1000,
+					"Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			}
+			if sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t], i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DECEN"]} max(Storage_out [y,i , "HEAT_LOW_T_DECEN", h, td] - Storage_in [y,i , "HEAT_LOW_T_DECEN", h, td],0) > 10 then
+			   printf "%s,%s,%.2f,%s,%s,%s\n", "Dec. sto" , "Heat LT Dec", sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t], i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DECEN"]} 
+									max(Storage_out [y,i , "HEAT_LOW_T_DECEN", h, td] - Storage_in [y,i , "HEAT_LOW_T_DECEN", h, td],0)/1000 , "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"DHN_BOILER_GAS", h, td] + F_t [y,"DHN_BOILER_WOOD", 
+			h, td] + F_t [y,"DHN_BOILER_OIL", h, td])  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Boilers" , "DHN", sum{i in BOILERS, t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,i,"HEAT_LOW_T_DHN"] * F_t [y,i, h, td]  ) / 1000 , "Heat LT", "#FA8072", "TWh" > 
+					(PathName & "/input2sankey.csv");
+					
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}((F_t [y,"IND_BOILER_GAS", h, td] + F_t [y,"IND_BOILER_WOOD", 
+			h, td] + F_t [y,"IND_BOILER_OIL", h, td] + F_t [y,"IND_BOILER_COAL", h, td] + F_t [y,"IND_BOILER_WASTE", h, td])  ) > 10	then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "Boilers" , "Heat HT", sum{i in BOILERS, t in PERIODS, h in HOUR_OF_PERIOD[t], td in 
+					TYPICAL_DAY_OF_PERIOD[t]}(layers_in_out[y,i,"HEAT_HIGH_T"] * F_t [y,i, h, td]  ) / 1000 , "Heat HT", "#DC143C", "TWh" > 
+					(PathName & "/input2sankey.csv");
+
+			# DHN 
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(End_uses [y,"HEAT_LOW_T_DHN", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "DHN" , "Heat LT DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} 
+					(sum {i in TECHNOLOGIES diff STORAGE_TECH } (layers_in_out[y,i, "HEAT_LOW_T_DHN"] * F_t [y,i, h, td]  ) 
+					- Network_losses [y,"HEAT_LOW_T_DHN", h, td]   
+					- sum {i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DHN"]} max(Storage_in [y,i, "HEAT_LOW_T_DHN", h, td] - Storage_out [y,i, "HEAT_LOW_T_DHN", h, td],0)) / 1000
+					, "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			if sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}(Network_losses [y,"HEAT_LOW_T_DHN", h, td]  ) > 10 then
+				printf "%s,%s,%.2f,%s,%s,%s\n", "DHN" , "Loss DHN", sum{t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+					(Network_losses [y,"HEAT_LOW_T_DHN", h, td]  ) / 1000 , "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			if sum {i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DHN"] ,t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}
+			max(Storage_in [y,i, "HEAT_LOW_T_DHN", h, td] - Storage_out [y,i, "HEAT_LOW_T_DHN", h, td],0) > 10 then {
+				printf "%s,%s,%.2f,%s,%s,%s\n", "DHN" , "DHN Sto", sum {i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DHN"],t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} max(Storage_in [y,i, "HEAT_LOW_T_DHN", h, td] - Storage_out [y,i, "HEAT_LOW_T_DHN", h, td],0)/1000
+					, "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+				printf "%s,%s,%.2f,%s,%s,%s\n", "DHN Sto", "Heat LT DHN", sum {i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DHN"],t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} max(Storage_out [y,i, "HEAT_LOW_T_DHN", h, td] - Storage_in [y,i, "HEAT_LOW_T_DHN", h, td],0)/1000
+					, "Heat LT", "#FA8072", "TWh" > (PathName & "/input2sankey.csv");
+			}
+
+		}# END SAVING			
+
+}
+}}#End cartography loop
