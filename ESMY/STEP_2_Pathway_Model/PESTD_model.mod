@@ -362,7 +362,7 @@ subject to limit_energy_to_power_ratio {y in YEARS_WND diff YEAR_ONE, j in STORA
 
 # [Eq. 19] limit the Energy to power ratio. 
 subject to limit_energy_to_power_ratio_bis {y in YEARS_WND diff YEAR_ONE, i in V2G, j in EVs_BATT_OF_V2G[i] , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
-	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + (Storage_out [y, j, l, h, td] + layers_in_out[y, i,"ELECTRICITY"]* F_t [y, i, h, td] ) * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
+	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + (Storage_out [y, j, l, h, td] + layers_in_out[y, i,"ELECTRICITY"]* F_t [y, i, h, td] ) * storage_discharge_time[y, j] <=  (F [y, j] - F_t[y,i,h,td] / vehicule_capacity[y,i] * batt_per_car[y,i] ) * storage_availability[y, j];
 
 ## Infrastructure
 #----------------
