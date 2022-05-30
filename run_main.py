@@ -35,7 +35,7 @@ from copy import deepcopy
 if __name__ == '__main__':	
     
     # Different actions
-    CleanHistory = True
+    CleanHistory = False
     InitStorage = True
     RunMyopicOpti = True
     GoNextWindow = True
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     
     ## Pickled results: preparation
     PKL_list = ['Resources','Tech_Prod_Cons','Tech_Cap','Shadow_prices', 'EUD', 
-                'C_INV', 'C_OP_MAINT']
+                'C_INV_ANN','C_INV', 'C_OP_MAINT']
     PKL_dict = dict.fromkeys(PKL_list)
     
     
@@ -192,7 +192,12 @@ if __name__ == '__main__':
                 ampl.setOption('_log_input_only', False)
                 
                 t = time.time()
-
+                
+                ampl.getSet('YEARS_WND').setValues(['YEAR_2015','YEAR_2020'])
+                ampl.getSet('PHASE_WND').setValues(['2015_2020'])
+                
+                ampl.getVariable('F')['YEAR_2020',slice(None)].fix(5)
+                
                 ampl.solve()
                 elapsed = time.time()-t
                 print('Time to solve the window #'+str(i+1)+': ',elapsed)
@@ -202,42 +207,38 @@ if __name__ == '__main__':
                 if i>0:
                     curr_wnd_y.remove(year_one)
                 
-                # Shadow price of CO2 and EUDs
-                t_x = time.time()
-                for y in curr_wnd_y:
-                    Shadow_prices['GWP'][y] = ampl.getConstraint('minimum_GWP_reduction')[y].dual()
-                    for l in EUD_demands:
-                        temp_EUD = np.zeros((len(Hour),len(TD)))
-                        for h in Hour:
-                            for td in TD:
-                                h_i = int(h-1)
-                                td_i = int(td-1)
-                                temp_EUD[h_i,td_i] = ampl.getConstraint('end_uses_t')[y,l,h,td].dual()
-                        Shadow_prices['EUD'][l][y] = deepcopy(temp_EUD)
-                    for l in Layer_list:
-                        temp_layer = np.zeros((len(Hour),len(TD)))
-                        for h in Hour:
-                            for td in TD:
-                                h_i = int(h-1)
-                                td_i = int(td-1)
-                                temp_layer[h_i,td_i] = ampl.getConstraint('layer_balance')[y,l,h,td].dual()
-                        Shadow_prices['Layer'][l][y] = deepcopy(temp_layer)
+                # # Shadow price of CO2 and EUDs
+                # t_x = time.time()
+                # for y in curr_wnd_y:
+                #     Shadow_prices['GWP'][y] = ampl.getConstraint('minimum_GWP_reduction')[y].dual()
+                #     for l in EUD_demands:
+                #         temp_EUD = np.zeros((len(Hour),len(TD)))
+                #         for h in Hour:
+                #             for td in TD:
+                #                 h_i = int(h-1)
+                #                 td_i = int(td-1)
+                #                 temp_EUD[h_i,td_i] = ampl.getConstraint('end_uses_t')[y,l,h,td].dual()
+                #         Shadow_prices['EUD'][l][y] = deepcopy(temp_EUD)
+                #     for l in Layer_list:
+                #         temp_layer = np.zeros((len(Hour),len(TD)))
+                #         for h in Hour:
+                #             for td in TD:
+                #                 h_i = int(h-1)
+                #                 td_i = int(td-1)
+                #                 temp_layer[h_i,td_i] = ampl.getConstraint('layer_balance')[y,l,h,td].dual()
+                #         Shadow_prices['Layer'][l][y] = deepcopy(temp_layer)
 
-                elapsed_x = time.time()-t_x
-                print('Time to extract shadow prices:',elapsed_x)
+                # elapsed_x = time.time()-t_x
+                # print('Time to extract shadow prices:',elapsed_x)
                 
                 # F
                 F_up_to = ampl.getVariable('F_up_to')
                 
                 # F_new
                 F_new_up_to = ampl.getVariable('F_new_up_to')
-                F_new_up_to_2 = F_new_up_to.getValues()
-                df_F_new_up_to = postp.to_pd_pivot(F_new_up_to_2)
                 
                 # F_old
                 F_old_up_to = ampl.getVariable('F_old_up_to')
-                F_old_up_to_2 = F_old_up_to.getValues()
-                df_F_old_up_to = postp.to_pd_pivot(F_old_up_to_2)
                 
                 # F_decom
                 F_decom_up_to = ampl.getVariable('F_decom_up_to')
@@ -245,24 +246,18 @@ if __name__ == '__main__':
                 #F_used_year_start_next
                 F_used_year_start_next = ampl.getVariable('F_used_year_start_next')
                 
-                #F_decom_p_decom
-                F_decom_p_decom = ampl.getVariable('F_decom_p_decom').getValues()
-                df_temp_F_decom_p_decom = postp.to_pd_pivot(F_decom_p_decom)
-                
-                #F_decom_p_build
-                F_decom_p_build = ampl.getVariable('F_decom_p_build').getValues()
-                df_temp_F_decom_p_build = postp.to_pd_pivot(F_decom_p_build)
                 
                 # Resources
                 Res_wnd = ampl.getVariable('Res_wnd').getValues()
                 df_temp_res = postp.to_pd_pivot(Res_wnd)
                 RES.update(df_temp_res)
+            
                 
                 # C_inv
                 C_inv_wnd = ampl.getVariable('C_inv_wnd').getValues()
                 df_temp_c_inv_wnd = postp.to_pd_pivot(C_inv_wnd)
                 C_INV.update(df_temp_c_inv_wnd)
-                
+            
                 # C_op_maint
                 C_op_maint_wnd = ampl.getVariable('C_op_maint_wnd').getValues()
                 df_temp_c_op_maint_wnd = postp.to_pd_pivot(C_op_maint_wnd)
@@ -288,6 +283,11 @@ if __name__ == '__main__':
                 df_temp_eud = - pd.concat({'EUD': df_temp_eud}, names=['Technology'])
                 df_temp_eud = df_temp_eud.reorder_levels(['index0','index1','Technology']).sort_index()
                 EUD.loc[(curr_wnd_y,slice(None),slice(None))] = df_temp_eud.loc[(curr_wnd_y,slice(None),slice(None))]
+                
+                if i == 0: 
+                    c_inv = ampl.getParameter('c_inv')
+                    F = ampl.getVariable('F')
+                    C_inv_2015 = sum(c_inv['YEAR_2015',t]*F['YEAR_2015',t].value() for t in Tech)
 
                 
                 if GoNextWindow:
@@ -338,6 +338,7 @@ if __name__ == '__main__':
                 
         
         if PostProcess:
+            
             
             print(file_name)
             
