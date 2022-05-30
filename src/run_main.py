@@ -102,12 +102,17 @@ if __name__ == '__main__':
     
     for m in range(len(N_year_opti)):
         
+        # TO DO ONCE AT INITIALISATION OF THE ENVIRONMENT
+        
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
         
         ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
         ampl.clean_history()
         ampl_pre = AmplPreProcessor(ampl, n_year_opti, n_year_overlap)
+        
+        
+        # TO DO AT EVERY STEP OF THE TRANSITION
         
         ampl_pre.write_seq_opti(0)
         ampl_pre.remaining_update(0)
