@@ -11,9 +11,6 @@ var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacit
 var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
 var Tech_wnd {YEARS_WND diff YEAR_ONE, LAYERS, TECHNOLOGIES diff STORAGE_TECH union RESOURCES}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
 var EUD_wnd {YEARS_WND diff YEAR_ONE,LAYERS}, default 0; # Variable to store end-use demands
-var F_t_up_to {YEARS_WND, TECHNOLOGIES, HOURS, TYPICAL_DAYS} >= 0; # F_t: Operation in each period [GW] or, for STORAGE_TECH, storage level [GWh]. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
-var F_decom_p_decom{PHASE_UP_TO, TECHNOLOGIES} >= 0;
-var F_decom_p_build{{"2010_2015"} union PHASE_UP_TO, TECHNOLOGIES} >= 0;
 var C_inv_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
 var C_op_maint_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES union RESOURCES}; #[€] Variable to store operational costs of resources or maintenance costs of technologies
 
@@ -32,12 +29,6 @@ subject to store_F_old_up_to {p in PHASE_UP_TO, j in TECHNOLOGIES}:
 
 subject to store_F_decom_up_to {p_decom in PHASE_UP_TO, p_built in PHASE_UP_TO union {"2010_2015"}, j in TECHNOLOGIES}:
 	F_decom_up_to[p_decom,p_built,j] = F_decom[p_decom,p_built,j];
-
-subject to store_F_decom_for_each_p_decom {p in PHASE_UP_TO, j in TECHNOLOGIES}:
-	F_decom_p_decom[p, j] = sum {p2 in {"2010_2015"} union PHASE_UP_TO} F_decom[p,p2,j];
-
-subject to store_F_decom_for_each_p_build {p in {"2010_2015"} union PHASE_UP_TO, j in TECHNOLOGIES}:
-	F_decom_p_build[p, j] = sum {p2 in PHASE_UP_TO} F_decom[p2,p,j];
 
 subject to store_F_used_year_start_next {y in YEAR_ONE_NEXT, j in TECHNOLOGIES}:
 	F_used_year_start_next[y, j] = F_used_year_start[y,j];

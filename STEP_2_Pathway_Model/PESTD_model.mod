@@ -174,7 +174,6 @@ var C_inv_return {TECHNOLOGIES} >=0; #[M€] Money given back for existing techn
 var C_opex {YEARS} >=0;
 var C_tot_opex >=0;
 var C_tot_capex >=0;
-var TotalTransitionCost >=0; #Overall transition cost.
 var TotalGWPTransition >=0;
 var Delta_change {PHASE,TECHNOLOGIES} >=0;
 
@@ -565,10 +564,6 @@ subject to limit_changes_freight {p in PHASE_WND union PHASE_UP_TO, y_start in P
 
 ## Compute cost during phase:
 #----------------------------
-
-# [Eq. XX] Total transition cost = capex + opex
-subject to New_totalTransitionCost_calculation :
-	TotalTransitionCost = C_tot_capex + C_tot_opex;
 	
 # [Eq. XX] Compute capital expenditure for transition
 subject to total_capex: # category: COST_calc
@@ -604,5 +599,12 @@ subject to maxInvestment {p in PHASE_WND}:
 ### OBJECTIVE FUNCTION ###
 ##########################
 
+
+# var TotalTransitionCost >=0; #Overall transition cost.
+# subject to New_totalTransitionCost_calculation :
+# 	TotalTransitionCost = C_tot_capex + C_tot_opex;
+# minimize obj: TotalTransitionCost;
 # Can choose between TotalTransitionCost_calculation and TotalGWP and TotalCost
-minimize obj:  TotalTransitionCost;#sum {y in YEARS} TotalCost [y];
+minimize  TotalTransitionCost: C_tot_capex + C_tot_opex;#sum {y in YEARS} TotalCost [y];
+# subject to New_totalTransitionCost_calculation :
+# 	TotalTransitionCost = C_tot_capex + C_tot_opex;

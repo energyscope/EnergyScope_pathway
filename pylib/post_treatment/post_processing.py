@@ -85,7 +85,7 @@ def to_pd(amplpy_df):
     
     return df
 
-def to_pd_pivot(amplpy_df, in_type = 'Def'):
+def to_pd_pivot(amplpy_df):
 # function to transform an amplpy df into a pd df
     nindices = amplpy_df.getNumIndices()
     headers = amplpy_df.getHeaders()
@@ -99,14 +99,9 @@ def to_pd_pivot(amplpy_df, in_type = 'Def'):
         df.index.name = None # get rid of the name of the index (multilevel)
     elif nindices==3:
         dic = dict()
-        if in_type == 'F_t':
-            for i in set(columns[headers[2]]):
-                dic[i] = df[df[headers[2]]==i].pivot(index=headers[0], columns=headers[1], values=headers[3])
-                dic[i].index.name = None # to get rid of name (multilevel)
-        else:
-            for i in set(columns[headers[0]]):
-                dic[i] = df[df[headers[0]]==i].pivot(index=headers[2], columns=headers[1], values=headers[3])
-                dic[i].index.name = None # to get rid of name (multilevel)
+        for i in set(columns[headers[0]]):
+            dic[i] = df[df[headers[0]]==i].pivot(index=headers[2], columns=headers[1], values=headers[3])
+            dic[i].index.name = None # to get rid of name (multilevel)
         df = dic
     elif nindices==4:
         dic = dict()
