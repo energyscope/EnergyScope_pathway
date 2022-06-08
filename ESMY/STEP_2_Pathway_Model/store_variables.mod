@@ -14,10 +14,9 @@ var EUD_wnd {YEARS_WND diff YEAR_ONE, LAYERS}, default 0; # Variable to store en
 var C_inv_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
 var C_op_maint_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES union RESOURCES}; #[€] Variable to store operational costs of resources or maintenance costs of technologies
 var F_used_year_start_next{YEAR_ONE_NEXT, TECHNOLOGIES} >= 0;
-var F_t_up_to {YEARS_UP_TO, RESOURCES union TECHNOLOGIES, HOURS, TYPICAL_DAYS} >= 0;
 
 
-set SET_INIT_SOL := {"F_up_to",	"F_new_up_to",	"F_new_up_to",	"F_decom_up_to",	"F_old_up_to",	"F_used_year_start_next", "F_t_up_to"};
+set SET_INIT_SOL := {"F_up_to",	"F_new_up_to",	"F_decom_up_to",	"F_old_up_to",	"F_used_year_start_next"};
 set STORE_RESULTS := {"F_wnd", "Res_wnd", "C_inv_wnd", "C_op_maint_wnd", "Tech_wnd"};
 
 ## Constraints for storing variables
@@ -26,9 +25,6 @@ subject to store_F_wnd {j in TECHNOLOGIES, y in YEARS_WND}:
 
 subject to store_F_up_to {j in TECHNOLOGIES, y in YEARS_UP_TO}:
 	F_up_to[y,j] = F[y,j];
-
-subject to store_F_t_up_to {y in YEARS_UP_TO, j in RESOURCES union TECHNOLOGIES,h in HOURS, td in TYPICAL_DAYS}:
-	F_t_up_to[y,j, h, td] = F_t[y,j, h, td];
 
 subject to store_F_new_up_to {p in PHASE_UP_TO union {"2010_2015"}, j in TECHNOLOGIES}:
 	F_new_up_to[p,j] = F_new[p,j];

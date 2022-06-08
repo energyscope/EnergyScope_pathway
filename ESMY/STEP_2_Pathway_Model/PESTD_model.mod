@@ -460,13 +460,6 @@ subject to minimum_GWP_reduction  {y in YEARS_WND diff YEAR_ONE} :
 # [Eq. XX] Constraint to limit the emissions below a budget (gwp_limit_transition) 
 subject to minimum_GWP_transition  : # category: GWP_calc
 	TotalGWPTransition <= gwp_limit_transition;
-
-
-# [Eq. 35] Minimum share of RE in primary energy supply
-subject to Minimum_RE_share {y in YEARS_WND diff YEAR_ONE} :
-	sum {j in RE_RESOURCES, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y, j, h, td] * t_op [h, td] 
-	>=	re_share_primary [y] *
-	sum {j in RESOURCES, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y, j, h, td] * t_op [h, td]	;
 		
 # [Eq. 36] Definition of min/max output of each technology as % of total output in a given layer. 
 subject to f_max_perc {y in YEARS_WND diff YEAR_ONE, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
@@ -485,11 +478,6 @@ subject to max_elec_import {y in YEARS_WND diff YEAR_ONE, h in HOURS, td in TYPI
 # [Eq. 39] Limit surface area for solar
 subject to solar_area_limited {y in YEARS_WND diff YEAR_ONE} :
 	F[y, "PV"] / power_density_pv + ( F [y, "DEC_SOLAR"] + F [y, "DHN_SOLAR"] ) / power_density_solar_thermal <= solar_area [y];
-
-# [Eq. XX] Force the system to consume all the WASTE available.
-subject to use_all_the_waste {y in YEARS_WND diff {"YEAR_2015"} diff YEAR_ONE} : # I don't know why this constraint should be removed. 
-	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,"WASTE",h,td] * t_op[h,td]) = avail [y,"WASTE"];
-
 
 ## Define technologies change during phases:
 #-------------------------------------------
