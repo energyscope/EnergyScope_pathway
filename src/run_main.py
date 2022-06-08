@@ -121,6 +121,7 @@ if __name__ == '__main__':
         
         ampl.run_ampl()
         
+        
         # out_list = ampl.sets['STORE_RESULTS']
         # ampl.get_outputs(out_list)
         
