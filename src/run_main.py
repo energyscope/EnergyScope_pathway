@@ -7,28 +7,7 @@ Created on Mon May 17 10:21 2021
 
 import os, sys
 from pathlib import Path
-
-# import matplotlib.pyplot as plt
-# import plotly.express as px
-# from plotly.offline import plot
-
-
-# import time
-# import pandas as pd
-
-# from amplpy import AMPL, Environment
-
-# from pylib.pre_treatment import Pathway_window as wnd
-# from pylib.pre_treatment import set_up_ampl as sua
-# from pylib.post_treatment import post_processing as postp
-
-# import numpy as np
-
-
-# import pickle
-
-# from copy import deepcopy      
-# 
+import time
 
 curr_dir = Path(os.getcwd())
 
@@ -38,6 +17,7 @@ sys.path.insert(0, pymodPath)
 from ampl_object import AmplObject
 from ampl_preprocessor import AmplPreProcessor
 from ampl_postprocessor import AmplPostProcessor
+from ampl_collector import AmplCollector
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
 pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
@@ -57,17 +37,14 @@ dat_path = [os.path.join(pth_model,'seq_opti.dat'),
              os.path.join(pth_model,'PESTD_data_all_years.dat'),
              os.path.join(pth_model,'PESTD_data_decom_allowed.dat')]
 
-## Options for ampl and cplex
-cplex_options = ['baropt',
-                'predual=-1',
-                'barstart=4',
-                'timelimit 64800',
-                'crossover=1',
-                'bardisplay=0',
-                'prestats=0',
-                'presolve=1', # Not a good idea to put it to 0 if the model is too big
-                'display=0']
-cplex_options_str = ' '.join(cplex_options)
+## Options for ampl and gurobi
+gurobi_options = ['predual=-1',
+                'method = 2', # 2 is for barrier method
+                'crossover=0',
+                'presolve=1'] # Not a good idea to put it to 0 if the model is too big
+
+gurobi_options_str = ' '.join(gurobi_options)
+
 ampl_options = {'show_stats': 3,
                 'log_file': os.path.join(pth_model,'log.txt'),
                 'presolve': 10,
@@ -76,7 +53,7 @@ ampl_options = {'show_stats': 3,
                 'times': 0,
                 'gentimes': 0,
                 'show_boundtol': 0,
-                'cplex_options': cplex_options_str,
+                'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
 
 ###############################################################################
@@ -86,13 +63,15 @@ ampl_options = {'show_stats': 3,
 if __name__ == '__main__':	
     
     ## Pickled results: preparation
-    PKL_list = ['Resources','Tech_Prod_Cons','Tech_Cap','Shadow_prices', 'EUD', 
-                'C_INV', 'C_OP_MAINT']
-    PKL_dict = dict.fromkeys(PKL_list)
-    
+    PKL_dict = {'Resources':'Res_wnd',
+                'Tech_Prod_Cons':'Tech_wnd',
+                'Tech_Cap':'F_wnd',
+                'EUD':'EUD_wnd', 
+                'C_INV':'C_inv_wnd', 
+                'C_OP_MAINT':'C_op_maint_wnd'}
     
     ## Paths
-    pth_output = os.path.join(os.getcwd(),'outputs')
+    pth_output = os.path.join(curr_dir.parent,'out')
     
     
     N_year_opti = [10]
@@ -111,184 +90,40 @@ if __name__ == '__main__':
         ampl.clean_history()
         ampl_pre = AmplPreProcessor(ampl, n_year_opti, n_year_overlap)
         
+        t = time.time()
         
+        for i in range(len(ampl_pre.years_opti)):
         # TO DO AT EVERY STEP OF THE TRANSITION
         
-        ampl_pre.write_seq_opti(0)
-        ampl_pre.remaining_update(0)
+            curr_years_wnd = ampl_pre.write_seq_opti(i)
+            ampl_pre.remaining_update(i)
+            
+            ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
+            
+            ampl.run_ampl()
+            
+            ampl_post = AmplPostProcessor(ampl, pth_output)
+            
+            if i > 0:
+                curr_years_wnd.remove(ampl_pre.year_to_rm)
+            
+            # ampl_post.extract_outputs()
+            
+            ampl_post.set_init_sol()
         
-        ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
+            A  = 4
         
-        ampl.run_ampl()
-        
-        
-        # out_list = ampl.sets['STORE_RESULTS']
-        # ampl.get_outputs(out_list)
-        
-        ampl_post = AmplPostProcessor(ampl, PKL_list, pth_output)
-        ampl_post.set_init_sol()
-        
-        A  = 4
+        elapsed = time.time()-t
+        print('Time to solve the whole problem'+str(i+1)+': ',elapsed)
         
     
         # file_name = os.path.join(pth_output,'pickle_{}_{}_minus_F_decom_coal_inf.pkl'.format(n_year_opti,n_year_overlap))
-    
-        # # [years_wnd, phases_wnd, years_up_to, phases_up_to] = wnd.pathway_window(n_year_opti,n_year_overlap)
-            
-        # if CleanHistory:
-        #     open(os.path.join(pth_model,'fix_2.mod'), 'w').close()
-        #     open(os.path.join(pth_model,'PESTD_data_remaining_wnd.dat'), 'w').close()
-        #     open(os.path.join(pth_model,'seq_opti.dat'), 'w').close()
-            
-        # if InitStorage:
-            
-        #     ampl0 = AMPL()
-            
-        #     sua.set_up_ampl(ampl0, pth_model, ampl_options)
-            
-        #     S = ampl0.getSets()
-        #     V = ampl0.getVariables()
-        #     P = ampl0.getParameters()
-            
-        #     Res = S['RESOURCES'].getValues().toList()
-        #     Tech = S['TECHNOLOGIES'].getValues().toList()
-        #     Storage = S['STORAGE_TECH'].getValues().toList()
-        #     Tech_minus_sto = [x for x in Tech if x not in Storage]
-        #     Tech_plus_res = Tech_minus_sto + Res
-            
-            
-        #     Layers = S['LAYERS'].getValues().toList()
-            
-        #     Tech_EUD = S['TECHNOLOGIES_OF_END_USES_TYPE']
-        #     Years = S['YEARS'].getValues().toList()
-        #     Phase = S['PHASE'].getValues().toList()
-            
-        #     EUD_cat = S['END_USES_CATEGORIES'].getValues().toList()
-        #     EUD_type = S['END_USES_TYPES_OF_CATEGORY']
-        #     EUD_demands = []
-        #     for i in EUD_cat:
-        #         EUD_demands += EUD_type[i].getValues().toList()
-                
-            
-        #     SP_LIST = ['GWP','Layer','EUD']
-        #     Layer_list = ['ELECTRICITY', 'GAS',
-        #                   'H2', 'AMMONIA', 'METHANOL']
-            
-        #     Shadow_prices = dict.fromkeys(SP_LIST)
-            
-        #     Shadow_prices['GWP'] = dict.fromkeys(Years)
-        #     Shadow_prices['Layer'] = dict.fromkeys(Layer_list)
-        #     Shadow_prices['EUD'] = dict.fromkeys(EUD_demands)
-            
-        #     for i in Shadow_prices['Layer']:
-        #         Shadow_prices['Layer'][i] = dict.fromkeys(Years)
-        #     for i in Shadow_prices['EUD']:
-        #         Shadow_prices['EUD'][i] = dict.fromkeys(Years)
-                
-                
-            
-        #     Periods = S['PERIODS'].getValues().toList()
-        #     Hour = S['HOURS'].getValues().toList()
-        #     TD = S['TYPICAL_DAYS'].getValues().toList()
-            
-        #     Hour_of_period = S['HOUR_OF_PERIOD']
-        #     Dict_HofP = postp.toPandasDict_H_TD_ofP(Periods, Hour_of_period)
-            
-        #     TDofP = S['TYPICAL_DAY_OF_PERIOD']
-        #     Dict_TDofP = postp.toPandasDict_H_TD_ofP(Periods, TDofP)
-            
-        #     index_Tech = pd.MultiIndex.from_product([Years, Layers, Tech_plus_res],names = ['Year','Layer','Technology'])
-        #     index_eud = pd.MultiIndex.from_product([Years, Layers, ['EUD']],names = ['Year','Layer','Technology'])
-            
-        #     RES = pd.DataFrame(0,index = Res,columns = Years).T
-        #     Tech_Cap = pd.DataFrame(0,index = Tech,columns = Years).T
-        #     Tech_Prod_Cons = pd.DataFrame(0, index=index_Tech, columns=['Value'])
-        #     EUD = pd.DataFrame(0, index=index_eud, columns = ['Value'])
-        #     C_INV = pd.DataFrame(0,index = Tech, columns = Years).T
-        #     C_OP_MAINT = pd.DataFrame(0,index = Res + Tech, columns = Years).T
             
         
         # t0 = time.time()
         # if RunMyopicOpti:
             
-        #     year_one = ''
-            
         #     for i in range(len(years_wnd)):
-        #         curr_window_years = years_wnd[i]
-        #         curr_window_phases = phases_wnd[i]
-        #         curr_years_up_to = years_up_to[i]
-        #         curr_phases_up_to = phases_up_to[i]
-                
-        #         if i == len(years_wnd)-1:
-        #             next_year_one = False
-        #             year_one_next = ''
-        #         else:
-        #             next_year_one = True
-        #             year_one_next = years_wnd[i+1][0]
-                
-        #         wnd.write_seq_opti(curr_window_years, curr_window_phases,\
-        #                            curr_years_up_to, curr_phases_up_to, pth_model, year_one,\
-        #                                year_one_next, i, next_year_one)
-        #         wnd.remaining_update("PESTD_data_remaining.dat",pth_model,curr_window_phases, curr_phases_up_to, n_year_overlap)
-                
-        #         ampl = AMPL()
-                
-        #         sua.set_up_ampl(ampl, pth_model, ampl_options)
-                
-        #         ampl._startRecording('session.log')
-        #         ampl.setOption('_log_input_only', False)
-                
-        #         t = time.time()
-                
-        #         ampl.solve()
-        #         elapsed = time.time()-t
-        #         print('Time to solve the window #'+str(i+1)+': ',elapsed)
-                
-                
-        #         curr_wnd_y = deepcopy(curr_window_years)
-        #         if i>0:
-        #             curr_wnd_y.remove(year_one)
-                
-        #         # # Shadow price of CO2 and EUDs
-        #         # t_x = time.time()
-        #         # for y in curr_wnd_y:
-        #         #     Shadow_prices['GWP'][y] = ampl.getConstraint('minimum_GWP_reduction')[y].dual()
-        #         #     for l in EUD_demands:
-        #         #         temp_EUD = np.zeros((len(Hour),len(TD)))
-        #         #         for h in Hour:
-        #         #             for td in TD:
-        #         #                 h_i = int(h-1)
-        #         #                 td_i = int(td-1)
-        #         #                 temp_EUD[h_i,td_i] = ampl.getConstraint('end_uses_t')[y,l,h,td].dual()
-        #         #         Shadow_prices['EUD'][l][y] = deepcopy(temp_EUD)
-        #         #     for l in Layer_list:
-        #         #         temp_layer = np.zeros((len(Hour),len(TD)))
-        #         #         for h in Hour:
-        #         #             for td in TD:
-        #         #                 h_i = int(h-1)
-        #         #                 td_i = int(td-1)
-        #         #                 temp_layer[h_i,td_i] = ampl.getConstraint('layer_balance')[y,l,h,td].dual()
-        #         #         Shadow_prices['Layer'][l][y] = deepcopy(temp_layer)
-
-        #         # elapsed_x = time.time()-t_x
-        #         # print('Time to extract shadow prices:',elapsed_x)
-                
-        #         # F
-        #         F_up_to = ampl.getVariable('F_up_to')
-                
-        #         # F_new
-        #         F_new_up_to = ampl.getVariable('F_new_up_to')
-                
-        #         # F_old
-        #         F_old_up_to = ampl.getVariable('F_old_up_to')
-                
-        #         # F_decom
-        #         F_decom_up_to = ampl.getVariable('F_decom_up_to')
-                
-        #         #F_used_year_start_next
-        #         F_used_year_start_next = ampl.getVariable('F_used_year_start_next')
-                
-                
         #         # Resources
         #         Res_wnd = ampl.getVariable('Res_wnd').getValues()
         #         df_temp_res = postp.to_pd_pivot(Res_wnd)
@@ -330,36 +165,6 @@ if __name__ == '__main__':
         #             c_inv = ampl.getParameter('c_inv')
         #             F = ampl.getVariable('F')
         #             C_inv_2015 = sum(c_inv['YEAR_2015',t]*F['YEAR_2015',t].value() for t in Tech)
-
-                
-        #         if GoNextWindow:
-        #             fix = os.path.join(pth_model,'fix.mod')
-        #             fix_2 = os.path.join(pth_model,'fix_2.mod')
-                    
-        #             with open(fix,'w+', encoding='utf-8') as fp:
-        #                 for index, variable in F_up_to:
-        #                     print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
-        #                 print("\n", file = fp)
-        #                 for index, variable in F_new_up_to:
-        #                     print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
-        #                 print("\n", file = fp)
-        #                 for index, variable in F_old_up_to:
-        #                     print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
-        #                 print("\n", file = fp)
-        #                 for index, variable in F_decom_up_to:
-        #                     print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
-        #                 print("\n", file = fp)
-                        
-        #                 for index, variable in F_used_year_start_next:
-        #                     print('fix {}:={};'.format(variable.name(),variable.value()), file = fp)
-                    
-        #             with open(fix) as fin, open(fix_2,'w+', encoding='utf-8') as fout:
-        #                 for line in fin:
-        #                     line = line.replace("_up_to","")
-        #                     line = line.replace("_next","")
-        #                     fout.write(line)
-                    
-        #             year_one = year_one_next
                 
         #         if i == len(years_wnd)-1:
         #             elapsed0 = time.time()-t0
@@ -368,7 +173,6 @@ if __name__ == '__main__':
         #             PKL_dict['Resources'] = RES
         #             PKL_dict['Tech_Prod_Cons'] = Tech_Prod_Cons
         #             PKL_dict['Tech_Cap'] = Tech_Cap
-        #             PKL_dict['Shadow_prices'] = Shadow_prices
         #             PKL_dict['EUD'] = EUD
         #             PKL_dict['C_INV'] = C_INV
         #             PKL_dict['C_OP_MAINT'] = C_OP_MAINT
@@ -415,29 +219,7 @@ if __name__ == '__main__':
         #     # for l in EUD_demands:
         #     #     Tech_Prod_layer[l] = pd.DataFrame(0,index = Tech_minus_sto,columns = Years)
         #     #     for y in Years:
-        #     #         Tech_Prod_layer[l][:,y] = Tech_Prod_Cons[y].loc[l,:]
-            
-        #     # tyo = time.time()
-        #     # Shadow_prices_year = deepcopy(Shadow_prices)
-        #     # for y in Years:
-        #     #     for l in EUD_demands:
-        #     #         SP_EUD_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['EUD'][l][y])
-        #     #         Shadow_prices_year['EUD'][l][y] = postp.TDtoYEAR(SP_EUD_scaled, Dict_TDofP)
-        #     #     for l in Layer_list:
-        #     #         SP_Layer_scaled = postp.scale_marginal_cost(Dict_TDofP, Shadow_prices['Layer'][l][y])
-        #     #         Shadow_prices_year['Layer'][l][y] = postp.TDtoYEAR(SP_Layer_scaled, Dict_TDofP)
-
-            
-        #     # Shadow_prices_av_year = deepcopy(Shadow_prices)
-        #     # for l in Layer_list:
-        #     #     for y in Years:
-        #     #         Shadow_prices_av_year['Layer'][l][y] = np.average(Shadow_prices_year['Layer'][l][y])
-        #     # for l in EUD_demands:
-        #     #     for y in Years:
-        #     #         Shadow_prices_av_year['EUD'][l][y] = np.average(Shadow_prices_year['EUD'][l][y])
-            
-        #     # elapsedyo = time.time()-tyo
-        #     # print('Time to get all shadow prices from TD to year:',elapsedyo)
+        #     #         Tech_Prod_layer[l][:,y] = Tech_Prod_Cons[y].loc[l,:]    
             
         # if DrawGraphs:
             
