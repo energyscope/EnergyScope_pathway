@@ -49,6 +49,7 @@ class AmplPreProcessor:
         self.t_phase = t_phase
         self.n_years_wnd = n_years_wnd
         self.n_years_overlap = n_years_overlap
+        self.year_to_rm = '' # Year to remove when saving the results
 
         self.pathway_window(self)
 
@@ -74,6 +75,9 @@ class AmplPreProcessor:
         curr_phases_up_to = self.phases_up_to[i]
 
         year_one = self.years_opti[i][0]
+
+        if i > 0:
+            self.year_to_rm = year_one
 
         if i == len(self.years_opti)-1:
             next_year_one = False
@@ -110,7 +114,7 @@ class AmplPreProcessor:
                 f.write(':= %s' %year_one_next)
             f.write(';')
 
-        return year_one
+        return curr_years_wnd
 
 
     '''

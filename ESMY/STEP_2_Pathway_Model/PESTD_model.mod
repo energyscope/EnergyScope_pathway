@@ -197,7 +197,7 @@ var F_t_solar       {YEARS, TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] di
 
 ##Dependent variables [Table 4] :
 var End_uses {YEARS, LAYERS, HOURS, TYPICAL_DAYS} >= 0; #EndUses [GW]: total demand for each type of end-uses (hourly power). Defined for all layers (0 if not demand). [Mpkm] or [Mtkm] for passenger or freight mobility.
-var TotalCost {YEARS} >= 0; # C_tot [ktCO2-eq./year]: Total GWP emissions in the system.
+var TotalCost {YEARS} >= 0; # C_tot [MCHF/year]: Total cost of the system.
 var C_inv {YEARS, TECHNOLOGIES} >= 0; #C_inv [MCHF]: Total investment cost of each technology
 var C_maint {YEARS, TECHNOLOGIES} >= 0; #C_maint [MCHF/year]: Total O&M cost of each technology (excluding resource cost)
 var C_op {YEARS, RESOURCES} >= 0; #C_op [MCHF/year]: Total O&M cost of each resource
