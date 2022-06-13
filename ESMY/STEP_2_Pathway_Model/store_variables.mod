@@ -11,13 +11,13 @@ var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacit
 var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
 var Tech_wnd {YEARS_WND diff YEAR_ONE, LAYERS, TECHNOLOGIES diff STORAGE_TECH union RESOURCES}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
 var EUD_wnd {YEARS_WND diff YEAR_ONE, LAYERS}, default 0; # Variable to store end-use demands
-var C_inv_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES}; #[€] Variable to store annualised investment costs of technologies
-var C_op_maint_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES union RESOURCES}; #[€] Variable to store operational costs of resources or maintenance costs of technologies
+var C_inv_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES} >= 0, default 0; #[€] Variable to store annualised investment costs of technologies
+var C_op_maint_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES union RESOURCES} >= 0, default 0; #[€] Variable to store operational costs of resources or maintenance costs of technologies
 var F_used_year_start_next{YEAR_ONE_NEXT, TECHNOLOGIES} >= 0;
 
 
 set SET_INIT_SOL := {"F_up_to",	"F_new_up_to",	"F_decom_up_to",	"F_old_up_to",	"F_used_year_start_next"};
-set STORE_RESULTS := {"F_wnd", "Res_wnd", "C_inv_wnd", "C_op_maint_wnd", "Tech_wnd"};
+set STORE_RESULTS := {"F_wnd", "Res_wnd", "C_inv_wnd", "C_op_maint_wnd", "Tech_wnd", "EUD_wnd"};
 
 ## Constraints for storing variables
 subject to store_F_wnd {j in TECHNOLOGIES, y in YEARS_WND}:

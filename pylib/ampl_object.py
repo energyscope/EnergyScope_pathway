@@ -139,8 +139,11 @@ class AmplObject:
     Collect the relevant outputs to store 
 
     """
-    def get_outputs(self, output_list):
-        for k in output_list:
+    def get_outputs(self):
+
+        store_list = self.sets['STORE_RESULTS']
+
+        for k in store_list:
             self.outputs[k] = self.to_pd(self.ampl.getVariable(k).getValues())
     
 
@@ -148,6 +151,27 @@ class AmplObject:
         open(os.path.join(self.dir,'fix.mod'), 'w').close()
         open(os.path.join(self.dir,'PESTD_data_remaining_wnd.dat'), 'w').close()
         open(os.path.join(self.dir,'seq_opti.dat'), 'w').close()
+
+
+    def set_init_sol(self):
+    
+        fix_0 = os.path.join(self.dir,'fix_0.mod')
+        fix = os.path.join(self.dir,'fix.mod')
+
+        with open(fix_0,'w+', encoding='utf-8') as fp:
+            variables = self.ampl.getVariables()
+            for k in self.sets['SET_INIT_SOL']:
+                for i, v in variables[k]:
+                    print('fix {}:={};'.format(v.name(),v.value()), file = fp)
+                print("\n", file = fp)
+                    
+        with open(fix_0) as fin, open(fix,'w+', encoding='utf-8') as fout:
+            for line in fin:
+                line = line.replace("_up_to","")
+                line = line.replace("_next","")
+                fout.write(line)
+        
+        os.remove(fix_0)
 
     
     #############################
@@ -188,7 +212,7 @@ class AmplObject:
             else:
                 ampl = AMPL(Environment(ampl_path))
             # define solver
-            ampl.setOption('solver', 'cplex')
+            ampl.setOption('solver', 'gurobi')
             # set options
             for o in options:
                 ampl.setOption(o, options[o])
@@ -259,6 +283,8 @@ class AmplObject:
         headers = amplpy_df.getHeaders()
         columns = {header: list(amplpy_df.getColumn(header)) for header in headers}
         df = pd.DataFrame(columns)
+        df = df.rename(columns={headers[-1]:'Value'})
+        df = df.set_index(list(headers[:-1]))
         df.index.name = None # get rid of the name of the index (multilevel)
         return df
 
