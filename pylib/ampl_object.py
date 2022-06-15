@@ -76,6 +76,7 @@ class AmplObject:
             self.ampl.solve()
             self.ampl.eval('display solve_result;')
             self.ampl.eval('display _solve_elapsed_time;')
+            self.ampl.eval('display _ampl_elapsed_time;')
             self.t = self.ampl.getData('_solve_elapsed_time;').toList()[0]
 
         except Exception as e:
@@ -93,16 +94,6 @@ class AmplObject:
             self.vars.append(name)
 
     
-    """
-    
-    Get the parameters of the ampl problem
-
-    """
-    def get_params(self):
-        for n, p in self.ampl.getParameters():
-            self.params.append(n)
-
-
     """
 
     Function to of the LP optimization problem
@@ -130,7 +121,7 @@ class AmplObject:
     and the value to set is a float
 
     """
-    def set_params(self,name, value):
+    def set_params(self, name, value):
         self.ampl.get_parameter(name).setValues(value)
     
 

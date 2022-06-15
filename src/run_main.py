@@ -16,7 +16,6 @@ sys.path.insert(0, pymodPath)
 
 from ampl_object import AmplObject
 from ampl_preprocessor import AmplPreProcessor
-from ampl_postprocessor import AmplPostProcessor
 from ampl_collector import AmplCollector
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
@@ -60,18 +59,10 @@ ampl_options = {'show_stats': 3,
 ''' main script '''
 ###############################################################################
 
-if __name__ == '__main__':	
-    
-    ## Pickled results: preparation
-    PKL_dict = {'Resources':'Res_wnd',
-                'Tech_Prod_Cons':'Tech_wnd',
-                'Tech_Cap':'F_wnd',
-                'EUD':'EUD_wnd', 
-                'C_INV':'C_inv_wnd', 
-                'C_OP_MAINT':'C_op_maint_wnd'}
+if __name__ == '__main__':
     
     ## Paths
-    pth_output = os.path.join(curr_dir.parent,'out')
+    pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
     N_year_opti = [10]
@@ -82,115 +73,62 @@ if __name__ == '__main__':
     for m in range(len(N_year_opti)):
         
         # TO DO ONCE AT INITIALISATION OF THE ENVIRONMENT
-        
+
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
         
-        ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
-        ampl.clean_history()
-        ampl_pre = AmplPreProcessor(ampl, n_year_opti, n_year_overlap)
+        case_study = 'pickle_{}_{}_gwp_only_2050'.format(n_year_opti,n_year_overlap)
+        expl_text = 'No gwp limit for any year except 2050, to reach carbon neutrality'
+        
+        output_folder = os.path.join(pth_output_all,case_study)
+        output_file = os.path.join(output_folder,'_Results.pkl')
+        
+        ampl_0 = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
+        ampl_0.clean_history()
+        ampl_pre = AmplPreProcessor(ampl_0, n_year_opti, n_year_overlap)
+        ampl_collector = AmplCollector(ampl_0, output_file, expl_text)
         
         t = time.time()
         
         for i in range(len(ampl_pre.years_opti)):
         # TO DO AT EVERY STEP OF THE TRANSITION
-        
+            t_i = time.time()
             curr_years_wnd = ampl_pre.write_seq_opti(i)
             ampl_pre.remaining_update(i)
             
             ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
             
-            ampl.run_ampl()
+            ampl.set_params('gwp_limit',{('YEAR_2015'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2020'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2025'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2030'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2035'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2040'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2045'):1e6})
             
-            ampl_post = AmplPostProcessor(ampl, pth_output)
+            ampl.run_ampl()
+
+            ampl.get_outputs()
             
             if i > 0:
                 curr_years_wnd.remove(ampl_pre.year_to_rm)
             
-            # ampl_post.extract_outputs()
+            ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
             
-            ampl_post.set_init_sol()
-        
-            A  = 4
+            ampl.set_init_sol()
+            
+            elapsed_i = time.time()-t_i
+            print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
+            
+            if i == len(ampl_pre.years_opti)-1:
+                ampl_collector.pkl()
+                break
         
         elapsed = time.time()-t
-        print('Time to solve the whole problem'+str(i+1)+': ',elapsed)
-        
-    
-        # file_name = os.path.join(pth_output,'pickle_{}_{}_minus_F_decom_coal_inf.pkl'.format(n_year_opti,n_year_overlap))
-            
-        
-        # t0 = time.time()
-        # if RunMyopicOpti:
-            
-        #     for i in range(len(years_wnd)):
-        #         # Resources
-        #         Res_wnd = ampl.getVariable('Res_wnd').getValues()
-        #         df_temp_res = postp.to_pd_pivot(Res_wnd)
-        #         RES.update(df_temp_res)
-            
-                
-        #         # C_inv
-        #         C_inv_wnd = ampl.getVariable('C_inv_wnd').getValues()
-        #         df_temp_c_inv_wnd = postp.to_pd_pivot(C_inv_wnd)
-        #         C_INV.update(df_temp_c_inv_wnd)
-            
-        #         # C_op_maint
-        #         C_op_maint_wnd = ampl.getVariable('C_op_maint_wnd').getValues()
-        #         df_temp_c_op_maint_wnd = postp.to_pd_pivot(C_op_maint_wnd)
-        #         C_OP_MAINT.update(df_temp_c_op_maint_wnd)
-    
-        #         # Tech cap
-        #         F_wnd = ampl.getVariable('F_wnd').getValues()
-        #         df_temp_F = postp.to_pd_pivot(F_wnd)
-        #         Tech_Cap.update(df_temp_F)
-                
-        #         # Tech prod and cons
-        #         Tech_wnd = ampl.getVariable('Tech_wnd').getValues()
-        #         Tech_df = postp.to_pd(Tech_wnd)
-        #         Tech_df = Tech_df.rename(columns = {'Tech_wnd.val':'Value'})
-        #         Tech_df = Tech_df.set_index(['index0','index1','index2'])
-        #         Tech_Prod_Cons.loc[(curr_wnd_y,slice(None),slice(None))] = Tech_df.loc[(curr_wnd_y,slice(None),slice(None))]
-                
-        #         # End-use demands
-        #         EUD_wnd = ampl.getVariable('EUD_wnd').getValues()
-        #         df_temp_eud = postp.to_pd(EUD_wnd)
-        #         df_temp_eud = df_temp_eud.rename(columns = {'EUD_wnd.val':'Value'})
-        #         df_temp_eud = df_temp_eud.set_index(['index0','index1'])
-        #         df_temp_eud = - pd.concat({'EUD': df_temp_eud}, names=['Technology'])
-        #         df_temp_eud = df_temp_eud.reorder_levels(['index0','index1','Technology']).sort_index()
-        #         EUD.loc[(curr_wnd_y,slice(None),slice(None))] = df_temp_eud.loc[(curr_wnd_y,slice(None),slice(None))]
-                
-        #         if i == 0: 
-        #             c_inv = ampl.getParameter('c_inv')
-        #             F = ampl.getVariable('F')
-        #             C_inv_2015 = sum(c_inv['YEAR_2015',t]*F['YEAR_2015',t].value() for t in Tech)
-                
-        #         if i == len(years_wnd)-1:
-        #             elapsed0 = time.time()-t0
-        #             print('Time to solve the whole problem:',elapsed0)
-                    
-        #             PKL_dict['Resources'] = RES
-        #             PKL_dict['Tech_Prod_Cons'] = Tech_Prod_Cons
-        #             PKL_dict['Tech_Cap'] = Tech_Cap
-        #             PKL_dict['EUD'] = EUD
-        #             PKL_dict['C_INV'] = C_INV
-        #             PKL_dict['C_OP_MAINT'] = C_OP_MAINT
-                    
-        #             open_file = open(file_name,"wb")
-        #             pickle.dump(PKL_dict,open_file)
-        #             open_file.close()
-        #             break
+        print('Time to solve the whole problem: ',elapsed)
                 
         
         # if PostProcess:
-            
-            
-        #     print(file_name)
-            
-        #     open_file = open(file_name,"rb")
-        #     loaded_list = pickle.load(open_file)
-        #     open_file.close()
             
         #     RES = loaded_list['Resources'].T
         #     Tech_Prod_Cons = loaded_list['Tech_Prod_Cons']
