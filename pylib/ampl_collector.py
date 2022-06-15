@@ -9,7 +9,7 @@ Created on Fri Apr 08 2022
 from pathlib import Path
 
 import os,sys
-from copy import deepcopy
+import csv
 import pickle
 import pandas as pd
 
@@ -28,22 +28,21 @@ class AmplCollector:
     ----------
     ampl_obj : AmplObject object of ampl_object module
         Ampl object containing the optimisation problem and its attributes
-    n_years_wnd : int
-        Duration in years of the time windows. To avoid overshooting the end of the time horizon,
-        the last window of optimisation might be shorter than n_years_wnd
-    n_years_overlap : int
-        Duration in years of the overlap between two windows of optimisation
-    t_phase : int
-        Duration in years of a phase
+    output_file : pathlib.Path
+        Path towards the output file where to pickle the results
+    expl_text : String
+        Small description of the case study
 
     """
 
-    def __init__(self, ampl_obj, output_file):
+    def __init__(self, ampl_obj, output_file, expl_text):
 
         self.ampl_obj = ampl_obj
         self.PKL_save = dict.fromkeys(ampl_obj.sets['STORE_RESULTS'])
         self.init_storage()
+        self.pth_output_all = Path(output_file).parent.parent
         self.output_file = output_file
+        self.expl_text = expl_text
     
     def init_storage(self):
             
@@ -91,7 +90,35 @@ class AmplCollector:
                 self.PKL_save[k].loc[(curr_years_wnd,slice(None),slice(None))] = df_output.loc[(curr_years_wnd,slice(None),slice(None))]
     
     def pkl(self):
+        if not os.path.exists(Path(self.output_file).parent):
+            os.makedirs(Path(self.output_file).parent)
+        
         open_file = open(self.output_file,"wb")
         pickle.dump(self.PKL_save,open_file)
         open_file.close()
 
+        case_exist = False
+        case_name = os.path.basename(os.path.normpath(Path(self.output_file).parent))
+        recap_file = os.path.join(self.pth_output_all,'_Recap.csv')
+        if not os.path.exists(Path(recap_file)):
+            with open(recap_file,'w+') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Case study','Comment'])
+        with open(recap_file, 'r+') as f:
+            reader = csv.reader(f)
+            writer = csv.writer(f)
+            for row in reader:
+                if case_name == row[0]:
+                    row[1] = self.expl_text
+                    writer.writerow(row)
+                    case_exist = True
+                    break
+            if not case_exist:
+                writer.writerow([case_name,self.expl_text])
+
+    def unpkl(self):
+        open_file = open(self.output_file,"rb")
+        loaded_list = pickle.load(open_file)
+        open_file.close()
+
+        return loaded_list
