@@ -9,7 +9,7 @@ import os, sys
 from pathlib import Path
 import time
 
-curr_dir = Path(os.getcwd())
+curr_dir = Path(os.path.dirname(__file__))
 
 pymodPath = os.path.abspath(os.path.join(curr_dir.parent,'pylib'))
 sys.path.insert(0, pymodPath)
@@ -46,7 +46,7 @@ gurobi_options_str = ' '.join(gurobi_options)
 
 ampl_options = {'show_stats': 3,
                 'log_file': os.path.join(pth_model,'log.txt'),
-                'presolve': 10,
+                'presolve': 1,
                 'presolve_eps': 1e-7,
                 'presolve_fixeps': 1e-7,
                 'times': 0,
