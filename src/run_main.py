@@ -40,17 +40,19 @@ dat_path = [os.path.join(pth_model,'seq_opti.dat'),
 gurobi_options = ['predual=-1',
                 'method = 2', # 2 is for barrier method
                 'crossover=0',
-                'presolve=1'] # Not a good idea to put it to 0 if the model is too big
+                'prepasses = 3',
+                'barconvtol=1e-6',                
+                'presolve=-1'] # Not a good idea to put it to 0 if the model is too big
 
 gurobi_options_str = ' '.join(gurobi_options)
 
-ampl_options = {'show_stats': 3,
+ampl_options = {'show_stats': 1,
                 'log_file': os.path.join(pth_model,'log.txt'),
-                'presolve': 1,
+                'presolve': 10,
                 'presolve_eps': 1e-7,
                 'presolve_fixeps': 1e-7,
                 'times': 0,
-                'gentimes': 0,
+                'gentimes': 1,
                 'show_boundtol': 0,
                 'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
@@ -119,6 +121,7 @@ if __name__ == '__main__':
             
             elapsed_i = time.time()-t_i
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
+            
             
             if i == len(ampl_pre.years_opti)-1:
                 ampl_collector.pkl()
