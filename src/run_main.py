@@ -52,7 +52,7 @@ ampl_options = {'show_stats': 1,
                 'presolve_eps': 1e-7,
                 'presolve_fixeps': 1e-7,
                 'times': 0,
-                'gentimes': 1,
+                'gentimes': 0,
                 'show_boundtol': 0,
                 'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
@@ -67,8 +67,8 @@ if __name__ == '__main__':
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
-    N_year_opti = [10]
-    N_year_overlap = [5]
+    N_year_opti = [35, 10]
+    N_year_overlap = [0, 5]
 
 
     
