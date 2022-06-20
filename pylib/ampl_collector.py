@@ -12,6 +12,8 @@ import os,sys
 import csv
 import pickle
 import pandas as pd
+from datetime import datetime
+from time import time
 
 pylibPath = os.path.abspath("../pylib")
 if pylibPath not in sys.path:
@@ -79,7 +81,8 @@ class AmplCollector:
         self.PKL_save['EUD_wnd'] = EUD
         self.PKL_save['C_inv_wnd'] = C_INV
         self.PKL_save['C_op_maint_wnd'] = C_OP_MAINT
-
+    
+    
     def update_storage(self, dict_outputs, curr_years_wnd):
         for k in self.PKL_save:
             df_output = dict_outputs[k]
@@ -90,35 +93,27 @@ class AmplCollector:
                 self.PKL_save[k].loc[(curr_years_wnd,slice(None),slice(None))] = df_output.loc[(curr_years_wnd,slice(None),slice(None))]
     
     def pkl(self):
+
+        case_name = os.path.basename(os.path.normpath(Path(self.output_file).parent))
+        recap_file = os.path.join(self.pth_output_all,'_Recap.csv')
+        t = datetime.fromtimestamp(time())
+        if not os.path.exists(Path(recap_file)):
+            with open(recap_file,'w+') as f:
+                writer = csv.writer(f)
+                writer.writerow(['Case_study','Comment','Date_Time'])
+        df = pd.read_csv(recap_file)
+        if case_name in df.Case_study.values:
+            df.loc[df['Case_study'] == case_name,'Comment'] = self.expl_text
+            df.loc[df['Case_study'] == case_name,'Date_Time'] = t
+            df.to_csv(recap_file, index=False)                                              
+        else:
+            with open(recap_file, 'a') as f:
+                writer = csv.writer(f)
+                writer.writerow([case_name,self.expl_text,t])
+                
         if not os.path.exists(Path(self.output_file).parent):
             os.makedirs(Path(self.output_file).parent)
         
         open_file = open(self.output_file,"wb")
         pickle.dump(self.PKL_save,open_file)
         open_file.close()
-
-        case_exist = False
-        case_name = os.path.basename(os.path.normpath(Path(self.output_file).parent))
-        recap_file = os.path.join(self.pth_output_all,'_Recap.csv')
-        if not os.path.exists(Path(recap_file)):
-            with open(recap_file,'w+') as f:
-                writer = csv.writer(f)
-                writer.writerow(['Case study','Comment'])
-        with open(recap_file, 'r+') as f:
-            reader = csv.reader(f)
-            writer = csv.writer(f)
-            for row in reader:
-                if case_name == row[0]:
-                    row[1] = self.expl_text
-                    writer.writerow(row)
-                    case_exist = True
-                    break
-            if not case_exist:
-                writer.writerow([case_name,self.expl_text])
-
-    def unpkl(self):
-        open_file = open(self.output_file,"rb")
-        loaded_list = pickle.load(open_file)
-        open_file.close()
-
-        return loaded_list

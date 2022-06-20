@@ -17,6 +17,7 @@ sys.path.insert(0, pymodPath)
 from ampl_object import AmplObject
 from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
+# from ampl_graph import AmplGraph
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
 pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
@@ -67,8 +68,8 @@ if __name__ == '__main__':
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
-    N_year_opti = [35, 10]
-    N_year_overlap = [0, 5]
+    N_year_opti = [10]
+    N_year_overlap = [5]
 
 
     
@@ -80,7 +81,7 @@ if __name__ == '__main__':
         n_year_overlap = N_year_overlap[m]
         
         case_study = 'pickle_{}_{}_gwp_only_2050'.format(n_year_opti,n_year_overlap)
-        expl_text = 'No gwp limit for any year except 2050, to reach carbon neutrality'
+        expl_text = 'No gwp limit for any year except 2050, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
         
         output_folder = os.path.join(pth_output_all,case_study)
         output_file = os.path.join(output_folder,'_Results.pkl')
@@ -121,7 +122,6 @@ if __name__ == '__main__':
             
             elapsed_i = time.time()-t_i
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
-            
             
             if i == len(ampl_pre.years_opti)-1:
                 ampl_collector.pkl()
