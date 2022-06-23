@@ -5,8 +5,8 @@
 # NEW VARIABLE FOR MYOPIC
 var F_wnd {YEARS_WND, TECHNOLOGIES} >= 0; # F_wnd: Installed capacity during the window of interest
 var F_up_to {YEARS_UP_TO, TECHNOLOGIES} >= 0; # F_up_to: Installed capacity from the start of the optimisation (2015)
-var F_new_up_to {PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase from the start of the optimisation (2015)
-var F_decom_up_to {PHASE_UP_TO,PHASE_UP_TO union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase from the start of the optimisation (2015)
+var F_new_up_to {PHASE_UP_TO union {"2015_2020"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase from the start of the optimisation (2015)
+var F_decom_up_to {PHASE_UP_TO,PHASE_UP_TO union {"2015_2020"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase from the start of the optimisation (2015)
 var F_old_up_to {PHASE_UP_TO,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output from the start of the optimisation (2015)
 var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
 var Tech_wnd {YEARS_WND diff YEAR_ONE, LAYERS, TECHNOLOGIES diff STORAGE_TECH union RESOURCES}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
@@ -26,13 +26,13 @@ subject to store_F_wnd {j in TECHNOLOGIES, y in YEARS_WND}:
 subject to store_F_up_to {j in TECHNOLOGIES, y in YEARS_UP_TO}:
 	F_up_to[y,j] = F[y,j];
 
-subject to store_F_new_up_to {p in PHASE_UP_TO union {"2010_2015"}, j in TECHNOLOGIES}:
+subject to store_F_new_up_to {p in PHASE_UP_TO union {"2015_2020"}, j in TECHNOLOGIES}:
 	F_new_up_to[p,j] = F_new[p,j];
 
 subject to store_F_old_up_to {p in PHASE_UP_TO, j in TECHNOLOGIES}:
 	F_old_up_to[p,j] = F_old[p,j];
 
-subject to store_F_decom_up_to {p_decom in PHASE_UP_TO, p_built in PHASE_UP_TO union {"2010_2015"}, j in TECHNOLOGIES}:
+subject to store_F_decom_up_to {p_decom in PHASE_UP_TO, p_built in PHASE_UP_TO union {"2015_2020"}, j in TECHNOLOGIES}:
 	F_decom_up_to[p_decom,p_built,j] = F_decom[p_decom,p_built,j];
 
 subject to store_F_used_year_start_next {y in YEAR_ONE_NEXT, j in TECHNOLOGIES}:

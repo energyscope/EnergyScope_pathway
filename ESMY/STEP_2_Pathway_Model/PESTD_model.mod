@@ -75,7 +75,7 @@ set COGEN within TECHNOLOGIES; # cogeneration tech
 set BOILERS within TECHNOLOGIES; # boiler tech
 
 #NEW DEPENDENT:
-set AGE {TECHNOLOGIES,PHASE} within PHASE union {"2010_2015"} union {"STILL_IN_USE"};
+set AGE {TECHNOLOGIES,PHASE} within PHASE union {"2015_2020"} union {"STILL_IN_USE"};
 
 
 #################################
@@ -87,7 +87,7 @@ param max_inv_phase {PHASE} default Infinity;#Unlimited
 param t_phase ;
 param diff_2015_phase {PHASE};
 param gwp_limit_transition >=0 default Infinity; #To limit CO2 emissions over the transition
-param decom_allowed {PHASE,PHASE union {"2010_2015"},TECHNOLOGIES} default 0;
+param decom_allowed {PHASE,PHASE union {"2015_2020"},TECHNOLOGIES} default 0;
 param remaining_years {TECHNOLOGIES,PHASE} >=0;
 param limit_LT_renovation >= 0;
 param limit_pass_mob_changes >= 0;
@@ -165,8 +165,8 @@ param annualised_factor {p in PHASE} := 1 / ((1 + i_rate)^diff_2015_phase[p] ); 
 #################################
 
 ## NEW VARIABLES FOR PATHWAY:
-var F_new {PHASE union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase
-var F_decom {PHASE,PHASE union {"2010_2015"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase
+var F_new {PHASE union {"2015_2020"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for the additional new capacity installed in a new phase
+var F_decom {PHASE,PHASE union {"2015_2020"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase
 var F_old {PHASE,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output
 var C_inv_phase {PHASE} >=0; #[M€/GW] Phase total annualised investment cost
 var C_inv_return {TECHNOLOGIES} >=0; #[M€] Money given back for existing technologies after 2050 to compute the objective function
@@ -285,7 +285,7 @@ subject to gwp_op_calc {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
 
 # [Eq. XX] total transition gwp calculation
 subject to totalGWPTransition_calculation : # category: GWP_calc
-	TotalGWPTransition = TotalGWP ["YEAR_2015"] + sum {p in PHASE_UP_TO union PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]}  (t_phase * (TotalGWP [y_start] + TotalGWP [y_stop])/2);
+	TotalGWPTransition = TotalGWP ["YEAR_2020"] + sum {p in PHASE_UP_TO union PHASE_WND,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]}  (t_phase * (TotalGWP [y_start] + TotalGWP [y_stop])/2);
 	
 ## Multiplication factor
 #-----------------------
@@ -482,38 +482,20 @@ subject to solar_area_limited {y in YEARS_WND diff YEAR_ONE} :
 ## Define technologies change during phases:
 #-------------------------------------------
 
-# # [Eq. XX] Relate the installed capacity between years
-# subject to phase_new_build {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in TECHNOLOGIES}:
-# 	F[y_stop,i] = F[y_start,i] + F_new[p,i] - F_old [p,i] 
-#   											     - sum {p2 in {PHASE_WND union PHASE_UP_TO union {"2010_2015"}}} F_decom[p,p2,i];
-
-# # [Eq. XX] Impose decom_allowed to 0 when not physical
-# subject to define_f_decom_properly {p_decom in PHASE_WND, p_built in PHASE_WND union PHASE_UP_TO union {"2010_2015"}, i in TECHNOLOGIES}:
-# 	if decom_allowed[p_decom,p_built,i] == 0 then F_decom [p_decom,p_built,i] = 0;
-
-# # [Eq. XX] Intialise the first phase based on YEAR_2015 results
-# subject to F_new_initiatlisation {tech in TECHNOLOGIES}:
-# 	F_new ["2010_2015",tech] = F["YEAR_2015",tech]; # Generate F_new2010_2015
-
-# # [Eq. XX] Impose the exact capacity that reaches its lifetime
-# subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE_WND union PHASE_UP_TO, age in AGE [i,p]}:
-# 	F_old [p,i] = if (age == "STILL_IN_USE") then  0 #<=> no problem
-# 					else F_new [age,i]    - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,age,i];
-
 # [Eq. XX] Relate the installed capacity between years
 # --> Check p2 HERE --> OK
 subject to phase_new_build {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in TECHNOLOGIES}:
 	F[y_stop,i] = F[y_start,i] + F_new[p,i] - F_old [p,i] 
-  											     - sum {p2 in {PHASE_WND union PHASE_UP_TO union {"2010_2015"}}} F_decom[p,p2,i];
+  											     - sum {p2 in {PHASE_WND union PHASE_UP_TO union {"2015_2020"}}} F_decom[p,p2,i];
 
 # [Eq. XX] Impose decom_allowed to 0 when not physical
 # --> Check p_built HERE --> Check if p_decom in PHASE ne change pas les résultats !!!!!!!!
-subject to define_f_decom_properly {p_decom in PHASE, p_built in PHASE union {"2010_2015"}, i in TECHNOLOGIES}:
+subject to define_f_decom_properly {p_decom in PHASE, p_built in PHASE union {"2015_2020"}, i in TECHNOLOGIES}:
 	if decom_allowed[p_decom,p_built,i] == 0 then F_decom [p_decom,p_built,i] = 0;
 
 # [Eq. XX] Intialise the first phase based on YEAR_2015 results
 subject to F_new_initialisation {tech in TECHNOLOGIES}:
-	F_new ["2010_2015",tech] = F["YEAR_2015",tech]; # Generate F_new2010_2015
+	F_new ["2015_2020",tech] = F["YEAR_2020",tech]; # Generate F_new2015_2020
 
 # [Eq. XX] Impose the exact capacity that reaches its lifetime
 # --> Check p2 HERE --> OK : p2 in PHASE
@@ -521,7 +503,7 @@ subject to phase_out_assignement {i in TECHNOLOGIES, p in PHASE_WND, age in AGE 
 	F_old [p,i] = if (age == "STILL_IN_USE") then  0 #<=> no problem
 					else F_new [age,i]    - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,age,i];
 
-subject to no_decom_if_no_built {i in TECHNOLOGIES, p in PHASE_WND union PHASE_UP_TO union {"2010_2015"}}:
+subject to no_decom_if_no_built {i in TECHNOLOGIES, p in PHASE_WND union PHASE_UP_TO union {"2015_2020"}}:
 	F_new [p, i] -  sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i] >= 0;
 
 # Limit renovation rate:
@@ -554,7 +536,7 @@ subject to limit_changes_freight {p in PHASE_WND union PHASE_UP_TO, y_start in P
 	
 # [Eq. XX] Compute capital expenditure for transition
 subject to total_capex: # category: COST_calc
-	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2015",i] # 2015 investment
+	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2020",i] # 2015 investment
 				 + sum{p in PHASE_WND union PHASE_UP_TO} C_inv_phase [p]
 				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
 
@@ -568,7 +550,7 @@ subject to investment_return {i in TECHNOLOGIES}:
 
 # [Eq. XX] Compute operating cost for transition
 subject to Opex_tot_cost_calculation :# category: COST_calc
-	C_tot_opex = C_opex["YEAR_2015"] 
+	C_tot_opex = C_opex["YEAR_2020"] 
 				 + t_phase *  sum {p in PHASE_WND union PHASE_UP_TO,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 

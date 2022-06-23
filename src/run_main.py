@@ -25,17 +25,17 @@ pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
 mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
             os.path.join(pth_model,'store_variables.mod')]
 
-mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2015.mod'),
+mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
               os.path.join(pth_model,'fix.mod')]
 
 dat_path = [os.path.join(pth_model,'seq_opti.dat'),
              os.path.join(pth_model,'PESTD_data_year_related.dat'),
              os.path.join(pth_model,'PESTD_data_efficiencies.dat'),
              os.path.join(pth_model,'PESTD_12TD.dat'),
-             os.path.join(pth_model,'PESTD_data_set_AGE.dat'),
+             os.path.join(pth_model,'PESTD_data_set_AGE_2020.dat'),
              os.path.join(pth_model,'PESTD_data_remaining_wnd.dat'),
              os.path.join(pth_model,'PESTD_data_all_years.dat'),
-             os.path.join(pth_model,'PESTD_data_decom_allowed.dat')]
+             os.path.join(pth_model,'PESTD_data_decom_allowed_2020.dat')]
 
 ## Options for ampl and gurobi
 gurobi_options = ['predual=-1',
@@ -68,8 +68,8 @@ if __name__ == '__main__':
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
-    N_year_opti = [10]
-    N_year_overlap = [5]
+    N_year_opti = [35, 10]
+    N_year_overlap = [0, 5]
 
 
     
@@ -80,8 +80,8 @@ if __name__ == '__main__':
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
         
-        case_study = 'pickle_{}_{}_gwp_only_2050'.format(n_year_opti,n_year_overlap)
-        expl_text = 'No gwp limit for any year except 2050, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+        case_study = 'pickle_{}_{}_gwp_only_2050_start_2020'.format(n_year_opti,n_year_overlap)
+        expl_text = 'No gwp limit for any year except 2050, to reach carbon neutrality with {} years of time window and {} years of overlap, start in 2020'.format(n_year_opti,n_year_overlap)
         
         output_folder = os.path.join(pth_output_all,case_study)
         output_file = os.path.join(output_folder,'_Results.pkl')
@@ -101,7 +101,6 @@ if __name__ == '__main__':
             
             ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
             
-            ampl.set_params('gwp_limit',{('YEAR_2015'):1e6})
             ampl.set_params('gwp_limit',{('YEAR_2020'):1e6})
             ampl.set_params('gwp_limit',{('YEAR_2025'):1e6})
             ampl.set_params('gwp_limit',{('YEAR_2030'):1e6})

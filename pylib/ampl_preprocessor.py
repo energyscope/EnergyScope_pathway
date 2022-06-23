@@ -42,6 +42,7 @@ class AmplPreProcessor:
         self.mod_path = ampl_obj.dir
         self.list_year = ampl_obj.sets['YEARS']
         self.list_phase = ampl_obj.sets['PHASE']
+        self.without_2015(self)
         self.years_opti = list()
         self.phases_opti = list()
         self.years_up_to = list()
@@ -169,6 +170,8 @@ class AmplPreProcessor:
                         f.write('\n')
             f.write('; \n')
     
+    
+    
 
     @staticmethod
     def pathway_window(self):
@@ -226,3 +229,8 @@ class AmplPreProcessor:
         self.phases_opti = phases_opti
         self.years_up_to = years_up_to
         self.phases_up_to = phases_up_to
+
+    @staticmethod
+    def without_2015(self):
+        self.list_year.remove('YEAR_2015')
+        self.list_phase.remove('2015_2020')
