@@ -187,8 +187,8 @@ class AmplPreProcessor:
 
         if years_window % 5 != 0:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt should be a multiple of 5')
-        elif years_window > 35 or years_window <= 0:
-            raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt cannot be smaller than 0 or greater than 35')
+        elif years_window > 30 or years_window <= 0:
+            raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt cannot be smaller than 0 or greater than 30')
         elif years_window < self.t_phase:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt must be bigger or equal to the number of years within a phase')
         elif years_window <= years_overlap:

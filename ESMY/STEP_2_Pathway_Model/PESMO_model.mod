@@ -37,10 +37,7 @@ set YEAR_ONE_NEXT within YEARS;
 #########################
 
 ## MAIN SETS: Sets whose elements are input directly in the data file
-set PERIODS := 1 .. 8760; # time periods (hours of the year)
-set HOURS := 1 .. 24; # hours of the day
-set TYPICAL_DAYS:= 1 .. 12; # typical days
-set T_H_TD within {PERIODS, HOURS, TYPICAL_DAYS}; # set linking periods, hours, days, typical days
+set PERIODS; # time periods
 set SECTORS; # sectors of the energy system
 set END_USES_INPUT; # Types of demand (end-uses). Input to the model
 set END_USES_CATEGORIES; # Categories of demand (end-uses): electricity, heat, mobility
@@ -65,10 +62,6 @@ set EVs_BATT   within STORAGE_TECH; # specific battery of EVs
 set EVs_BATT_OF_V2G {V2G}; # Makes the link between batteries of EVs and the V2G technology
 set STORAGE_DAILY within STORAGE_TECH;# Storages technologies for daily application 
 set TS_OF_DEC_TECH {TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}} ; # Makes the link between TS and the technology producing the heat
-
-##Additional SETS added just to simplify equations.
-set TYPICAL_DAY_OF_PERIOD {t in PERIODS} := setof {h in HOURS, td in TYPICAL_DAYS: (t,h,td) in T_H_TD} td; #TD_OF_PERIOD(T)
-set HOUR_OF_PERIOD {t in PERIODS} := setof {h in HOURS, td in TYPICAL_DAYS: (t,h,td) in T_H_TD} h; #H_OF_PERIOD(T)
 
 ## Additional SETS: only needed for printing out results (not represented in Figure 3).
 set COGEN within TECHNOLOGIES; # cogeneration tech
@@ -95,11 +88,9 @@ param limit_freight_changes >= 0;
 param efficiency {YEARS} >=0 default 1;
 
 ## Parameters added to include time series in the model [Table 1]
-param electricity_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_elec [-]: factor for sharing lighting across typical days (adding up to 1)
-param heating_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_sh [-]: factor for sharing space heating across typical days (adding up to 1)
-param mob_pass_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_pass [-]: factor for sharing passenger transportation across Typical days (adding up to 1) based on https://www.fhwa.dot.gov/policy/2013cpr/chap1.cfm
-param mob_freight_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_fr [-]: factor for sharing freight transportation across Typical days (adding up to 1)
-param c_p_t {TECHNOLOGIES, HOURS, TYPICAL_DAYS} default 1; #Hourly capacity factor [-]. If = 1 (default value) <=> no impact.
+param lighting_month {PERIODS} >= 0, <= 1; # %_lighting: factor for sharing lighting across months (adding up to 1)
+param heating_month {PERIODS} >= 0, <= 1; # %_sh: factor for sharing space heating across months (adding up to 1)
+param c_p_t {TECHNOLOGIES, PERIODS} >= 0, <= 1 default 1; # capacity factor of each technology and resource, defined on monthly basis. Different than 1 if F_Mult_t (t) <= c_p_t (t) * F_Mult
 
 ## Parameters added to define scenarios and technologies [Table 2]
 param end_uses_demand_year {YEARS, END_USES_INPUT, SECTORS} >= 0 default 0; # end_uses_year [GWh]: table end-uses demand vs sectors (input to the model). Yearly values. [Mpkm] or [Mtkm] for passenger or freight mobility.
@@ -121,7 +112,7 @@ param share_freight_boat_max {YEARS}  >= 0, <= 1 default 0; # % max limit for pe
 param share_heat_dhn_min {YEARS} >= 0, <= 1 default 0; # %_dhn,min [-]: min limit for penetration of dhn in low-T heating
 param share_heat_dhn_max {YEARS} >= 0, <= 1 default 0; # %_dhn,max [-]: max limit for penetration of dhn in low-T heating
 param share_ned {YEARS, END_USES_TYPES_OF_CATEGORY["NON_ENERGY"]} >= 0, <= 1; # %_ned [-] share of non-energy demand per type of feedstocks.
-param t_op {HOURS, TYPICAL_DAYS} default 1;# [h]: operating time 
+param t_op {PERIODS}; # duration of each time period [h]
 param f_max {YEARS,TECHNOLOGIES} >= 0 default 0; # Maximum feasible installed capacity [GW], refers to main output. storage level [GWh] for STORAGE_TECH
 param f_min {YEARS,TECHNOLOGIES} >= 0 default 0; # Minimum feasible installed capacity [GW], refers to main output. storage level [GWh] for STORAGE_TECH
 param fmax_perc {YEARS,TECHNOLOGIES} >= 0, <= 1 default 1; # value in [0,1]: this is to fix that a technology can at max produce a certain % of the total output of its sector over the entire year
@@ -146,7 +137,6 @@ param storage_discharge_time {YEARS, STORAGE_TECH} >= 0 default 0; # t_sto_out [
 param storage_availability {YEARS, STORAGE_TECH} >=0, default 1;# %_sto_avail [-]: Storage technology availability to charge/discharge. Used for EVs 
 param loss_network {YEARS, END_USES_TYPES} >= 0 default 0; # %_net_loss: Losses coefficient [0; 1] in the networks (grid and DHN)
 param batt_per_car {YEARS, V2G} >= 0 default 0; # ev_Batt_size [GWh]: Battery size per EVs car technology
-param state_of_charge_ev {EVs_BATT,HOURS} >= 0, default 0; # Minimum state of charge of the EV during the day. 
 param c_grid_extra >=0; # # Cost to reinforce the grid due to IRE penetration [Meuros/GW of (PV + Wind)].
 param elec_max_import_capa  {YEARS} >=0;
 param solar_area	 {YEARS} >= 0; # Maximum land available for PV deployment [km2]
@@ -155,7 +145,7 @@ param power_density_solar_thermal >=0 default 0;# Maximum power irradiance for s
 
 
 ##Additional parameter (not presented in the paper)
-param total_time := sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (t_op [h, td]); # [h]. added just to simplify equations
+param total_time := sum {t in PERIODS} (t_op [t]); # added just to simplify equations
 
 # NEW : PARAM DEPEN?DENT:
 param annualised_factor {p in PHASE} := 1 / ((1 + i_rate)^diff_2015_phase[p] ); # Annualisation factor for each different technology
@@ -184,19 +174,19 @@ var Share_freight_road {y in YEARS}, >= share_freight_road_min [y], <= share_fre
 var Share_freight_boat {y in YEARS}, >= share_freight_boat_min [y], <= share_freight_boat_max [y]; # %_Rail: % of freight mobility attributed to train
 var Share_heat_dhn {y in YEARS}, >= share_heat_dhn_min [y], <= share_heat_dhn_max [y]; # %_DHN: Ratio [0; 1] centralized over total low-temperature heat
 var F {YEARS, TECHNOLOGIES} >= 0; # F: Installed capacity ([GW]) with respect to main output (see layers_in_out). [GWh] for STORAGE_TECH.
-var F_t {YEARS, RESOURCES union TECHNOLOGIES, HOURS, TYPICAL_DAYS} >= 0; # F_t: Operation in each period [GW] or, for STORAGE_TECH, storage level [GWh]. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
-var Storage_in {YEARS, i in STORAGE_TECH, LAYERS, HOURS, TYPICAL_DAYS} >= 0; # Sto_in [GW]: Power input to the storage in a certain period
-var Storage_out {YEARS, i in STORAGE_TECH, LAYERS, HOURS, TYPICAL_DAYS} >= 0; # Sto_out [GW]: Power output from the storage in a certain period
+var F_t {YEARS, RESOURCES union TECHNOLOGIES, PERIODS} >= 0; # F_t: Operation in each period. multiplication factor with respect to the values in layers_in_out table. Takes into account c_p
+var Storage_in {YEARS, i in STORAGE_TECH, LAYERS, PERIODS} >= 0; # Sto_in: Power [GW] input to the storage in a certain period
+var Storage_out {YEARS, i in STORAGE_TECH, LAYERS, PERIODS} >= 0; # Sto_out: Power [GW] output from the storage in a certain period
 var Power_nuclear {YEARS}  >=0; # [GW] P_Nuc: Constant load of nuclear
 var Shares_mobility_passenger {YEARS, TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_PASSENGER"]} >=0; # %_MobPass [-]: Constant share of passenger mobility
 # NEW VARIABLE
 var Shares_mobility_freight {YEARS, TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_FREIGHT"]} >=0; # %_Freight [-]: Constant share of passenger mobility
 var Shares_lowT_dec {YEARS, TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}}>=0 ; # %_HeatDec [-]: Constant share of heat Low T decentralised + its specific thermal solar
 var F_solar         {YEARS, TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}} >=0; # F_sol [GW]: Solar thermal installed capacity per heat decentralised technologies
-var F_t_solar       {YEARS, TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS} >= 0; # F_t_sol [GW]: Solar thermal operating per heat decentralised technologies
+var F_t_solar       {YEARS, TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, PERIODS} >= 0; # F_t_sol [GW]: Solar thermal operating per heat decentralised technologies
 
 ##Dependent variables [Table 4] :
-var End_uses {YEARS, LAYERS, HOURS, TYPICAL_DAYS} >= 0; #EndUses [GW]: total demand for each type of end-uses (hourly power). Defined for all layers (0 if not demand). [Mpkm] or [Mtkm] for passenger or freight mobility.
+var End_uses {YEARS, LAYERS, PERIODS} >= 0; # total demand for each type of end-uses (monthly power). Defined for all layers (0 if not demand). [Mpkm] or [Mtkm] for passenger or freight mobility.
 var TotalCost {YEARS} >= 0; # C_tot [MCHF/year]: Total cost of the system.
 var C_inv {YEARS, TECHNOLOGIES} >= 0; #C_inv [MCHF]: Total investment cost of each technology
 var C_maint {YEARS, TECHNOLOGIES} >= 0; #C_maint [MCHF/year]: Total O&M cost of each technology (excluding resource cost)
@@ -204,7 +194,7 @@ var C_op {YEARS, RESOURCES} >= 0; #C_op [MCHF/year]: Total O&M cost of each reso
 var TotalGWP {YEARS} >= 0; # GWP_tot [ktCO2-eq./year]: Total global warming potential (GWP) emissions in the system
 var GWP_constr {YEARS, TECHNOLOGIES} >= 0; # GWP_constr [ktCO2-eq.]: Total emissions of the technologies
 var GWP_op {YEARS, RESOURCES} >= 0; #  GWP_op [ktCO2-eq.]: Total yearly emissions of the resources [ktCO2-eq./y]
-var Network_losses {YEARS, END_USES_TYPES, HOURS, TYPICAL_DAYS} >= 0; # Net_loss [GW]: Losses in the networks (normally electricity grid and DHN)
+var Network_losses {YEARS, END_USES_TYPES, PERIODS} >= 0; # Net_loss [GW]: Losses in the networks (normally electricity grid and DHN)
 var Storage_level {YEARS, STORAGE_TECH, PERIODS} >= 0; # Sto_level [GWh]: Energy stored at each period
 
 #########################################
@@ -217,24 +207,24 @@ var Storage_level {YEARS, STORAGE_TECH, PERIODS} >= 0; # Sto_level [GWh]: Energy
 #-----------------------------------------
 
 # [Figure 4] From annual energy demand to hourly power demand. End_uses is non-zero only for demand layers.
-subject to end_uses_t {y in YEARS_WND diff YEAR_ONE, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
-	End_uses [y,l, h, td] = (if l == "ELECTRICITY" 
+subject to end_uses_t {y in YEARS_WND diff YEAR_ONE, l in LAYERS, t in PERIODS}:
+	End_uses [y,l, t] = (if l == "ELECTRICITY" 
 		then
-			(end_uses_input[y,l] / total_time + end_uses_input[y,"LIGHTING"] * electricity_time_series [h, td] / t_op [h, td] ) + Network_losses [y,l,h,td]
+			(end_uses_input[y,l] / total_time + end_uses_input[y,"LIGHTING"] * lighting_month [t] / t_op [t]) + Network_losses [y,l,t]
 		else (if l == "HEAT_LOW_T_DHN" then
-			(end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_time_series [h, td] / t_op [h, td] ) * Share_heat_dhn [y] + Network_losses [y,l,h,td]
+			(end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_month [t] / t_op [t]) * Share_heat_dhn [y] + Network_losses [y,l,t]
 		else (if l == "HEAT_LOW_T_DECEN" then
-			(end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_time_series [h, td] / t_op [h, td] ) * (1 - Share_heat_dhn [y])
+			(end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_month [t] / t_op [t]) * (1 - Share_heat_dhn [y])
 		else (if l == "MOB_PUBLIC" then
-			(end_uses_input[y,"MOBILITY_PASSENGER"] * mob_pass_time_series [h, td] / t_op [h, td]  ) * Share_mobility_public [y]
+			(end_uses_input[y,"MOBILITY_PASSENGER"] / total_time) * Share_mobility_public [y]
 		else (if l == "MOB_PRIVATE" then
-			(end_uses_input[y,"MOBILITY_PASSENGER"] * mob_pass_time_series [h, td] / t_op [h, td]  ) * (1 - Share_mobility_public [y])
+			(end_uses_input[y,"MOBILITY_PASSENGER"] / total_time) * (1 - Share_mobility_public [y])
 		else (if l == "MOB_FREIGHT_RAIL" then
-			(end_uses_input[y,"MOBILITY_FREIGHT"]   * mob_freight_time_series [h, td] / t_op [h, td] ) *  Share_freight_train [y]
+			(end_uses_input[y,"MOBILITY_FREIGHT"] / total_time) * Share_freight_train [y]
 		else (if l == "MOB_FREIGHT_ROAD" then
-			(end_uses_input[y,"MOBILITY_FREIGHT"]   * mob_freight_time_series [h, td] / t_op [h, td] ) *  Share_freight_road [y]
+			(end_uses_input[y,"MOBILITY_FREIGHT"] / total_time) * Share_freight_road [y]
 		else (if l == "MOB_FREIGHT_BOAT" then
-			(end_uses_input[y,"MOBILITY_FREIGHT"]   * mob_freight_time_series [h, td] / t_op [h, td] ) *  Share_freight_boat [y]
+			(end_uses_input[y,"MOBILITY_FREIGHT"] / total_time) * Share_freight_boat [y]
 		else (if l == "HEAT_HIGH_T" then
 			end_uses_input[y,l] / total_time
 		else (if l == "HVC" then
@@ -264,7 +254,7 @@ subject to main_cost_calc {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
 
 # [Eq. 5] Total cost of each resource
 subject to op_cost_calc {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	C_op [y,i] = sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (c_op [y,i] * F_t [y,i, h, td] * t_op [h, td] ) ;
+	C_op [y,i] = sum {t in PERIODS} (c_op [y,i] * F_t [y,i, t] * t_op [t] ) ;
 
 ## Emissions
 #-----------
@@ -281,7 +271,7 @@ subject to gwp_constr_calc {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
 
 # [Eq. 8]
 subject to gwp_op_calc {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	GWP_op [y,i] = gwp_op [y,i] * sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} ( F_t [y,i, h, td] * t_op [h, td] );	
+	GWP_op [y,i] = gwp_op [y,i] * sum {t in PERIODS} ( F_t [y,i, t] * t_op [t] );	
 
 # [Eq. XX] total transition gwp calculation
 subject to totalGWPTransition_calculation : # category: GWP_calc
@@ -295,24 +285,24 @@ subject to size_limit {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
 	f_min [y,j] <= F [y,j] <= f_max [y,j];
 	
 # [Eq. 10] relation between power and capacity via period capacity factor. This forces max hourly output (e.g. renewables)
-subject to capacity_factor_t {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES, h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y,j, h, td] <= F [y,j] * c_p_t [j, h, td];
+subject to capacity_factor_t {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES, t in PERIODS}:
+	F_t [y,j, t] <= F [y,j] * c_p_t [j, t];
 	
 # [Eq. 11] relation between mult_t and mult via yearly capacity factor. This one forces total annual output
 subject to capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
-	sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,j, h, td] * t_op [h, td]) <= F [y,j] * c_p [y,j] * total_time;	
+	sum {t in PERIODS} (F_t [y,j, t] * t_op [t]) <= F [y,j] * c_p [y,j] * total_time;	
 		
 ## Resources
 #-----------
 
 # [Eq. 12] Resources availability equation
 subject to resource_availability {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,i, h, td] * t_op [h, td]) <= avail [y,i];
+	sum {t in PERIODS} (F_t [y,i, t] * t_op [t]) <= avail [y,i];
 
 # [Eq. 2.12-bis] Constant flow of import for resources listed in SET RES_IMPORT_CONSTANT
 var Import_constant {y in YEARS diff YEAR_ONE, RES_IMPORT_CONSTANT} >= 0;
-subject to resource_constant_import {y in YEARS_WND diff YEAR_ONE, i in RES_IMPORT_CONSTANT, h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y, i, h, td] * t_op [h, td] = Import_constant [y, i];
+subject to resource_constant_import {y in YEARS_WND diff YEAR_ONE, i in RES_IMPORT_CONSTANT, t in PERIODS}:
+	F_t [y, i, t] * t_op [t] = Import_constant [y, i];
 
 
 ## Layers
@@ -320,56 +310,56 @@ subject to resource_constant_import {y in YEARS_WND diff YEAR_ONE, i in RES_IMPO
 
 # [Eq. 13] Layer balance equation with storage. Layers: input > 0, output < 0. Demand > 0. Storage: in > 0, out > 0;
 # output from technologies/resources/storage - input to technologies/storage = demand. Demand has default value of 0 for layers which are not end_uses
-subject to layer_balance {y in YEARS_WND diff YEAR_ONE, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+subject to layer_balance {y in YEARS_WND diff YEAR_ONE, l in LAYERS, t in PERIODS}:
 		sum {i in RESOURCES union TECHNOLOGIES diff STORAGE_TECH } 
-		(layers_in_out[y,i, l] * F_t [y,i, h, td]) 
-		+ sum {j in STORAGE_TECH} ( Storage_out [y,j, l, h, td] - Storage_in [y,j, l, h, td] )
-		- End_uses [y, l, h, td]
+		(layers_in_out[y,i, l] * F_t [y,i, t]) 
+		+ sum {j in STORAGE_TECH diff STORAGE_DAILY} (Storage_out [y,j, l, t] - Storage_in [y,j, l, t] )
+		- End_uses [y, l, t]
 		= 0;
 	
 ## Storage	
 #---------
 	
 # [Eq. 14] The level of the storage represents the amount of energy stored at a certain time.
-subject to storage_level {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
+subject to storage_level {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff STORAGE_DAILY, t in PERIODS}:
 	Storage_level [y, j, t] = (if t == 1 then
 	 			Storage_level [y, j, card(PERIODS)] * (1.0 -  storage_losses[y,j])
-				+ t_op [h, td] * (   (sum {l in LAYERS: storage_eff_in [y,j,l] > 0}  (Storage_in [y, j, l, h, td]  * storage_eff_in  [y, j, l])) 
-				                   - (sum {l in LAYERS: storage_eff_out [y,j,l] > 0} (Storage_out [y, j, l, h, td] / storage_eff_out [y, j, l])))
+				+ t_op [t] * (   (sum {l in LAYERS: storage_eff_in [y,j,l] > 0}  (Storage_in [y, j, l, t]  * storage_eff_in  [y, j, l])) 
+				                   - (sum {l in LAYERS: storage_eff_out [y,j,l] > 0} (Storage_out [y, j, l, t] / storage_eff_out [y, j, l])))
 	else
 	 			Storage_level [y, j, t-1] * (1.0 -  storage_losses[y, j])
-				+ t_op [h, td] * (   (sum {l in LAYERS: storage_eff_in [y, j,l] > 0}  (Storage_in [y, j, l, h, td]  * storage_eff_in  [y, j, l])) 
-				                   - (sum {l in LAYERS: storage_eff_out [y, j,l] > 0} (Storage_out [y, j, l, h, td] / storage_eff_out [y, j, l])))
+				+ t_op [t] * (   (sum {l in LAYERS: storage_eff_in [y, j,l] > 0}  (Storage_in [y, j, l, t]  * storage_eff_in  [y, j, l])) 
+				                   - (sum {l in LAYERS: storage_eff_out [y, j,l] > 0} (Storage_out [y, j, l, t] / storage_eff_out [y, j, l])))
 				);
 
 # [Eq. 15] Bounding daily storage
-subject to impose_daily_storage {y in YEARS_WND diff YEAR_ONE, j in STORAGE_DAILY, t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
-	Storage_level [y, j, t] = F_t [y, j, h, td];
+subject to impose_storage {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff STORAGE_DAILY, t in PERIODS}:
+	Storage_level [y, j, t] = F_t [y, j, t];
 	
 # [Eq. 16] Bounding seasonal storage
-subject to limit_energy_stored_to_maximum {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff STORAGE_DAILY , t in PERIODS}:
+subject to limit_energy_stored_to_maximum {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff STORAGE_DAILY, t in PERIODS}:
 	Storage_level [y, j, t] <= F [y, j];# Never exceed the size of the storage unit
 	
 # [Eqs. 17-18] Each storage technology can have input/output only to certain layers. If incompatible then the variable is set to 0
-subject to storage_layer_in {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
-	(if storage_eff_in [y, j, l]=0 then  Storage_in [y, j, l, h, td]  = 0);
-subject to storage_layer_out {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
-	(if storage_eff_out [y, j, l]=0 then  Storage_out [y, j, l, h, td]  = 0);
+subject to storage_layer_in {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff STORAGE_DAILY, l in LAYERS, t in PERIODS}:
+	(if storage_eff_in [y, j, l]=0 then  Storage_in [y, j, l, t]  = 0);
+subject to storage_layer_out {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff STORAGE_DAILY, l in LAYERS, t in PERIODS}:
+	(if storage_eff_out [y, j, l]=0 then  Storage_out [y, j, l, t]  = 0);
 		
 # [Eq. 19] limit the Energy to power ratio. 
-subject to limit_energy_to_power_ratio {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff {"BEV_BATT","PHEV_BATT"}, l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
-	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + Storage_out [y, j, l, h, td] * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
+subject to limit_energy_to_power_ratio {y in YEARS_WND diff YEAR_ONE, j in STORAGE_TECH diff {"BEV_BATT","PHEV_BATT"} diff STORAGE_DAILY, l in LAYERS, t in PERIODS}:
+	Storage_in [y, j, l, t] * storage_charge_time[y, j] + Storage_out [y, j, l, t] * storage_discharge_time[y, j] <=  F [y, j] * storage_availability[y, j];
 
-# [Eq. 19] limit the Energy to power ratio. 
-subject to limit_energy_to_power_ratio_bis {y in YEARS_WND diff YEAR_ONE, i in V2G, j in EVs_BATT_OF_V2G[i] , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
-	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + (Storage_out [y, j, l, h, td] + layers_in_out[y, i,"ELECTRICITY"]* F_t [y, i, h, td] ) * storage_discharge_time[y, j] <=  (F [y, j] - F_t[y,i,h,td] / vehicule_capacity[y,i] * batt_per_car[y,i] ) * storage_availability[y, j];
+# # [Eq. 19] limit the Energy to power ratio. 
+# subject to limit_energy_to_power_ratio_bis {y in YEARS_WND diff YEAR_ONE, i in V2G, j in EVs_BATT_OF_V2G[i] , l in LAYERS, h in HOURS, td in TYPICAL_DAYS}:
+# 	Storage_in [y, j, l, h, td] * storage_charge_time[y, j] + (Storage_out [y, j, l, h, td] + layers_in_out[y, i,"ELECTRICITY"]* F_t [y, i, h, td] ) * storage_discharge_time[y, j] <=  (F [y, j] - F_t[y,i,h,td] / vehicule_capacity[y,i] * batt_per_car[y,i] ) * storage_availability[y, j];
 
 ## Infrastructure
 #----------------
 
 # [Eq. 20] Calculation of losses for each end-use demand type (normally for electricity and DHN)
-subject to network_losses {y in YEARS_WND diff YEAR_ONE, eut in END_USES_TYPES, h in HOURS, td in TYPICAL_DAYS}:
-	Network_losses [y, eut,h,td] = (sum {j in RESOURCES union TECHNOLOGIES diff STORAGE_TECH: layers_in_out [y,j, eut] > 0} ((layers_in_out[y,j, eut]) * F_t [y, j, h, td])) * loss_network [y,eut];
+subject to network_losses {y in YEARS_WND diff YEAR_ONE, eut in END_USES_TYPES, t in PERIODS}:
+	Network_losses [y, eut, t] = (sum {j in RESOURCES union TECHNOLOGIES diff STORAGE_TECH: layers_in_out [y,j, eut] > 0} ((layers_in_out[y,j, eut]) * F_t [y, j, t])) * loss_network [y,eut];
 
 # [Eq. 21] Extra grid cost for integrating 1 GW of RE is estimated to 367.8Meuros per GW of intermittent renewable (27beuros to integrate the overall potential) 
 subject to extra_grid {y in YEARS_WND diff YEAR_ONE}:
@@ -385,20 +375,20 @@ subject to extra_dhn  {y in YEARS_WND diff YEAR_ONE}:
 #------------------------
 	
 # [Eq. 23] Fix nuclear production constant : 
-subject to constantNuc {y in YEARS_WND diff YEAR_ONE, h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y, "NUCLEAR", h, td] = Power_nuclear [y];
+subject to constantNuc {y in YEARS_WND diff YEAR_ONE, t in PERIODS}:
+	F_t [y, "NUCLEAR", t] = Power_nuclear [y];
 
 # [Eq. 24] Operating strategy in mobility passenger (to make model more realistic)
 # Each passenger mobility technology (j) has to supply a constant share  (Shares_mobility_passenger[j]) of the passenger mobility demand
-subject to operating_strategy_mob_passenger{y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_PASSENGER"], h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y, j, h, td]   = Shares_mobility_passenger [y, j] * (end_uses_input[y,"MOBILITY_PASSENGER"] * mob_pass_time_series [h, td] / t_op [h, td] );
+subject to operating_strategy_mob_passenger{y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_PASSENGER"], t in PERIODS}:
+	F_t [y, j, t]   = Shares_mobility_passenger [y, j] * (end_uses_input[y, "MOBILITY_PASSENGER"] / total_time);
 	
 	
 # NEW CONSTRAINT to fix the use of trucks (not having FC trucks during summer and other during winter).
 # [Eq. 25Â¤ Operating strategy in mobility freight (to make model more realistic)
 # Each freight mobility technology (j) has to supply a constant share  (Shares_mobility_freight[j]) of the passenger mobility demand
-subject to operating_strategy_mobility_freight{y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_FREIGHT"], h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y, j, h, td]   = Shares_mobility_freight [y, j] * (end_uses_input[y,"MOBILITY_FREIGHT"] * mob_freight_time_series [h, td] / t_op [h, td] );
+subject to operating_strategy_mobility_freight{y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_CATEGORY["MOBILITY_FREIGHT"], t in PERIODS}:
+	F_t [y, j, t] = Shares_mobility_freight [y, j] * (end_uses_input[y, "MOBILITY_FREIGHT"] / total_time);
 	
 # [Eq. 26] To impose a constant share in the mobility
 subject to Freight_shares {y in YEARS_WND diff YEAR_ONE} :
@@ -408,17 +398,17 @@ subject to Freight_shares {y in YEARS_WND diff YEAR_ONE} :
 ## Thermal solar & thermal storage:
 
 # [Eq. 26] relation between decentralised thermal solar power and capacity via period capacity factor.
-subject to thermal_solar_capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
-	F_t_solar [y, j, h, td] <= F_solar[y, j] * c_p_t["DEC_SOLAR", h, td];
+subject to thermal_solar_capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, t in PERIODS}:
+	F_t_solar [y, j, t] <= F_solar[y, j] * c_p_t["DEC_SOLAR", t];
 	
 # [Eq. 27] Overall thermal solar is the sum of specific thermal solar 	
 subject to thermal_solar_total_capacity {y in YEARS_WND diff YEAR_ONE}:
 	F [y, "DEC_SOLAR"] = sum {j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}} F_solar[y, j];
 
 # [Eq. 28]: Decentralised thermal technology must supply a constant share of heat demand.
-subject to decentralised_heating_balance  {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, i in TS_OF_DEC_TECH[j], h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y, j, h, td] + F_t_solar [y, j, h, td] + sum {l in LAYERS } ( Storage_out [y, i, l, h, td] - Storage_in [y, i, l, h, td])  
-		= Shares_lowT_dec[y, j] * (end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_time_series [h, td] / t_op [h, td]);
+subject to decentralised_heating_balance  {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, i in TS_OF_DEC_TECH[j], t in PERIODS}:
+	F_t [y, j, t] + F_t_solar [y, j, t] + sum {l in LAYERS } ( Storage_out [y, i, l, t] - Storage_in [y, i, l, t])  
+		= Shares_lowT_dec[y, j] * (end_uses_input[y,"HEAT_LOW_T_HW"] / total_time + end_uses_input[y,"HEAT_LOW_T_SH"] * heating_month [t] / t_op [t]);
 
 ## EV storage :
 
@@ -427,24 +417,23 @@ subject to EV_storage_size {y in YEARS_WND diff YEAR_ONE, j in V2G, i in EVs_BAT
 	F [y, i] = F[y,j] / vehicule_capacity [y,j] * batt_per_car[y,j];# Battery size proportional to the number of cars
 	
 # [Eq. 33]  Impose EVs to be supplied by their battery.
-subject to EV_storage_for_V2G_demand {y in YEARS_WND diff YEAR_ONE, j in V2G, i in EVs_BATT_OF_V2G[j], h in HOURS, td in TYPICAL_DAYS}:
-	Storage_out [y, i,"ELECTRICITY",h,td] >=  - layers_in_out[y,j,"ELECTRICITY"]* F_t [y, j, h, td];
-		
-# [Eq. 2.31-bis]  Impose a minimum state of charge at some hours of the day:
-subject to ev_minimum_state_of_charge {j in V2G, i in EVs_BATT_OF_V2G[j], y in YEARS_WND diff YEAR_ONE,  t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
-	Storage_level [y, i, t] >=  F [y, i] * state_of_charge_ev [i, h];
+subject to EV_storage_for_V2G_demand {y in YEARS_WND diff YEAR_ONE, j in V2G, i in EVs_BATT_OF_V2G[j], t in PERIODS}:
+	Storage_out [y, i,"ELECTRICITY",t] >=  - layers_in_out[y,j,"ELECTRICITY"]* F_t [y, j, t];
 
+# # [Eq. 2.31-bis]  Impose a minimum state of charge at some hours of the day:
+# subject to ev_minimum_state_of_charge {j in V2G, i in EVs_BATT_OF_V2G[j], y in YEARS_WND diff YEAR_ONE,  t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]}:
+# 	Storage_level [y, i, t] >=  F [y, i] * state_of_charge_ev [i, h];
 		
 ## Peak demand :
 
 # [Eq. 34] Peak in decentralized heating
-subject to peak_lowT_dec {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
-	F [y, j] >= peak_sh_factor * F_t [y, j, h, td] ;
+subject to peak_lowT_dec {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, t in PERIODS}:
+	F [y, j] >= peak_sh_factor * F_t [y, j, t] ;
 
 # [Eq. 35] Calculation of max heat demand in DHN (1st constrain required to linearised the max function)
 var Max_Heat_Demand {YEARS} >= 0;
-subject to max_dhn_heat_demand {y in YEARS_WND diff YEAR_ONE, h in HOURS, td in TYPICAL_DAYS}:
-	Max_Heat_Demand [y] >= End_uses [y, "HEAT_LOW_T_DHN", h, td];
+subject to max_dhn_heat_demand {y in YEARS_WND diff YEAR_ONE, t in PERIODS}:
+	Max_Heat_Demand [y] >= End_uses [y, "HEAT_LOW_T_DHN", t];
 # Peak in DHN
 subject to peak_lowT_dhn {y in YEARS_WND diff YEAR_ONE}:
 	sum {j in TECHNOLOGIES_OF_END_USES_TYPE ["HEAT_LOW_T_DHN"], i in STORAGE_OF_END_USES_TYPES["HEAT_LOW_T_DHN"]} (F [y, j] + F[y, i]/storage_discharge_time[y, i]) >= peak_sh_factor * Max_Heat_Demand [y];
@@ -463,17 +452,17 @@ subject to minimum_GWP_transition  : # category: GWP_calc
 		
 # [Eq. 36] Definition of min/max output of each technology as % of total output in a given layer. 
 subject to f_max_perc {y in YEARS_WND diff YEAR_ONE, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
-	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j,h,td] * t_op[h,td]) <= fmax_perc [y,j] * sum {j2 in TECHNOLOGIES_OF_END_USES_TYPE[eut], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j2, h, td] * t_op[h,td]);
+	sum {t in PERIODS} (F_t [y,j,t] * t_op[t]) <= fmax_perc [y,j] * sum {j2 in TECHNOLOGIES_OF_END_USES_TYPE[eut], t in PERIODS} (F_t [y,j2, t] * t_op[t]);
 subject to f_min_perc {y in YEARS_WND diff YEAR_ONE, eut in END_USES_TYPES, j in TECHNOLOGIES_OF_END_USES_TYPE[eut]}:
-	sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j,h,td] * t_op[h,td]) >= fmin_perc [y,j] * sum {j2 in TECHNOLOGIES_OF_END_USES_TYPE[eut], t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} (F_t [y,j2, h, td] * t_op[h,td]);
+	sum {t in PERIODS} (F_t [y,j,t] * t_op[t]) >= fmin_perc [y,j] * sum {j2 in TECHNOLOGIES_OF_END_USES_TYPE[eut], t in PERIODS} (F_t [y,j2, t] * t_op[t]);
 
 # [Eq. 39] Energy efficiency is a fixed cost
 subject to extra_efficiency {y in YEARS_WND diff YEAR_ONE}:
 	F [y,"EFFICIENCY"] = efficiency [y];	
 
 # [Eq. 38] Limit electricity import capacity
-subject to max_elec_import {y in YEARS_WND diff YEAR_ONE, h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y, "ELECTRICITY", h, td] * t_op [h, td] <= elec_max_import_capa [y];
+subject to max_elec_import {y in YEARS_WND diff YEAR_ONE, t in PERIODS}:
+	F_t [y, "ELECTRICITY", t] * t_op [t] <= elec_max_import_capa [y];
 	
 # [Eq. 39] Limit surface area for solar
 subject to solar_area_limited {y in YEARS_WND diff YEAR_ONE} :
@@ -510,10 +499,10 @@ subject to no_decom_if_no_built {i in TECHNOLOGIES, p in PHASE_WND union PHASE_U
 # [Eq. XX] Define the amount of change between years
 var F_used_year_start{YEARS_WND, TECHNOLOGIES} >= 0;
 subject to compute_F_used_year_start{p in PHASE_WND, y_start in PHASE_START[p] diff YEAR_ONE, j in TECHNOLOGIES} :
-	F_used_year_start[y_start,j] = (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_start,j, h,td] * t_op[h,td]);
+	F_used_year_start[y_start,j] = (sum {t in PERIODS} F_t [y_start,j, t] * t_op[t]);
 
 subject to delta_change_definition {p in PHASE_WND, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], j in TECHNOLOGIES} :
-	Delta_change [p,j] >= F_used_year_start[y_start,j] - (sum {t in PERIODS, h in HOUR_OF_PERIOD[t], td in TYPICAL_DAY_OF_PERIOD[t]} F_t [y_stop,j, h,td] * t_op[h,td]) ;
+	Delta_change [p,j] >= F_used_year_start[y_start,j] - (sum {t in PERIODS} F_t [y_stop,j, t] * t_op[t]) ;
 
 # [Eq. XX] Limit the amount of change for low temperature heating
 subject to limit_changes_heat {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]} :

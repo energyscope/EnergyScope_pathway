@@ -19,22 +19,33 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 # from ampl_graph import AmplGraph
 
+type_of_model = 'MO'
+
+
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
-pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
-
-mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
-            os.path.join(pth_model,'store_variables.mod')]
-
-mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
+if type_of_model == 'MO':
+    pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
+    mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
+                os.path.join(pth_model,'PESMO_store_variables.mod'),
+                os.path.join(pth_model,'PES_store_variables.mod')]
+    mod_2_path = [os.path.join(pth_model,'PESMO_initialise_2020.mod'),
+                  os.path.join(pth_model,'fix.mod')]
+    dat_path = [os.path.join(pth_model,'PESMO_data_all_years.dat')]
+else:
+    pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
+    mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
+            os.path.join(pth_model,'PESTD_store_variables.mod'),
+            os.path.join(pth_model,'PES_store_variables.mod')]
+    mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
               os.path.join(pth_model,'fix.mod')]
+    dat_path = [os.path.join(pth_model,'PESTD_data_all_years.dat'),
+                os.path.join(pth_model,'PESTD_12TD.dat')]
 
-dat_path = [os.path.join(pth_model,'seq_opti.dat'),
+dat_path += [os.path.join(pth_model,'seq_opti.dat'),
              os.path.join(pth_model,'PESTD_data_year_related.dat'),
              os.path.join(pth_model,'PESTD_data_efficiencies.dat'),
-             os.path.join(pth_model,'PESTD_12TD.dat'),
              os.path.join(pth_model,'PESTD_data_set_AGE_2020.dat'),
              os.path.join(pth_model,'PESTD_data_remaining_wnd.dat'),
-             os.path.join(pth_model,'PESTD_data_all_years.dat'),
              os.path.join(pth_model,'PESTD_data_decom_allowed_2020.dat')]
 
 ## Options for ampl and gurobi
@@ -52,8 +63,6 @@ ampl_options = {'show_stats': 1,
                 'presolve': 10,
                 'presolve_eps': 1e-7,
                 'presolve_fixeps': 1e-7,
-                'times': 0,
-                'gentimes': 0,
                 'show_boundtol': 0,
                 'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
@@ -68,7 +77,7 @@ if __name__ == '__main__':
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
-    N_year_opti = [35, 10]
+    N_year_opti = [30, 10]
     N_year_overlap = [0, 5]
 
 
@@ -122,12 +131,19 @@ if __name__ == '__main__':
             elapsed_i = time.time()-t_i
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
             
+            elapsed = time.time()-t
+            print('Time to solve the whole problem: ',elapsed)
+            
             if i == len(ampl_pre.years_opti)-1:
-                ampl_collector.pkl()
-                break
-        
-        elapsed = time.time()-t
-        print('Time to solve the whole problem: ',elapsed)
+                A = ampl_collector.PKL_save['F_wnd']
+                B = ampl_collector.PKL_save['C_inv_wnd']
+                C = ampl_collector.PKL_save['C_op_maint_wnd']
+                
+                D = 0
+            
+            # if i == len(ampl_pre.years_opti)-1:
+            #     ampl_collector.pkl()
+            #     break
                 
         
         # if PostProcess:
