@@ -87,7 +87,7 @@ class AmplPreProcessor:
             next_year_one = True
             year_one_next = self.years_opti[i+1][0]
 
-        with open(os.path.join(self.mod_path,'seq_opti.dat'),'w+', encoding='utf-8') as f:
+        with open(os.path.join(self.mod_path,'PES_seq_opti.dat'),'w+', encoding='utf-8') as f:
             f.write('set YEARS_WND := ' )
             for year in curr_years_wnd:
                 f.write('%s ' %year)
@@ -132,7 +132,7 @@ class AmplPreProcessor:
         Name of the file where remaining years of lifetime are computed from 2015 to the end of 
         the time window currently optimised
     '''
-    def remaining_update(self,i,file_in = 'PESTD_data_remaining.dat', file_out = 'PESTD_data_remaining_wnd.dat'):
+    def remaining_update(self,i,file_in = 'PES_data_remaining.dat', file_out = 'PES_data_remaining_wnd.dat'):
         
         curr_phases_up_to = self.phases_up_to[i]
         curr_phases_wnd = self.phases_opti[i]

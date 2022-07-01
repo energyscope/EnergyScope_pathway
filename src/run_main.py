@@ -19,12 +19,13 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 # from ampl_graph import AmplGraph
 
-type_of_model = 'MO'
+type_of_model = 'TD'
 
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
+
+pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
 if type_of_model == 'MO':
-    pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
     mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
                 os.path.join(pth_model,'PESMO_store_variables.mod'),
                 os.path.join(pth_model,'PES_store_variables.mod')]
@@ -32,7 +33,6 @@ if type_of_model == 'MO':
                   os.path.join(pth_model,'fix.mod')]
     dat_path = [os.path.join(pth_model,'PESMO_data_all_years.dat')]
 else:
-    pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
     mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
             os.path.join(pth_model,'PESTD_store_variables.mod'),
             os.path.join(pth_model,'PES_store_variables.mod')]
@@ -41,12 +41,13 @@ else:
     dat_path = [os.path.join(pth_model,'PESTD_data_all_years.dat'),
                 os.path.join(pth_model,'PESTD_12TD.dat')]
 
-dat_path += [os.path.join(pth_model,'seq_opti.dat'),
-             os.path.join(pth_model,'PESTD_data_year_related.dat'),
-             os.path.join(pth_model,'PESTD_data_efficiencies.dat'),
-             os.path.join(pth_model,'PESTD_data_set_AGE_2020.dat'),
-             os.path.join(pth_model,'PESTD_data_remaining_wnd.dat'),
-             os.path.join(pth_model,'PESTD_data_decom_allowed_2020.dat')]
+dat_path += [os.path.join(pth_model,'PES_data_all_years.dat'),
+             os.path.join(pth_model,'PES_seq_opti.dat'),
+             os.path.join(pth_model,'PES_data_year_related.dat'),
+             os.path.join(pth_model,'PES_data_efficiencies.dat'),
+             os.path.join(pth_model,'PES_data_set_AGE_2020.dat'),
+             os.path.join(pth_model,'PES_data_remaining_wnd.dat'),
+             os.path.join(pth_model,'PES_data_decom_allowed_2020.dat')]
 
 ## Options for ampl and gurobi
 gurobi_options = ['predual=-1',
@@ -77,8 +78,8 @@ if __name__ == '__main__':
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
-    N_year_opti = [30, 10]
-    N_year_overlap = [0, 5]
+    N_year_opti = [10]
+    N_year_overlap = [5]
 
 
     
