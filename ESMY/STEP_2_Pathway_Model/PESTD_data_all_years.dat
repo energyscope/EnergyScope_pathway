@@ -2,6 +2,128 @@
 																														
 # References based on Supplementary material																														
 																														
+##New set for PATHWAY:																														
+set	YEARS	:=	YEAR_2015	YEAR_2020	YEAR_2025	YEAR_2030	YEAR_2035	YEAR_2040	YEAR_2045	YEAR_2050	;																			
+set PHASE := 	2015_2020	2020_2025	2025_2030	2030_2035	2035_2040	2040_2045	2045_2050;																							
+set PHASE_START["2015_2020"] :=	YEAR_2015;																													
+set PHASE_START["2020_2025"] :=	YEAR_2020;																													
+set PHASE_START["2025_2030"] :=	YEAR_2025;																													
+set PHASE_START["2030_2035"] :=	YEAR_2030;																													
+set PHASE_START["2035_2040"] :=	YEAR_2035;																													
+set PHASE_START["2040_2045"] :=	YEAR_2040;																													
+set PHASE_START["2045_2050"] :=	YEAR_2045;																													
+																														
+set PHASE_STOP["2015_2020"] :=	YEAR_2020;																													
+set PHASE_STOP["2020_2025"] :=	YEAR_2025;																													
+set PHASE_STOP["2025_2030"] :=	YEAR_2030;																													
+set PHASE_STOP["2030_2035"] :=	YEAR_2035;																													
+set PHASE_STOP["2035_2040"] :=	YEAR_2040;																													
+set PHASE_STOP["2040_2045"] :=	YEAR_2045;																													
+set PHASE_STOP["2045_2050"] :=	YEAR_2050;																													
+																														
+																														
+																														
+# --------------------------																														
+# SETS not depending on TD																														
+# --------------------------																														
+																														
+set SECTORS := 	HOUSEHOLDS	SERVICES	INDUSTRY	TRANSPORTATION;																										
+set END_USES_INPUT := 	ELECTRICITY	LIGHTING	HEAT_HIGH_T	HEAT_LOW_T_SH	HEAT_LOW_T_HW	MOBILITY_PASSENGER	MOBILITY_FREIGHT	NON_ENERGY;																						
+set END_USES_CATEGORIES := 	ELECTRICITY	HEAT_HIGH_T	HEAT_LOW_T	MOBILITY_PASSENGER	MOBILITY_FREIGHT	NON_ENERGY;																								
+set RESOURCES :=	ELECTRICITY	GASOLINE	DIESEL	BIOETHANOL	BIODIESEL	LFO	GAS	GAS_RE	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	H2_RE	AMMONIA	AMMONIA_RE	METHANOL	METHANOL_RE	ELEC_EXPORT CO2_EMISSIONS RES_WIND RES_SOLAR  RES_HYDRO RES_GEO	 CO2_ATM CO2_INDUSTRY CO2_CAPTURED;									
+set RES_IMPORT_CONSTANT := 		GAS	GAS_RE	H2_RE	H2	;#	GASOLINE	DIESEL	BIOETHANOL	BIODIESEL	LFO	AMMONIA	AMMONIA_RE	METHANOL	METHANOL_RE	;															
+set BIOFUELS :=	BIOETHANOL	BIODIESEL	GAS_RE	AMMONIA_RE	METHANOL_RE	H2_RE	;																							
+set RE_RESOURCES :=	 BIOETHANOL	BIODIESEL	GAS_RE WOOD RES_WIND RES_SOLAR  RES_HYDRO RES_GEO	WET_BIOMASS	H2_RE	AMMONIA_RE	METHANOL_RE	;																						
+set EXPORT := 	ELEC_EXPORT	CO2_EMISSIONS;																										
+																														
+set END_USES_TYPES_OF_CATEGORY["ELECTRICITY"] :=	ELECTRICITY;																													
+set END_USES_TYPES_OF_CATEGORY["HEAT_HIGH_T"] :=	HEAT_HIGH_T;																													
+set END_USES_TYPES_OF_CATEGORY["HEAT_LOW_T"] :=	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN;																												
+set END_USES_TYPES_OF_CATEGORY["MOBILITY_PASSENGER"] :=	MOB_PUBLIC	MOB_PRIVATE;																												
+set END_USES_TYPES_OF_CATEGORY["MOBILITY_FREIGHT"] :=	MOB_FREIGHT_RAIL	MOB_FREIGHT_BOAT	MOB_FREIGHT_ROAD;																											
+set END_USES_TYPES_OF_CATEGORY["NON_ENERGY"] :=	AMMONIA	HVC	METHANOL	;																										
+																														
+set TECHNOLOGIES_OF_END_USES_TYPE["ELECTRICITY"] := 	NUCLEAR	CCGT	CCGT_AMMONIA	COAL_US	COAL_IGCC			PV	WIND_ONSHORE	WIND_OFFSHORE		HYDRO_RIVER		GEOTHERMAL;																
+set TECHNOLOGIES_OF_END_USES_TYPE["HEAT_HIGH_T"] := 	IND_COGEN_GAS	IND_COGEN_WOOD	IND_COGEN_WASTE	IND_BOILER_GAS	IND_BOILER_WOOD	IND_BOILER_OIL	IND_BOILER_COAL	IND_BOILER_WASTE	IND_DIRECT_ELEC;																					
+set TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DHN"] := 	DHN_HP_ELEC	DHN_COGEN_GAS	DHN_COGEN_WOOD	DHN_COGEN_WET_BIOMASS	DHN_COGEN_BIO_HYDROLYSIS	DHN_COGEN_WASTE	DHN_BOILER_GAS	DHN_BOILER_WOOD	DHN_BOILER_OIL	DHN_DEEP_GEO	DHN_SOLAR		;																	
+set TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] := 	DEC_HP_ELEC	DEC_THHP_GAS	DEC_COGEN_GAS	DEC_COGEN_OIL	DEC_ADVCOGEN_GAS	DEC_ADVCOGEN_H2	DEC_BOILER_GAS	DEC_BOILER_WOOD	DEC_BOILER_OIL	DEC_SOLAR	DEC_DIRECT_ELEC;																			
+set TECHNOLOGIES_OF_END_USES_TYPE["MOB_PUBLIC"] := 	TRAMWAY_TROLLEY	BUS_COACH_DIESEL	BUS_COACH_HYDIESEL	BUS_COACH_CNG_STOICH	BUS_COACH_FC_HYBRIDH2		TRAIN_PUB	;																						
+set TECHNOLOGIES_OF_END_USES_TYPE["MOB_PRIVATE"] := 	CAR_GASOLINE	CAR_DIESEL	CAR_NG	CAR_METHANOL	CAR_HEV	CAR_PHEV	CAR_BEV	CAR_FUEL_CELL;																						
+set TECHNOLOGIES_OF_END_USES_TYPE["MOB_FREIGHT_RAIL"] :=	 TRAIN_FREIGHT;																													
+set TECHNOLOGIES_OF_END_USES_TYPE["MOB_FREIGHT_BOAT"] :=	BOAT_FREIGHT_DIESEL	BOAT_FREIGHT_NG	BOAT_FREIGHT_METHANOL	;																										
+set TECHNOLOGIES_OF_END_USES_TYPE["MOB_FREIGHT_ROAD"] := 	TRUCK_DIESEL	 TRUCK_FUEL_CELL 	TRUCK_NG	TRUCK_METHANOL	TRUCK_ELEC	;																								
+set TECHNOLOGIES_OF_END_USES_TYPE["AMMONIA"] := 	HABER_BOSCH	;																												
+set TECHNOLOGIES_OF_END_USES_TYPE["METHANOL"] := 	SYN_METHANOLATION	METHANE_TO_METHANOL	BIOMASS_TO_METHANOL	;																										
+set TECHNOLOGIES_OF_END_USES_TYPE["HVC"] := 	OIL_TO_HVC	GAS_TO_HVC	BIOMASS_TO_HVC	METHANOL_TO_HVC	;																									
+																														
+set STORAGE_TECH :=			 PHS BATT_LI 	BEV_BATT 	PHEV_BATT 	TS_DEC_HP_ELEC	 TS_DEC_DIRECT_ELEC	  TS_DHN_DAILY	  TS_DHN_SEASONAL	 TS_DEC_THHP_GAS	TS_DEC_COGEN_GAS	TS_DEC_COGEN_OIL	TS_DEC_ADVCOGEN_GAS	TS_DEC_ADVCOGEN_H2	TS_DEC_BOILER_GAS	TS_DEC_BOILER_WOOD	TS_DEC_BOILER_OIL	TS_HIGH_TEMP	 GAS_STORAGE	H2_STORAGE 	CO2_STORAGE GASOLINE_STORAGE	DIESEL_STORAGE	METHANOL_STORAGE	AMMONIA_STORAGE	LFO_STORAGE;					
+set INFRASTRUCTURE  :=	EFFICIENCY	DHN	GRID	H2_ELECTROLYSIS	SMR	H2_BIOMASS	GASIFICATION_SNG	SYN_METHANATION	BIOMETHANATION	BIO_HYDROLYSIS	PYROLYSIS_TO_LFO PYROLYSIS_TO_FUELS	ATM_CCS	INDUSTRY_CCS	AMMONIA_TO_H2	;															
+																														
+# Storage subsets																														
+set EVs_BATT  := 	 BEV_BATT 	PHEV_BATT;																												
+set V2G   := CAR_PHEV	CAR_BEV;																													
+set STORAGE_DAILY := 	BEV_BATT 	PHEV_BATT 	TS_DEC_HP_ELEC	TS_DEC_THHP_GAS	TS_DEC_COGEN_GAS	TS_DEC_COGEN_OIL	TS_DEC_ADVCOGEN_GAS	TS_DEC_ADVCOGEN_H2	TS_DEC_BOILER_GAS	TS_DEC_BOILER_WOOD	TS_DEC_BOILER_OIL	TS_DEC_DIRECT_ELEC 	TS_DHN_DAILY 	BATT_LI	TS_HIGH_TEMP	;														
+																														
+set STORAGE_OF_END_USES_TYPES ["HEAT_LOW_T_DHN"] := 	TS_DHN_DAILY 	TS_DHN_SEASONAL;																												
+set STORAGE_OF_END_USES_TYPES ["HEAT_LOW_T_DECEN"] := 	TS_DEC_HP_ELEC	TS_DEC_THHP_GAS	TS_DEC_COGEN_GAS	TS_DEC_COGEN_OIL	TS_DEC_ADVCOGEN_GAS	TS_DEC_ADVCOGEN_H2	TS_DEC_BOILER_GAS	TS_DEC_BOILER_WOOD	TS_DEC_BOILER_OIL	TS_DEC_DIRECT_ELEC;																				
+set STORAGE_OF_END_USES_TYPES ["ELECTRICITY"] := 	PHS 	BATT_LI;																												
+set STORAGE_OF_END_USES_TYPES ["HEAT_HIGH_T"] := 	TS_HIGH_TEMP	;																												
+																														
+# Link between storages & specific technologies																														
+set TS_OF_DEC_TECH ["DEC_HP_ELEC"] := TS_DEC_HP_ELEC;																														
+set TS_OF_DEC_TECH ["DEC_DIRECT_ELEC"] := TS_DEC_DIRECT_ELEC;																														
+set TS_OF_DEC_TECH ["DEC_THHP_GAS"] := TS_DEC_THHP_GAS;																														
+set TS_OF_DEC_TECH ["DEC_COGEN_GAS"] := TS_DEC_COGEN_GAS;																														
+set TS_OF_DEC_TECH ["DEC_ADVCOGEN_GAS"] := TS_DEC_ADVCOGEN_GAS;																														
+set TS_OF_DEC_TECH ["DEC_COGEN_OIL"] := TS_DEC_COGEN_OIL;																														
+set TS_OF_DEC_TECH ["DEC_ADVCOGEN_H2"] := TS_DEC_ADVCOGEN_H2;																														
+set TS_OF_DEC_TECH ["DEC_BOILER_GAS"] := TS_DEC_BOILER_GAS;																														
+set TS_OF_DEC_TECH ["DEC_BOILER_WOOD"] := TS_DEC_BOILER_WOOD;																														
+set TS_OF_DEC_TECH ["DEC_BOILER_OIL"] := TS_DEC_BOILER_OIL;																														
+set EVs_BATT_OF_V2G ["CAR_PHEV"] := PHEV_BATT;																														
+set EVs_BATT_OF_V2G ["CAR_BEV"]  := BEV_BATT;																														
+																														
+# Additional sets, just needed for printing results																														
+set COGEN	:=  IND_COGEN_GAS	IND_COGEN_WOOD	IND_COGEN_WASTE	DHN_COGEN_GAS	DHN_COGEN_WOOD	DHN_COGEN_WASTE DHN_COGEN_WET_BIOMASS DEC_COGEN_GAS	DEC_COGEN_OIL DEC_ADVCOGEN_GAS	DEC_ADVCOGEN_H2	DHN_COGEN_BIO_HYDROLYSIS	;																				
+set BOILERS	:=	IND_BOILER_GAS	IND_BOILER_WOOD	IND_BOILER_OIL	IND_BOILER_COAL	IND_BOILER_WASTE	DHN_BOILER_GAS	DHN_BOILER_WOOD	DHN_BOILER_OIL	DEC_BOILER_GAS	DEC_BOILER_WOOD	DEC_BOILER_OIL;																		
+																														
+# -----------------------------																														
+# PARAMETERS NOT DEPENDING ON THE NUMBER OF TYPICAL DAYS : 																														
+# -----------------------------																														
+																														
+## PARAMETERS presented in Table 2.																														
+param i_rate := 	0.015	; # part [2.7.4]																												
+																														
+##New PARAEMTERS for PATHWAY:																														
+param max_inv_phase :=																														
+2015_2020 Infinity																														
+2020_2025 Infinity																													
+2025_2030 Infinity																														
+2030_2035 Infinity																														
+2035_2040 Infinity																														
+2040_2045 Infinity																														
+2045_2050 Infinity;#0 => keep same system																														
+																														
+param t_phase := 	5	;#5 years																												
+																														
+param diff_2015_phase := 																														
+2015_2020 2.5																														
+2020_2025 7.5																														
+2025_2030 12.5																														
+2030_2035 17.5																														
+2035_2040 22.5																														
+2040_2045 27.5																														
+2045_2050 32.5; 																														
+																														
+param	limit_LT_renovation	:=	0.33	;#25% of refurbishment per period (5years) 																										
+param	limit_pass_mob_changes	:=	0.5	;#25% of refurbishment per period (5years) 																										
+param	limit_freight_changes	:=	0.5	;#25% of refurbishment per period (5years) 																										
+																														
+param c_grid_extra :=	3.68E+02	;	# cost to reinforce the grid due to intermittent renewable energy penetration. See 2.2.2																											
+																														
+param power_density_pv :=	0.2367	;																												
+param power_density_solar_thermal :=	0.2857	;																												
+																														
 # new parameter to impose the state of charge of EV. In this case, the batteries must be 60% charged at 7 am.																														
 param state_of_charge_ev :	1	2	3	4	5	6	7	8	9	10	11	12	13	14	15	16	17	18	19	20	21	22	23	24	:=					
 PHEV_BATT	0	0	0	0	0	0	0.6	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0						

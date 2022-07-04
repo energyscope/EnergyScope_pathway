@@ -19,6 +19,7 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 # from ampl_graph import AmplGraph
 
+<<<<<<< HEAD
 type_of_model = 'TD'
 
 
@@ -48,6 +49,25 @@ dat_path += [os.path.join(pth_model,'PES_data_all_years.dat'),
              os.path.join(pth_model,'PES_data_set_AGE_2020.dat'),
              os.path.join(pth_model,'PES_data_remaining_wnd.dat'),
              os.path.join(pth_model,'PES_data_decom_allowed_2020.dat')]
+=======
+pth_esmy = os.path.join(curr_dir.parent,'ESMY')
+pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
+
+mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
+            os.path.join(pth_model,'store_variables.mod')]
+
+mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
+              os.path.join(pth_model,'fix.mod')]
+
+dat_path = [os.path.join(pth_model,'seq_opti.dat'),
+             os.path.join(pth_model,'PESTD_data_year_related.dat'),
+             os.path.join(pth_model,'PESTD_data_efficiencies.dat'),
+             os.path.join(pth_model,'PESTD_12TD.dat'),
+             os.path.join(pth_model,'PESTD_data_set_AGE_2020.dat'),
+             os.path.join(pth_model,'PESTD_data_remaining_wnd.dat'),
+             os.path.join(pth_model,'PESTD_data_all_years.dat'),
+             os.path.join(pth_model,'PESTD_data_decom_allowed_2020.dat')]
+>>>>>>> ESTD-RL
 
 ## Options for ampl and gurobi
 gurobi_options = ['predual=-1',
@@ -64,6 +84,11 @@ ampl_options = {'show_stats': 1,
                 'presolve': 10,
                 'presolve_eps': 1e-7,
                 'presolve_fixeps': 1e-7,
+<<<<<<< HEAD
+=======
+                'times': 0,
+                'gentimes': 0,
+>>>>>>> ESTD-RL
                 'show_boundtol': 0,
                 'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
@@ -78,8 +103,13 @@ if __name__ == '__main__':
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
     
+<<<<<<< HEAD
     N_year_opti = [10]
     N_year_overlap = [5]
+=======
+    N_year_opti = [35, 10]
+    N_year_overlap = [0, 5]
+>>>>>>> ESTD-RL
 
 
     
@@ -132,6 +162,7 @@ if __name__ == '__main__':
             elapsed_i = time.time()-t_i
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
             
+<<<<<<< HEAD
             elapsed = time.time()-t
             print('Time to solve the whole problem: ',elapsed)
             
@@ -145,6 +176,14 @@ if __name__ == '__main__':
             # if i == len(ampl_pre.years_opti)-1:
             #     ampl_collector.pkl()
             #     break
+=======
+            if i == len(ampl_pre.years_opti)-1:
+                ampl_collector.pkl()
+                break
+        
+        elapsed = time.time()-t
+        print('Time to solve the whole problem: ',elapsed)
+>>>>>>> ESTD-RL
                 
         
         # if PostProcess:
