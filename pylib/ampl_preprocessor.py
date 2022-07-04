@@ -87,11 +87,7 @@ class AmplPreProcessor:
             next_year_one = True
             year_one_next = self.years_opti[i+1][0]
 
-<<<<<<< HEAD
         with open(os.path.join(self.mod_path,'PES_seq_opti.dat'),'w+', encoding='utf-8') as f:
-=======
-        with open(os.path.join(self.mod_path,'seq_opti.dat'),'w+', encoding='utf-8') as f:
->>>>>>> ESTD-RL
             f.write('set YEARS_WND := ' )
             for year in curr_years_wnd:
                 f.write('%s ' %year)
@@ -136,11 +132,7 @@ class AmplPreProcessor:
         Name of the file where remaining years of lifetime are computed from 2015 to the end of 
         the time window currently optimised
     '''
-<<<<<<< HEAD
     def remaining_update(self,i,file_in = 'PES_data_remaining.dat', file_out = 'PES_data_remaining_wnd.dat'):
-=======
-    def remaining_update(self,i,file_in = 'PESTD_data_remaining.dat', file_out = 'PESTD_data_remaining_wnd.dat'):
->>>>>>> ESTD-RL
         
         curr_phases_up_to = self.phases_up_to[i]
         curr_phases_wnd = self.phases_opti[i]
@@ -195,13 +187,8 @@ class AmplPreProcessor:
 
         if years_window % 5 != 0:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt should be a multiple of 5')
-<<<<<<< HEAD
         elif years_window > 30 or years_window <= 0:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt cannot be smaller than 0 or greater than 30')
-=======
-        elif years_window > 35 or years_window <= 0:
-            raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt cannot be smaller than 0 or greater than 35')
->>>>>>> ESTD-RL
         elif years_window < self.t_phase:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt must be bigger or equal to the number of years within a phase')
         elif years_window <= years_overlap:

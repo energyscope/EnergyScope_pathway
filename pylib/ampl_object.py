@@ -73,13 +73,9 @@ class AmplObject:
     def run_ampl(self):
         try:
             self.ampl._startRecording('session.log')
-<<<<<<< HEAD
             # self.ampl.eval("option times 1, gentimes 1;") 
             self.ampl.solve()
             # self.ampl.eval("option times 0, gentimes 0;")
-=======
-            self.ampl.solve()
->>>>>>> ESTD-RL
             self.ampl.eval('display solve_result;')
             self.ampl.eval('display _solve_elapsed_time;')
             self.ampl.eval('display _ampl_elapsed_time;')
