@@ -19,7 +19,7 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 # from ampl_graph import AmplGraph
 
-type_of_model = 'TD'
+type_of_model = 'MO'
 
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
