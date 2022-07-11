@@ -53,17 +53,18 @@ YEAR_2035	0
 YEAR_2040	0																																																																																																																
 YEAR_2045	0																																																																																																																
 YEAR_2050	0																																																																																																																
-;																																																																																																																	
+;																																																																																																																		
+
 param gwp_limit := 			# [ktCO2-eq./year]	# Minimum GWP reduction compare to year 2011 (47.51 MTCO2_eq)																																																																																																													
-YEAR_2015	156000																																																																																																																
-YEAR_2020	133715																																																																																																																
-YEAR_2025	111430																																																																																																																
-YEAR_2030	89145			# 86445 as 45% of values of 1990 from the results of a rule of three via https://www.worldometers.info/co2-emissions/belgium-co2-emissions/ and comparing values between 1990 and 2015 (ESTD vs website)																																																																																																								
-YEAR_2035	66860																																																																																																																
-YEAR_2040	44575																																																																																																																
-YEAR_2045	22290																																																																																																																
+YEAR_2015	Infinity #156000																																																																																																																
+YEAR_2020	Infinity #133715																																																																																																																
+YEAR_2025	Infinity #111430																																																																																																																
+YEAR_2030	Infinity #89145			# 86445 as 45% of values of 1990 from the results of a rule of three via https://www.worldometers.info/co2-emissions/belgium-co2-emissions/ and comparing values between 1990 and 2015 (ESTD vs website)																																																																																																								
+YEAR_2035	Infinity #66860																																																																																																																
+YEAR_2040	Infinity #44575																																																																																																																
+YEAR_2045	Infinity #22290																																																																																																																
 YEAR_2050	3406.92																																																																																																																
-;																																																																																																																	
+;
 # Part [2.4]																																																																																																																	
 param batt_per_car : CAR_PHEV  CAR_BEV:= #ev_batt,size [GWh]: Size of batteries per car per technology of EV  																																																																																																																	
 YEAR_2015	10	50																																																																																																															
