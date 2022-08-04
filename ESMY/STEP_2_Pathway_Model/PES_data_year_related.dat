@@ -63,7 +63,7 @@ YEAR_2030	Infinity #89145			# 86445 as 45% of values of 1990 from the results of
 YEAR_2035	Infinity #66860																																																																																																																
 YEAR_2040	Infinity #44575																																																																																																																
 YEAR_2045	Infinity #22290																																																																																																																
-YEAR_2050	3406.92																																																																																																																
+YEAR_2050	Infinity #3406.92																																																																																																																
 ;
 # Part [2.4]																																																																																																																	
 param batt_per_car : CAR_PHEV  CAR_BEV:= #ev_batt,size [GWh]: Size of batteries per car per technology of EV  																																																																																																																	

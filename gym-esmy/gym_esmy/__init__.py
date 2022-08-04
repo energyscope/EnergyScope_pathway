@@ -4,7 +4,20 @@ from gym.envs.registration import register
 logger = logging.getLogger(__name__)
 
 register(
-    id='ESMY-v0',
-    entry_point='gym_esmy.envs:ESMYInitV0',
+    # state = []
+    # action = []
+    # First environment using the monthly version of esmy
+    id='esmymo-v0',
+    entry_point='gym_esmy.envs:EsmyMoV0',
+    max_episode_steps = 50,
+)
+
+
+register(
+    # state = []
+    # action = []
+    # First environment using the TD version of esmy
+    id='esmytd-v0',
+    entry_point='gym_esmy.envs:EsmyTdV0',
     max_episode_steps = 50,
 )

@@ -28,6 +28,7 @@ pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
 if type_of_model == 'MO':
     mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
                 os.path.join(pth_model,'PESMO_store_variables.mod'),
+                os.path.join(pth_model,'PESMO_RL.mod'),
                 os.path.join(pth_model,'PES_store_variables.mod')]
     mod_2_path = [os.path.join(pth_model,'PESMO_initialise_2020.mod'),
                   os.path.join(pth_model,'fix.mod')]
@@ -35,6 +36,7 @@ if type_of_model == 'MO':
 else:
     mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
             os.path.join(pth_model,'PESTD_store_variables.mod'),
+            os.path.join(pth_model,'PESTD_RL.mod'),
             os.path.join(pth_model,'PES_store_variables.mod')]
     mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
               os.path.join(pth_model,'fix.mod')]
@@ -85,7 +87,7 @@ if __name__ == '__main__':
     for m in range(len(N_year_opti)):
         
         # TO DO ONCE AT INITIALISATION OF THE ENVIRONMENT
-
+        i = 0
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
         
@@ -124,22 +126,20 @@ if __name__ == '__main__':
             if i > 0:
                 curr_years_wnd.remove(ampl_pre.year_to_rm)
             
-            ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
+            # ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
             
             ampl.set_init_sol()
             
             elapsed_i = time.time()-t_i
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
             
-            elapsed = time.time()-t
-            print('Time to solve the whole problem: ',elapsed)
             
             if i == len(ampl_pre.years_opti)-1:
+                elapsed = time.time()-t
+                print('Time to solve the whole problem: ',elapsed)
                 A = ampl_collector.PKL_save['F_wnd']
                 B = ampl_collector.PKL_save['C_inv_wnd']
                 C = ampl_collector.PKL_save['C_op_maint_wnd']
-                
-                D = 0
             
             # if i == len(ampl_pre.years_opti)-1:
             #     ampl_collector.pkl()

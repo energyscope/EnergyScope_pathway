@@ -54,6 +54,7 @@ set TECHNOLOGIES_OF_END_USES_TYPE {END_USES_TYPES}; # set all energy conversion 
 set STORAGE_TECH; #  set of storage technologies 
 set STORAGE_OF_END_USES_TYPES {END_USES_TYPES} within STORAGE_TECH; # set all storage technologies related to an end-use types (used for thermal solar (TS))
 set INFRASTRUCTURE; # Infrastructure: DHN, grid, and intermediate energy conversion technologies (i.e. not directly supplying end-use demand)
+set RE_TECH; # Set composed of PV, WIND_ON and WIND_OFF
 
 ## SECONDARY SETS: a secondary set is defined by operations on MAIN SETS
 set LAYERS := (RESOURCES diff BIOFUELS diff EXPORT) union END_USES_TYPES; # Layers are used to balance resources/products in the system

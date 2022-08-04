@@ -41,6 +41,3 @@ subject to store_cost_op_maint {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES 
 			C_maint[y,j]
 		else
 			C_op[y,j]);
-
-# subject to store_GWP_wnd {y in YEARS_WND diff YEAR_ONE}:
-# 	GWP_wnd [y] = sum {i in RESOURCES} GWP_op [y,i];

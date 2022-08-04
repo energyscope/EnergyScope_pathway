@@ -56,7 +56,7 @@ class AmplPreProcessor:
 
     '''
     Update the sets YEARS_WND, PHASE_WND, YEARS_UP_TO, PHASE_UP_TO,
-    YEAR_ONE, YEAR_ONE_NEXT and write them down in the seq_opti.dat file
+    YEAR_ONE, YEAR_ONE_NEXT and write them down in the PES_seq_opti.dat file
 
     Parameters
     ----------
@@ -115,7 +115,7 @@ class AmplPreProcessor:
                 f.write(':= %s' %year_one_next)
             f.write(';')
 
-        return curr_years_wnd
+        return curr_years_wnd, self.year_to_rm
 
 
     '''

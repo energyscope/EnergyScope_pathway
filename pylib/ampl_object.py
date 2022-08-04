@@ -85,17 +85,6 @@ class AmplObject:
             print(e)
             raise
     
-
-    """
-
-    Get the name of the LP optimization problem's variables
-
-    """
-    def get_vars(self):
-        for name, values in self.ampl.getVariables():
-            self.vars.append(name)
-
-    
     """
 
     Function to of the LP optimization problem
@@ -124,7 +113,10 @@ class AmplObject:
 
     """
     def set_params(self, name, value):
-        self.ampl.get_parameter(name).setValues(value)
+        if len(self.ampl.get_parameter(name).instances()) == 1:
+            self.ampl.get_parameter(name).set(1.0*value) # 1.0* aims to convert potential float32 into float64 that is compatible with ampl object
+        else:
+            self.ampl.get_parameter(name).setValues(value) 
     
 
     """"
@@ -165,6 +157,32 @@ class AmplObject:
                 fout.write(line)
         
         os.remove(fix_0)
+    
+    def collect_gwp(self, years):
+        gwp_dict = dict.fromkeys(years)
+
+        TotalGWP = self.vars['TotalGWP']
+        for y in years:
+            gwp_dict[y] = TotalGWP[y].value()
+        
+        return gwp_dict
+    
+    def get_action(self,action):
+        action = action.astype('float64')
+        allow_foss = action[0]
+        sub_renew = action[1]
+
+        curr_year_wnd = self.sets['YEARS_WND']
+        re_tech = self.sets['RE_TECH']
+
+        lst_tpl_re_tech = [(y,t) for y in curr_year_wnd for t in re_tech]
+        
+        for i in lst_tpl_re_tech:
+            new_value = self.params['c_inv'][i]*sub_renew
+            self.set_params('c_inv',{i:new_value})
+        
+        self.set_params('allow_foss',allow_foss)
+
 
     
     #############################

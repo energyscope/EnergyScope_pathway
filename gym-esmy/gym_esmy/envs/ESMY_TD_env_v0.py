@@ -19,7 +19,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class ESMYInitV0(gym.Env):
+class EsmyTdV0(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):

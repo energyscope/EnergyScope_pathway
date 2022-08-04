@@ -1,1 +1,2 @@
-from gym_esmy.envs.ESMY_env_v0   import ESMYInitV0
+from gym_esmy.envs.ESMY_MO_env_v0   import EsmyMoV0
+from gym_esmy.envs.ESMY_TD_env_v0   import EsmyTdV0
