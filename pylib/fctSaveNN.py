@@ -72,22 +72,6 @@ def SaveNeuralNetwork(model,myModelFile):
 
     return 1
 
-import os,sys
-print("About to import RL modules")
-pymodPath = os.path.abspath("/home/ucl/tfl/coquelet/pymodules")
-sys.path.insert(0, pymodPath)
-import gym
-import tensorflow as tf
-from stable_baselines import SAC
-
-v           = 6
-batch       = 19
-jobdir      = '69274829'
-tfModelFile = '../out/learn_v{}/{}/batch{}/ipc{}'.format(v,jobdir,batch,batch)
-model       = SAC.load(tfModelFile)
-SaveNeuralNetwork(model,tfModelFile+'.dict')
-
-
 
 
 

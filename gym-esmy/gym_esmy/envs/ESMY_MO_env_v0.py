@@ -145,9 +145,9 @@ class EsmyMoV0(gym.Env):
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
 
 
-        self.file_rew  = open('{}reward.txt'.format(out_dir), 'w')
-        self.file_ret  = open('{}return.txt'.format(out_dir), 'w')
-        self.file_observation = open('{}observation.txt'.format(out_dir),'w')
+        self.file_rew  = open('{}/reward.txt'.format(out_dir), 'w')
+        self.file_ret  = open('{}/return.txt'.format(out_dir), 'w')
+        self.file_observation = open('{}/observation.txt'.format(out_dir),'w')
 
 
 #------------------------------------------------------------------------------#
@@ -218,14 +218,14 @@ class EsmyMoV0(gym.Env):
     # To add stochasticity, the End-Use-Demand to satisfy at each episode can vary by +/- 10%
     def reset(self):
         print("RESET THE PROBLEM")
+        self.it = 0
         self.file_ret.write('{}\n'.format(self.it))
         self.file_ret.flush()
         self.cum_gwp = self.cum_gwp_init
-        self.it = 0
-        self.ampl_obj_0 = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
         self.ampl_obj_0.clean_history()
-        self.ampl_pre = AmplPreProcessor(self.ampl_obj_0, self.n_year_opti, self.n_year_overlap)
-        # self.ampl_obj_0.clean_history()
+        self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
+        self.ampl_obj = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
+        self.ampl_pre = AmplPreProcessor(self.ampl_obj, self.n_year_opti, self.n_year_overlap)
 
         return np.array([self.cum_gwp], dtype=np.float32)
 
@@ -259,9 +259,9 @@ class EsmyMoV0(gym.Env):
         
         self.cum_gwp += self.gwp_per_year[year_n] * t_phase/2
 
-        self.file_observation.write('{:.1f} {:.1f}'.format(self.it,self.cum_gwp))
+        self.file_observation.write('{:.1f} {:.1f} '.format(self.it,self.cum_gwp))
         for k in self.gwp_per_year:
-            self.file_observation.write('{:.1f}'.format(self.gwp_per_year[k]))
+            self.file_observation.write('{:.1f} '.format(self.gwp_per_year[k]))
         self.file_observation.write('\n')
         self.file_observation.flush()
 
@@ -274,12 +274,15 @@ class EsmyMoV0(gym.Env):
             reward = 0.0
             done = 0
         else :
-            # if list(self.gwp_per_year.values())[-1] > self.target_2050:
-            #     reward = -self.cum_gwp
-            # else:
-            #     reward = self.target_2050 - self.gwp_per_year['YEAR_2050']
-            reward = -self.cum_gwp
+            if self.gwp_per_year['YEAR_2050'] > self.target_2050:
+                # reward = -self.cum_gwp
+                reward = -10
+            else:
+                # reward = self.target_2050 - self.gwp_per_year['YEAR_2050']
+                reward = 10
             done = 1
+            # reward = -self.cum_gwp
+            # done = 1
 
         self.file_rew.write('{:.2f} {:.6f}\n'.format(self.it,reward))
         self.file_rew.flush()
