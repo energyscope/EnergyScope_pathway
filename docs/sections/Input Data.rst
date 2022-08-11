@@ -185,7 +185,7 @@ These data are put into perspective with the real data for 2015.
    
       photovoltaic , 3.85 , :math:`\approx`\ 60 [bb]_ , [GW]
       onshore wind , 1.18 , 10 [cc]_ , [GW]
-      offshore wind , 0.69 , 3.5 , [GW]
+      offshore wind , 0.69 , 6 , [GW]
       hydro river , 0.11 [dd]_ , 0.120 , [GW]
       geothermal , 0 , :math:`\approx`\ 0 [ee]_ , [GW]
       geothermal , :math:`\approx`\ 0 , :math:`\approx`\ 0 , [GW]
@@ -274,7 +274,7 @@ potential :cite:`Devogelaer2013`. However, because of a lack
 of reliable sources about geothermal potential, we consider the
 potential as null in the reference scenario.
 
-The wind potential is estimated to 10 GW onshore and 3.5 GW offshore
+The wind potential has been estimated to 10 GW onshore and 3.5 GW offshore in
 :cite:`limpens2018electricity`. At the time of collecting
 the data (2011-2020), several potentials can be collected through
 various sources. As an example, the study from
@@ -292,10 +292,11 @@ increase of the Belgian wind potential: taller and taller wind turbines
 enable the use of faster and more constant wind. As a consequence, the
 offshore potential might be underestimated. On the other hand, the
 onshore potential might be overestimated as developers see their project
-often blocked by citizens. In a nutshell, the wind potential allowed is
-relevant, but perhaps slightly underestimated. As motivated in the
-results, due to its limited potential, wind will remain a small
-contributor of the energy mix with a maximum of :math:`\approx`\ 10%.
+often blocked by citizens. Given these different information, the model 
+considers a 6 GW potential for offshore wind. In a nutshell, the wind 
+potential allowed is relevant, but perhaps slightly underestimated. 
+As motivated in the results, due to its limited potential, wind will 
+remain a small contributor of the energy mix with a maximum of :math:`\approx`\ 10%.
 
 
 
@@ -935,7 +936,7 @@ are listed in :numref:`Table %s <tbl:renew_elec>`, including
 the yearly capacity factor (:math:`c_p`). As described in the Section
 `[ssec:lp_formulation] <#ssec:lp_formulation>`__, for seasonal
 renewables the capacity factor :math:`c_{p,t}` is defined for each
-time period. These capacity factors are represented in Figure
+time period. These capacity factors are represented in
 :numref:`Figure %s <fig:TS_Renewables>`. For these technologies,
 :math:`c_p` is the average of :math:`c_{p,t}`. For all the other
 electricity supply technologies (renewable and non-renewable),
