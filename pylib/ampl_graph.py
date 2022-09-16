@@ -33,7 +33,7 @@ class AMPLGraph:
     def __init__(self, pkl_file):
         self.pkl_file = pkl_file
         self.save_list = self.ampl_collector.ampl_obj.sets['STORE_RESULTS']
-        self.x_axis = [2015, 2020, 2025, 2030, 2035, 2040, 2045, 2050]
+        self.x_axis = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
         self.pkl_results = self.unpkl()
 
     @staticmethod
@@ -43,6 +43,21 @@ class AMPLGraph:
         open_file.close()
 
         return loaded_list
+    
+    @staticmethod
+    def is_number(s): 
+
+        """
+        Return True if s is a number, False otherwise.
+
+        """
+        try:
+            float(s)
+            return True
+        except ValueError:
+            pass
+    
+        return False
     
     # def save_all(output_name,save_folder_name,no_2015=False):
 

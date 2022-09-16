@@ -43,6 +43,7 @@ class EsmyMoV0(gym.Env):
         self.cum_gwp_init = 0.0
         self.cum_gwp = self.cum_gwp_init
         self.target_2050 = 3406.92
+        self.target_2035 = 86445
         self.n_year_opti = 10
         self.n_year_overlap = 5
 
@@ -81,7 +82,7 @@ class EsmyMoV0(gym.Env):
         ## Options for ampl and gurobi
         self.gurobi_options = ['predual=-1',
                         'method = 2', # 2 is for barrier method
-                        'crossover=0',
+                        'crossover=-1',
                         'prepasses = 3',
                         'barconvtol=1e-6',                
                         'presolve=-1'] # Not a good idea to put it to 0 if the model is too big
@@ -91,8 +92,8 @@ class EsmyMoV0(gym.Env):
         self.ampl_options = {'show_stats': 1,
                         'log_file': os.path.join(self.pth_model,'log.txt'),
                         'presolve': 10,
-                        'presolve_eps': 1e-7,
-                        'presolve_fixeps': 1e-7,
+                        'presolve_eps': 1e-6,
+                        'presolve_fixeps': 1e-6,
                         'show_boundtol': 0,
                         'gurobi_options': self.gurobi_options_str,
                         '_log_input_only': False}
@@ -271,7 +272,13 @@ class EsmyMoV0(gym.Env):
     def _get_reward(self):
 
         if self.it < self.max_it - 1:
-            reward = 0.0
+            if self.gwp_per_year['YEAR_2035'] != 0.0:
+                if self.gwp_per_year['YEAR_2035'] > self.target_2035:
+                    reward = -5
+                else:
+                    reward = 5
+            else:
+                reward = 0
             done = 0
         else :
             if self.gwp_per_year['YEAR_2050'] > self.target_2050:

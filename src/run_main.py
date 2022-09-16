@@ -54,7 +54,7 @@ dat_path += [os.path.join(pth_model,'PES_data_all_years.dat'),
 ## Options for ampl and gurobi
 gurobi_options = ['predual=-1',
                 'method = 2', # 2 is for barrier method
-                'crossover=0',
+                'crossover=-1',
                 'prepasses = 3',
                 'barconvtol=1e-6',                
                 'presolve=-1'] # Not a good idea to put it to 0 if the model is too big
@@ -64,8 +64,8 @@ gurobi_options_str = ' '.join(gurobi_options)
 ampl_options = {'show_stats': 1,
                 'log_file': os.path.join(pth_model,'log.txt'),
                 'presolve': 10,
-                'presolve_eps': 1e-7,
-                'presolve_fixeps': 1e-7,
+                'presolve_eps': 1e-6,
+                'presolve_fixeps': 1e-6,
                 'show_boundtol': 0,
                 'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
@@ -79,11 +79,9 @@ if __name__ == '__main__':
     ## Paths
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
-    N_year_opti = [10]
-    N_year_overlap = [5]
+    N_year_opti = [30, 10]
+    N_year_overlap = [0, 5]
 
-
-    
     for m in range(len(N_year_opti)):
         
         # TO DO ONCE AT INITIALISATION OF THE ENVIRONMENT
@@ -91,7 +89,7 @@ if __name__ == '__main__':
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
         
-        case_study = 'pickle_{}_{}_gwp_only_2050_start_2020'.format(n_year_opti,n_year_overlap)
+        case_study = '{}_pickle_{}_{}_gwp_only_2050_start_2020'.format(type_of_model,n_year_opti,n_year_overlap)
         expl_text = 'No gwp limit for any year except 2050, to reach carbon neutrality with {} years of time window and {} years of overlap, start in 2020'.format(n_year_opti,n_year_overlap)
         
         output_folder = os.path.join(pth_output_all,case_study)
@@ -112,12 +110,7 @@ if __name__ == '__main__':
             
             ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
             
-            ampl.set_params('gwp_limit',{('YEAR_2020'):1e6})
-            ampl.set_params('gwp_limit',{('YEAR_2025'):1e6})
-            ampl.set_params('gwp_limit',{('YEAR_2030'):1e6})
-            ampl.set_params('gwp_limit',{('YEAR_2035'):1e6})
-            ampl.set_params('gwp_limit',{('YEAR_2040'):1e6})
-            ampl.set_params('gwp_limit',{('YEAR_2045'):1e6})
+            ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
             
             ampl.run_ampl()
 
@@ -126,7 +119,7 @@ if __name__ == '__main__':
             if i > 0:
                 curr_years_wnd.remove(ampl_pre.year_to_rm)
             
-            # ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
+            ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
             
             ampl.set_init_sol()
             
@@ -134,17 +127,18 @@ if __name__ == '__main__':
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
             
             
+            # if i == len(ampl_pre.years_opti)-1:
+            #     A = ampl_collector.PKL_save['F_wnd']
+            #     B = ampl_collector.PKL_save['C_inv_wnd']
+            #     C = ampl_collector.PKL_save['C_op_maint_wnd']
+            #     D = ampl_collector.PKL_save['Tech_wnd']
+            
             if i == len(ampl_pre.years_opti)-1:
                 elapsed = time.time()-t
                 print('Time to solve the whole problem: ',elapsed)
-                A = ampl_collector.PKL_save['F_wnd']
-                B = ampl_collector.PKL_save['C_inv_wnd']
-                C = ampl_collector.PKL_save['C_op_maint_wnd']
-            
-            # if i == len(ampl_pre.years_opti)-1:
-            #     ampl_collector.pkl()
-            #     break
-                
+                ampl_collector.pkl()
+                break
+
         
         # if PostProcess:
             

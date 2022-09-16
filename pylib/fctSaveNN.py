@@ -71,7 +71,3 @@ def SaveNeuralNetwork(model,myModelFile):
     pickle.dump(myModelDict,file)
 
     return 1
-
-
-
-

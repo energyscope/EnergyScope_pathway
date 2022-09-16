@@ -115,7 +115,7 @@ class AmplPreProcessor:
                 f.write(':= %s' %year_one_next)
             f.write(';')
 
-        return curr_years_wnd, self.year_to_rm
+        return curr_years_wnd
 
 
     '''

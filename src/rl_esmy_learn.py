@@ -40,7 +40,7 @@ import gym_esmy
 from stable_baselines.sac.policies import MlpPolicy
 from stable_baselines.sac.policies import LnMlpPolicy
 from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines import SAC
+from stable_baselines.sac import SAC
 
 # from stable_baselines.common.env_checker import check_env
 # check_env(env)
@@ -58,8 +58,8 @@ layers_dict = { '16x16'       : [16,16],
                 '128x128'     : [128,128],
                 '128x128x128' : [128,128,128]  } 
 
-policy_dict = { 'Mlp'      : MlpPolicy,
-                'LnMlp'    : LnMlpPolicy }
+policy_dict = { 'Mlp'      : 'MlpPolicy',
+                'LnMlp'    : 'LnMlpPolicy'}
 
 
 actfun_dict = { 'tanh'     : tf.nn.tanh,
@@ -74,7 +74,7 @@ rundir = rundir.strftime('%Y_%m_%d-%H_%M_%S')
 # #--------- Recovering passed arguments ---------#
 
 v = 0
-policy = LnMlpPolicy
+policy = 'MlpPolicy'
 gamma = 0.3
 act_fun = tf.nn.relu
 layers = [16,16]
@@ -90,8 +90,8 @@ if len(sys.argv) > 1:
 
 # #-------- Defining learning variables --------#
 
-total_timesteps = 10000
-batch_timesteps = 500    
+total_timesteps = 1000
+batch_timesteps = 50   
 
 nbatches = int(np.ceil(total_timesteps/batch_timesteps))
 
@@ -111,7 +111,7 @@ system('touch ' + out_dir + 'set_up.txt')
 f = open(out_dir + 'set_up.txt', 'r+')
 f.write('Learning with esmymo v{}\n'.format(v))
 f.write('discount factor = {}\n'.format(gamma))
-f.write('layers = {}\n'.format(layers))
+f.write('nlayers = {}\n'.format(layers))
 f.write('activation function = {}\n'.format(act_fun))
 f.write('policy = {}\n'.format(policy))
 f.write('total #steps for learning = {}\n'.format(total_timesteps))
@@ -125,9 +125,6 @@ if not os.path.isdir(out_dir_batch):
     print('Creating out_dir {}'.format(out_dir_batch))
     system('mkdir -p {}'.format(out_dir_batch))
 
-# it0     = 0
-# #flag    = 'learn'
-# env     = gym.make('bem-v234', v = v, out_dir = out_dir_batch, flag = flag, it0 = it0, nS = nS)
 env = gym.make('esmymo-v0',out_dir=out_dir)
 env     = DummyVecEnv([lambda:env])
 model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(act_fun=act_fun, layers=layers))
@@ -138,7 +135,6 @@ model.save(mymodel)
 
 remain_steps = total_timesteps - nb_done * batch_timesteps
 i = nb_done + 1
-#flag = 'learn_bf'
 
 while remain_steps > 0:
 
