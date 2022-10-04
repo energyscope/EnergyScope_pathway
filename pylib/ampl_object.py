@@ -10,6 +10,7 @@ Created on Fri Apr 08 2022
 from pathlib import Path
 import pandas as pd
 from amplpy import AMPL, Environment
+from copy import deepcopy
 
 import os,sys
 
@@ -172,16 +173,18 @@ class AmplObject:
         allow_foss = action[0]
         sub_renew = action[1]
 
-        curr_year_wnd = self.sets['YEARS_WND']
+        curr_year_wnd = deepcopy(self.sets['YEARS_WND'])
+        if 'YEAR_2020' in curr_year_wnd:
+            curr_year_wnd.pop(0)
         re_tech = self.sets['RE_TECH']
 
         lst_tpl_re_tech = [(y,t) for y in curr_year_wnd for t in re_tech]
-        
-        for i in lst_tpl_re_tech:
-            new_value = self.params['c_inv'][i]*sub_renew
-            self.set_params('c_inv',{i:new_value})
-        
+
         self.set_params('allow_foss',allow_foss)
+
+        for i in lst_tpl_re_tech:
+            new_value = self.params['c_inv'][i]*(1-sub_renew)
+            self.set_params('c_inv',{i:new_value})
 
 
     

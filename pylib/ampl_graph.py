@@ -58,7 +58,6 @@ class AMPLGraph:
             pass
     
         return False
-    
     # def save_all(output_name,save_folder_name,no_2015=False):
 
     #     """

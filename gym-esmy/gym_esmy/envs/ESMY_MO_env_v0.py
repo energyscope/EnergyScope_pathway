@@ -98,12 +98,27 @@ class EsmyMoV0(gym.Env):
                         'gurobi_options': self.gurobi_options_str,
                         '_log_input_only': False}
 
-        #---------------------- Observation space --------------------#
-        self.min_gwp = 0
-        self.max_gwp = 1e10
+        #--------------------- Initializing objects ----------------#
+        self.ampl_obj_0 = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
+        self.ampl_obj_0.clean_history()
+        self.ampl_pre = AmplPreProcessor(self.ampl_obj_0, self.n_year_opti, self.n_year_overlap)
+        # self.ampl_collector = AmplCollector(self.ampl_obj_0, output_file, expl_text)
 
-        obslow = np.array([self.min_gwp])
-        obshigh = np.array([self.max_gwp])
+        # Maximum of phases to accomplish the transition
+        self.min_it = 0.0
+        self.max_it = len(self.ampl_pre.years_opti)
+
+        # self.carbon_budget = 1756703.8 #Linear decrease between 106600kt_CO2 in 2020 (from EC Trends towards 2050) and 3406.92 (from Gauthier)
+        self.carbon_budget = 1224935.4 #Infered from CO2-emissions of Belgium in 2020 (106.6Mt), of world in 2020 (34.81Gt, from ourworldindata) and world carbon budget (400Gt, from climate analytics)
+
+        self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
+
+        #---------------------- Observation space --------------------#
+        self.min_gwp = 5e5
+        self.max_gwp = 5e6
+
+        obslow = np.array([self.min_gwp, self.min_it])
+        obshigh = np.array([self.max_gwp, self.max_it])
 
         self.obslow = obslow
         self.obshigh = obshigh
@@ -111,19 +126,14 @@ class EsmyMoV0(gym.Env):
         self.observation_space = spaces.Box(low=self.obslow, high=self.obshigh, dtype=np.float32)
 
         #----------------------- Action space ----------------------#
-        self.max_allow_fossil_norm = 1.0
-        self.min_allow_fossil_norm = -1.0
         self.max_allow_fossil_scal = 1.0
         self.min_allow_fossil_scal = 0.0
 
-
-        self.max_sub_renew_norm = 1.0
-        self.min_sub_renew_norm = -1.0
         self.max_sub_renew_scal = 0.5
         self.min_sub_renew_scal = 0.0
 
-        actlow = np.array([self.min_allow_fossil_norm, self.min_sub_renew_norm])
-        acthigh = np.array([self.max_allow_fossil_norm, self.max_sub_renew_norm])
+        actlow = np.array([self.min_allow_fossil_scal, self.min_sub_renew_scal])
+        acthigh = np.array([self.max_allow_fossil_scal, self.max_sub_renew_scal])
 
         self.actlow = actlow
         self.acthigh  = acthigh
@@ -134,21 +144,10 @@ class EsmyMoV0(gym.Env):
 
         self.action_space = spaces.Box(low=self.actlow, high=self.acthigh, dtype=np.float32)
 
-        #--------------------- Initializing objects ----------------#
-        self.ampl_obj_0 = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
-        self.ampl_obj_0.clean_history()
-        self.ampl_pre = AmplPreProcessor(self.ampl_obj_0, self.n_year_opti, self.n_year_overlap)
-        # self.ampl_collector = AmplCollector(self.ampl_obj_0, output_file, expl_text)
-
-        # Maximum of phases to accomplish the transition
-        self.max_it = len(self.ampl_pre.years_opti)
-
-        self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
-
 
         self.file_rew  = open('{}/reward.txt'.format(out_dir), 'w')
-        self.file_ret  = open('{}/return.txt'.format(out_dir), 'w')
         self.file_observation = open('{}/observation.txt'.format(out_dir),'w')
+        self.file_action = open('{}/action.txt'.format(out_dir),'w')
 
 
 #------------------------------------------------------------------------------#
@@ -168,7 +167,7 @@ class EsmyMoV0(gym.Env):
         print('--------------------------------------------------------------------\n')
 
         self.ampl_pre.remaining_update(self.it)
-        self.curr_years_wnd, self.year_to_rm = self.ampl_pre.write_seq_opti(self.it)
+        self.curr_years_wnd = self.ampl_pre.write_seq_opti(self.it)
 
         self.ampl_obj = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
 
@@ -180,7 +179,7 @@ class EsmyMoV0(gym.Env):
         self._take_action( action )
         
         if self.it > 0:
-            self.curr_years_wnd.remove(self.year_to_rm)
+            self.curr_years_wnd.remove(self.ampl_pre.year_to_rm)
 
         # 2) Observed what happened
         observation = self._get_observation()
@@ -216,19 +215,16 @@ class EsmyMoV0(gym.Env):
         return observation, reward, episode_over, info
     
     # Reset function to initialize the environment at the beginning of each episode
-    # To add stochasticity, the End-Use-Demand to satisfy at each episode can vary by +/- 10%
     def reset(self):
         print("RESET THE PROBLEM")
         self.it = 0
-        self.file_ret.write('{}\n'.format(self.it))
-        self.file_ret.flush()
         self.cum_gwp = self.cum_gwp_init
         self.ampl_obj_0.clean_history()
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
         self.ampl_obj = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
         self.ampl_pre = AmplPreProcessor(self.ampl_obj, self.n_year_opti, self.n_year_overlap)
 
-        return np.array([self.cum_gwp], dtype=np.float32)
+        return np.array([self.cum_gwp, self.it], dtype=np.float32)
 
     # Function not necessary as the visualisation of the results is done in the Jupyter Notebook
     def render(self, mode='human'):
@@ -255,70 +251,65 @@ class EsmyMoV0(gym.Env):
 
         years_up_to = self.ampl_obj.sets['YEARS_UP_TO']
         year_n = years_up_to.pop()
+        years_up_to.pop(0)
         for i, y in enumerate(years_up_to):
             self.cum_gwp += self.gwp_per_year[y] * t_phase
         
         self.cum_gwp += self.gwp_per_year[year_n] * t_phase/2
 
-        self.file_observation.write('{:.1f} {:.1f} '.format(self.it,self.cum_gwp))
+        self.file_observation.write('{} {:.1f}'.format(self.it,self.cum_gwp))
         for k in self.gwp_per_year:
-            self.file_observation.write('{:.1f} '.format(self.gwp_per_year[k]))
+            self.file_observation.write(' ')
+            self.file_observation.write('{:.1f}'.format(self.gwp_per_year[k]))
         self.file_observation.write('\n')
         self.file_observation.flush()
 
-        return np.array([self.cum_gwp], dtype=np.float32)
+        return self._scale_obs(np.array([self.cum_gwp, self.it], dtype=np.float32))
     
     # Returns the reward depending on the state the agent ends up in, after taking the action
     def _get_reward(self):
-
+        reward = 0
+        if self.carbon_budget < self.cum_gwp:
+            reward -= 50 
         if self.it < self.max_it - 1:
             if self.gwp_per_year['YEAR_2035'] != 0.0:
-                if self.gwp_per_year['YEAR_2035'] > self.target_2035:
-                    reward = -5
-                else:
-                    reward = 5
+                reward += 5*(self.target_2035-self.gwp_per_year['YEAR_2035'])/self.target_2035
             else:
-                reward = 0
+                reward += 0
+            status_2050 = 'Failure'
             done = 0
         else :
-            if self.gwp_per_year['YEAR_2050'] > self.target_2050:
-                # reward = -self.cum_gwp
-                reward = -10
+            if self.gwp_per_year['YEAR_2050'] > self.target_2050 or self.carbon_budget < self.cum_gwp:
+                reward += -100
+                status_2050 = 'Failure'
             else:
-                # reward = self.target_2050 - self.gwp_per_year['YEAR_2050']
-                reward = 10
+                reward += 100
+                status_2050 = 'Success'
             done = 1
-            # reward = -self.cum_gwp
-            # done = 1
 
-        self.file_rew.write('{:.2f} {:.6f}\n'.format(self.it,reward))
+        self.file_rew.write('{} {:.6f} {}\n'.format(self.it,reward,status_2050))
         self.file_rew.flush()
 
         return reward, done
 
 
     def _take_action(self,action):
-
+        
+        
         err_msg = "%r (%s) invalid" % (action, type(action))
         assert self.action_space.contains(action), err_msg
 
         print('\n------------------------ A C T I O N S -----------------------')
 
-        self.max_allow_fossil_norm = 1.0
-        self.min_allow_fossil_norm = -1.0
-        self.max_allow_fossil_scal = 1.0
-        self.min_allow_fossil_scal = 0.0
-
-
-        self.max_sub_renew_norm = 1.0
-        self.min_sub_renew_norm = -1.0
-        self.max_sub_renew_scal = 0.5
-        self.min_sub_renew_scal = 0.0
-
-        action[0] = (action[0] - self.min_allow_fossil_norm)/(self.max_allow_fossil_norm - self.min_allow_fossil_norm)*(self.max_allow_fossil_scal-self.min_allow_fossil_scal)+self.min_allow_fossil_scal
-        action[1] = (action[1] - self.min_sub_renew_norm)/(self.max_sub_renew_norm - self.min_sub_renew_norm)*(self.max_sub_renew_scal-self.min_sub_renew_scal)+self.min_sub_renew_scal
         self.ampl_obj.get_action(action)
         
         self.ampl_obj.run_ampl()
 
         self.ampl_obj.get_outputs()
+
+        self.file_action.write('{} {:.2f} {:.2f}\n'.format(self.it,action[0],action[1]))
+        self.file_action.flush()
+    
+    def _scale_obs(self,obs):
+        low, high = self.observation_space.low, self.observation_space.high
+        return 2.0 * ((obs - low) / (high-low)) - 1.0

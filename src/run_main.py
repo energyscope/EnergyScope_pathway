@@ -79,8 +79,8 @@ if __name__ == '__main__':
     ## Paths
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
-    N_year_opti = [30, 10]
-    N_year_overlap = [0, 5]
+    N_year_opti = [10]
+    N_year_overlap = [5]
 
     for m in range(len(N_year_opti)):
         

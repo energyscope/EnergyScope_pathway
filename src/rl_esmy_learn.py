@@ -34,39 +34,31 @@ from fctSaveNN import SaveNeuralNetwork
 
 print("About to import RL modules")
 import gym
-import tensorflow as tf
-
 import gym_esmy
-from stable_baselines.sac.policies import MlpPolicy
-from stable_baselines.sac.policies import LnMlpPolicy
-from stable_baselines.common.vec_env import DummyVecEnv
-from stable_baselines.sac import SAC
+import torch
+import pandas as pd
+import pickle as pkl
+
+import rl_esmy_stats
+import rl_esmy_graphs
+from stable_baselines3.sac.policies import SACPolicy
+from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.sac import SAC
 
 # from stable_baselines.common.env_checker import check_env
+# rundir = datetime.now()
+# rundir = rundir.strftime('%Y_%m_%d-%H_%M_%S')
+# v = 0
+# out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
+# if not os.path.isdir(out_dir):
+#     print('Creating out_dir {}'.format(out_dir))
+#     system('mkdir -p {}'.format(out_dir))
+# env = gym.make('esmymo-v0',out_dir=out_dir)
 # check_env(env)
 
 
 
 #---------------- Defining dict -----------------#
-
-layers_dict = { '16x16'       : [16,16],
-                '16x16x16'    : [16,16,16],
-                '32x32'       : [32,32],
-                '32x32x32'    : [32,32,32],
-                '64x64'       : [64,64],
-                '64x64x64'    : [64,64,64], 
-                '128x128'     : [128,128],
-                '128x128x128' : [128,128,128]  } 
-
-policy_dict = { 'Mlp'      : 'MlpPolicy',
-                'LnMlp'    : 'LnMlpPolicy'}
-
-
-actfun_dict = { 'tanh'     : tf.nn.tanh,
-                'sigmoid'  : tf.nn.sigmoid,
-                'softplus' : tf.nn.softplus,
-                'relu'     : tf.nn.relu       }
-
 rundir = datetime.now()
 rundir = rundir.strftime('%Y_%m_%d-%H_%M_%S')
 
@@ -76,22 +68,14 @@ rundir = rundir.strftime('%Y_%m_%d-%H_%M_%S')
 v = 0
 policy = 'MlpPolicy'
 gamma = 0.3
-act_fun = tf.nn.relu
+act_fun = torch.nn.modules.activation.ReLU
 layers = [16,16]
 nb_done = 0
-
-if len(sys.argv) > 1:
- 
-    try:
-        v = int(sys.argv[1])
-    except:
-        v = 0
-
 
 # #-------- Defining learning variables --------#
 
 total_timesteps = 1000
-batch_timesteps = 50   
+batch_timesteps = 50
 
 nbatches = int(np.ceil(total_timesteps/batch_timesteps))
 
@@ -127,14 +111,17 @@ if not os.path.isdir(out_dir_batch):
 
 env = gym.make('esmymo-v0',out_dir=out_dir)
 env     = DummyVecEnv([lambda:env])
-model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(act_fun=act_fun, layers=layers))
+model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=10)
 mymodel = out_dir_batch+"test0"
 model.save(mymodel)
+# SaveNeuralNetwork(model,mymodel+'.dict')
 
 # #--------------- Learning ------------------#
 
 remain_steps = total_timesteps - nb_done * batch_timesteps
 i = nb_done + 1
+
+df_learning = pd.DataFrame(columns=['step', 'cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050','act_1','act_2','reward','status_2050','batch', 'episode'])
 
 while remain_steps > 0:
 
@@ -149,17 +136,31 @@ while remain_steps > 0:
     it0 = total_timesteps - remain_steps
     env = gym.make('esmymo-v0',out_dir=out_dir)
     env     = DummyVecEnv([lambda:env])
-    model   = SAC.load("{}batch{}/test{}".format(out_dir,i-1, i-1))
-    mymodel = out_dir_batch+"test{}".format(i)
     
     model.set_env(env)
 
     model.learn(batch_timesteps, log_interval=10)
+    
+    df_learning = rl_esmy_stats.fill_df(out_dir, df_learning,i)
+    
+    mymodel = out_dir_batch+"test{}".format(i)
     model.save(mymodel)
-    SaveNeuralNetwork(model,mymodel+'.dict')
+
 
     i += 1
     remain_steps -= batch_timesteps
+    system('cp {}{}.txt {}'.format(out_dir,'action',out_dir_batch))
+    system('cp {}{}.txt {}'.format(out_dir,'observation',out_dir_batch))
+    system('cp {}{}.txt {}'.format(out_dir,'reward',out_dir_batch))
+
+df_learning = df_learning.reset_index().iloc[:,1:]
+df_learning['episode'] = df_learning.index//5+1
+rl_esmy_stats.updated_status_2050(df_learning)
+rl_esmy_graphs.sp_generator(df_learning, out_dir)
+open_file = open(out_dir+'df_learning_pkl',"wb")
+pkl.dump(df_learning, open_file)
+open_file.close()
+rl_esmy_graphs.gif(out_dir,'sp')
 
 # #-------- Removing batch0 directory ----------#
 
