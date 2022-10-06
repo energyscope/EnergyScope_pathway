@@ -19,21 +19,21 @@ pylibPath = os.path.abspath("../pylib")    # WARNING ! pwd is where the MAIN fil
 if pylibPath not in sys.path:
     sys.path.insert(0, pylibPath)
 
-def fill_df(output_dir, df_learning, j):
-    list_file = ['action.txt','observation.txt','reward.txt']
+def fill_df(output_dir, df_learning, nb_batch):
     df_temp = pd.DataFrame(columns=df_learning.columns)
-    df_obs = pd.read_csv(output_dir+'observation.txt', header = None, sep = ' ').reset_index(drop=True)
-    df_act = pd.read_csv(output_dir+'action.txt', header = None, sep = ' ').reset_index(drop=True)
-    df_rew = pd.read_csv(output_dir+'reward.txt', header = None, sep = ' ').reset_index(drop=True)
+    for i in range(1,nb_batch+1):
+        df_obs = pd.read_csv(output_dir+'batch{}/observation.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
+        df_act = pd.read_csv(output_dir+'batch{}/action.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
+        df_rew = pd.read_csv(output_dir+'batch{}/reward.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
 
-    df_temp = pd.concat([df_obs,df_act.iloc[:,1:],df_rew.iloc[:,1:]],axis=1, join='inner')
-    df_temp['batch'] = j
-    df_temp['episode'] = 0
-    df_temp.columns = df_learning.columns
-    if j!=1:
-        df_learning = pd.concat([df_learning,df_temp])
-    else:
-        df_learning = df_temp
+        df_temp = pd.concat([df_obs,df_act.iloc[:,1:],df_rew.iloc[:,1:]],axis=1, join='inner')
+        df_temp['batch'] = i
+        df_temp['episode'] = 0
+        df_temp.columns = df_learning.columns
+        if i!=1:
+            df_learning = pd.concat([df_learning,df_temp])
+        else:
+            df_learning = df_temp
     return df_learning
 
 def updated_status_2050(df_learning):

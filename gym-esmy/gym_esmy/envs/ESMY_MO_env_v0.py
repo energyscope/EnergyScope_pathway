@@ -267,23 +267,35 @@ class EsmyMoV0(gym.Env):
         return self._scale_obs(np.array([self.cum_gwp, self.it], dtype=np.float32))
     
     # Returns the reward depending on the state the agent ends up in, after taking the action
+    # def _get_reward(self):
+    #     reward = 0
+    #     if self.carbon_budget < self.cum_gwp:
+    #         reward -= 50 
+    #     if self.it < self.max_it - 1:
+    #         if self.gwp_per_year['YEAR_2035'] != 0.0:
+    #             reward += 5*(self.target_2035-self.gwp_per_year['YEAR_2035'])/self.target_2035
+    #         else:
+    #             reward += 0
+    #         status_2050 = 'Failure'
+    #         done = 0
+    #     else :
+    #         if self.gwp_per_year['YEAR_2050'] > self.target_2050 or self.carbon_budget < self.cum_gwp:
+    #             reward += -100
+    #             status_2050 = 'Failure'
+    #         else:
+    #             reward += 100
+    #             status_2050 = 'Success'
+    #         done = 1
     def _get_reward(self):
-        reward = 0
-        if self.carbon_budget < self.cum_gwp:
-            reward -= 50 
+        status_2050 = 'Failure'
         if self.it < self.max_it - 1:
-            if self.gwp_per_year['YEAR_2035'] != 0.0:
-                reward += 5*(self.target_2035-self.gwp_per_year['YEAR_2035'])/self.target_2035
-            else:
-                reward += 0
-            status_2050 = 'Failure'
+            reward = 0
             done = 0
         else :
-            if self.gwp_per_year['YEAR_2050'] > self.target_2050 or self.carbon_budget < self.cum_gwp:
-                reward += -100
-                status_2050 = 'Failure'
+            if self.carbon_budget < self.cum_gwp:
+                reward = -100
             else:
-                reward += 100
+                reward = 100
                 status_2050 = 'Success'
             done = 1
 
