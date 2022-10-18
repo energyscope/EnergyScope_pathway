@@ -39,6 +39,7 @@ import torch
 import pandas as pd
 import pickle as pkl
 import shutil
+import sobol
 
 import rl_esmy_stats
 import rl_esmy_graphs
@@ -73,15 +74,15 @@ nb_done = 0
 
 # #-------- Defining learning variables --------#
 
-total_timesteps = 10000
-batch_timesteps = 500
+total_timesteps = 50
+batch_timesteps = 10
 
 rundir = '2022_10_06-12_12_13'
 out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
 
-learning = False
+learning = True
 fill_df = True
-plot = True
+plot = False
 
 df_learning = pd.DataFrame(columns=['step', 'cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050','act_1','act_2','reward','status_2050','batch', 'episode'])
 
@@ -186,17 +187,25 @@ if plot:
     df_learning = open(out_dir+'df_learning_pkl','rb')
     df_learning = pkl.load(df_learning)
     
-    rl_esmy_graphs.pdf_generator(df_learning,out_dir)   
-    rl_esmy_graphs.gif(out_dir,'pdf')
-    # rl_esmy_graphs.ln_generator(df_learning, out_dir)
-    # rl_esmy_graphs.gif(out_dir,'ln')
+    # rl_esmy_graphs.pdf_generator(df_learning,out_dir, type_graph='cum_gwp')   
+    # rl_esmy_graphs.gif(out_dir,'pdf_cum_gwp')
+    
+    # rl_esmy_graphs.pdf_generator(df_learning,out_dir,type_graph='act')   
+    # rl_esmy_graphs.gif(out_dir,'pdf_act')
+    
+    # rl_esmy_graphs.kde_generator(df_learning, out_dir)
+    # rl_esmy_graphs.gif(out_dir,'kde')
+    
+    # rl_esmy_graphs.ln_generator(df_learning, out_dir, type_graph = 'act')
+    # rl_esmy_graphs.gif(out_dir,'ln_act')
     
     # rl_esmy_graphs.sp_generator(df_learning, out_dir)
     # rl_esmy_graphs.gif(out_dir,'sp')
+    
     # rl_esmy_graphs.sp_generator(df_learning, out_dir,'stat')
     # rl_esmy_graphs.gif(out_dir,'sp',type_distr='stat')
     
-    # rl_esmy_graphs.reward_fig(df_learning,out_dir)
+    rl_esmy_graphs.reward_fig(df_learning,out_dir)
     
     if not os.path.isdir(out_dir+ '_graphs'):
         os.makedirs(out_dir+ '_graphs')

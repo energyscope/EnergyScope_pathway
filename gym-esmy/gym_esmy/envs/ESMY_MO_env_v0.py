@@ -39,6 +39,7 @@ class EsmyMoV0(gym.Env):
 
 
         #--------------------- Initialization ---------------------#
+        self.solve_result = "?"
         self.it = 0
         self.cum_gwp_init = 0.0
         self.cum_gwp = self.cum_gwp_init
@@ -114,7 +115,7 @@ class EsmyMoV0(gym.Env):
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
 
         #---------------------- Observation space --------------------#
-        self.min_gwp = 5e5
+        self.min_gwp = 3e5
         self.max_gwp = 5e6
 
         obslow = np.array([self.min_gwp, self.min_it])
@@ -267,37 +268,25 @@ class EsmyMoV0(gym.Env):
         return self._scale_obs(np.array([self.cum_gwp, self.it], dtype=np.float32))
     
     # Returns the reward depending on the state the agent ends up in, after taking the action
-    # def _get_reward(self):
-    #     reward = 0
-    #     if self.carbon_budget < self.cum_gwp:
-    #         reward -= 50 
-    #     if self.it < self.max_it - 1:
-    #         if self.gwp_per_year['YEAR_2035'] != 0.0:
-    #             reward += 5*(self.target_2035-self.gwp_per_year['YEAR_2035'])/self.target_2035
-    #         else:
-    #             reward += 0
-    #         status_2050 = 'Failure'
-    #         done = 0
-    #     else :
-    #         if self.gwp_per_year['YEAR_2050'] > self.target_2050 or self.carbon_budget < self.cum_gwp:
-    #             reward += -100
-    #             status_2050 = 'Failure'
-    #         else:
-    #             reward += 100
-    #             status_2050 = 'Success'
-    #         done = 1
     def _get_reward(self):
-        status_2050 = 'Failure'
-        if self.it < self.max_it - 1:
-            reward = 0
-            done = 0
-        else :
-            if self.carbon_budget < self.cum_gwp:
-                reward = -100
-            else:
-                reward = 100
-                status_2050 = 'Success'
+        if not (self.solve_result == 'solved'):
+            status_2050 = 'Failure_imp'
+            reward = -200
             done = 1
+            raise Exception('The EnergyScope optimization has not converged to the optimal solution')
+        else:
+            status_2050 = ''
+            if self.it < self.max_it - 1:
+                reward = 0
+                done = 0
+            else :
+                if self.carbon_budget < self.cum_gwp:
+                    reward = -100
+                    status_2050 = 'Failure'
+                else:
+                    reward = 100
+                    status_2050 = 'Success'
+                done = 1
 
         self.file_rew.write('{} {:.6f} {}\n'.format(self.it,reward,status_2050))
         self.file_rew.flush()
@@ -315,7 +304,7 @@ class EsmyMoV0(gym.Env):
 
         self.ampl_obj.get_action(action)
         
-        self.ampl_obj.run_ampl()
+        self.solve_result = self.ampl_obj.run_ampl()
 
         self.ampl_obj.get_outputs()
 

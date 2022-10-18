@@ -10,9 +10,8 @@ print("General imports")
 import numpy as np
 import os,sys
 from os import system
-
-print("Adding pymodules directory to path")
-import classNN as NN
+import pandas as pd
+import pickle as pkl
 
 pylibPath = os.path.abspath("../pylib")    # WARNING ! pwd is where the MAIN file was launched !!!
 if pylibPath not in sys.path:
@@ -28,7 +27,12 @@ if pylibPath not in sys.path:
 
 import ESMY_MO_env_v0 as esmy_mo_env
 import gym
+import gym_esmy
 from stable_baselines3.sac import SAC
+import classNN as NN
+import rl_esmy_stats
+import rl_esmy_graphs
+
 
 
 
@@ -36,7 +40,7 @@ from stable_baselines3.sac import SAC
 
 nb_done = 0
 v = 0
-rundir = '2022_10_04-10_40_23'
+rundir = '2022_10_04-16_24_58'
 
 learn_dir = '../out/learn_v{}/{}/'.format(v,rundir)
 
@@ -54,6 +58,7 @@ nact = 2
 
 #------------------ // testing -----------------------#
 
+df_testing = pd.DataFrame(columns=['step', 'cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050','act_1','act_2','reward','status_2050','batch', 'episode'])
 
 for batch in range(b0,bf+1):
     out_dir_batch = learn_dir + 'batch{}/'.format(batch)    
@@ -62,7 +67,7 @@ for batch in range(b0,bf+1):
         os.makedirs(out_dir_test)
     for j in range(ntests):
 
-        out_dir_test_batch = out_dir_test + 'batch{}/test{}/'.format(batch,j+1)    
+        out_dir_test_batch = out_dir_test + 'batch{}/'.format(batch)#'test{}/'.format(batch,j+1)    
         
         print('out_dir_test_batch = {}'.format(out_dir_test_batch))
     
@@ -92,4 +97,16 @@ for batch in range(b0,bf+1):
     
             obs[it,:],reward[it],_,_ = env.step(action)
             print('reward = ', reward[it], 'reward.shape = ',reward[it].shape)
+            
+            df_testing = rl_esmy_stats.fill_df(out_dir_test_batch, df_testing,batch)
+
+df_testing = df_testing.reset_index().iloc[:,1:]
+df_testing['episode'] = df_testing.index//5+1
+rl_esmy_stats.updated_status_2050(df_testing)
+open_file = open(out_dir_test+'df_testing_pkl',"wb")
+pkl.dump(df_testing, open_file)
+open_file.close()
+
+
+
 

@@ -38,10 +38,10 @@ def fill_df(output_dir, df_learning, nb_batch):
 
 def updated_status_2050(df_learning):
     idx_success = list(df_learning.index[df_learning['status_2050']=='Success'])
+    idx_failure = list(df_learning.index[df_learning['status_2050']=='Failure'])
     df_learning.loc[[j-i for j in idx_success for i in range(1,5)],'status_2050'] = 'Success'
-    ep_success = list(df_learning.loc[idx_success,'episode'])
-
-
+    df_learning.loc[[j-i for j in idx_failure for i in range(1,5)],'status_2050'] = 'Failure'
+    df_learning.loc[df_learning['status_2050']=='','status_2050'] = 'Failure_imp'
 
     
     # if output_type == 'action':

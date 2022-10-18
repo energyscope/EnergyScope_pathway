@@ -85,7 +85,7 @@ class AmplObject:
         except Exception as e:
             print(e)
             raise
-    
+        return self.ampl.getData('solve_result;').toList()[0]
     """
 
     Function to of the LP optimization problem
@@ -173,14 +173,14 @@ class AmplObject:
         allow_foss = action[0]
         sub_renew = action[1]
 
+        self.set_params('allow_foss',allow_foss)
+
         curr_year_wnd = deepcopy(self.sets['YEARS_WND'])
         if 'YEAR_2020' in curr_year_wnd:
             curr_year_wnd.pop(0)
         re_tech = self.sets['RE_TECH']
 
         lst_tpl_re_tech = [(y,t) for y in curr_year_wnd for t in re_tech]
-
-        self.set_params('allow_foss',allow_foss)
 
         for i in lst_tpl_re_tech:
             new_value = self.params['c_inv'][i]*(1-sub_renew)
