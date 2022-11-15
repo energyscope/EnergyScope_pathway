@@ -1,5 +1,4 @@
 import numpy as  np
-from copy import deepcopy
 
 from pathlib import Path
 
@@ -25,11 +24,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class EsmyMoV0(gym.Env):
+class EsmyMoV1(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):
-        print("Initializing the EsmyMoV0", flush=True)
+        print("Initializing the EsmyMo1", flush=True)
 
         out_dir = kwargs['out_dir']
         self.v = kwargs['v']
@@ -125,14 +124,15 @@ class EsmyMoV0(gym.Env):
         self.observation_space = spaces.Box(low=self.obslow, high=self.obshigh, dtype=np.float32)
 
         #----------------------- Action space ----------------------#
-        self.max_allow_fossil_scal = 1.0
-        self.min_allow_fossil_scal = 0.0
+        self.max_conso_energy_scal = [0.2] * 6
+        self.min_conso_energy_scal = [0.1] * 6
 
-        self.max_sub_renew_scal = 0.5
-        self.min_sub_renew_scal = 0.0
+        self.max_allow_fossil_scal = [1.0]
+        self.min_allow_fossil_scal = [0.0]
 
-        actlow = np.array([self.min_allow_fossil_scal, self.min_sub_renew_scal])
-        acthigh = np.array([self.max_allow_fossil_scal, self.max_sub_renew_scal])
+
+        actlow = np.array(self.min_conso_energy_scal + self.min_allow_fossil_scal)
+        acthigh = np.array(self.max_conso_energy_scal + self.max_allow_fossil_scal)
 
         self.actlow = actlow
         self.acthigh  = acthigh
@@ -143,6 +143,7 @@ class EsmyMoV0(gym.Env):
 
         self.action_space = spaces.Box(low=self.actlow, high=self.acthigh, dtype=np.float32)
 
+        self.i_epoch = 0
 
         self.file_rew  = open('{}/reward.txt'.format(out_dir), 'w')
         self.file_observation = open('{}/observation.txt'.format(out_dir),'w')
@@ -217,6 +218,7 @@ class EsmyMoV0(gym.Env):
     def reset(self):
         print("RESET THE PROBLEM")
         self.it = 0
+        self.i_epoch += 1
         self.cum_gwp = self.cum_gwp_init
         self.ampl_obj_0.clean_history()
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
@@ -271,7 +273,7 @@ class EsmyMoV0(gym.Env):
             status_2050 = 'Failure_imp'
             reward = -200
             done = 1
-            raise Exception('The EnergyScope optimization has not converged to the optimal solution')
+            # raise Exception('The EnergyScope optimization has not converged to the optimal solution')
         else:
             status_2050 = ''
             if self.it < self.max_it - 1:
@@ -306,27 +308,29 @@ class EsmyMoV0(gym.Env):
 
         self.ampl_obj.get_outputs()
 
-        self.file_action.write('{} {:.2f} {:.2f}\n'.format(self.it,action[0],action[1]))
+        act_sector = action[:-1]
+        act_foss = action[-1]
+
+        self.file_action.write('{} {} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f} {:.2f}\n'.format(self.i_epoch,self.it,act_sector[0],act_sector[1],act_sector[2],act_sector[3],act_sector[4],act_sector[5], act_foss))
         self.file_action.flush()
     
     def _scale_obs(self,obs):
         low, high = self.observation_space.low, self.observation_space.high
         return 2.0 * ((obs - low) / (high-low)) - 1.0
-
+    
     def _get_action_to_ampl(self,action):
         action = action.astype('float64')
-        allow_foss = action[0]
-        sub_renew = action[1]
+        act_sector = action[:-1]
+        act_foss = action[-1]
+        conso_energy_sector = dict.fromkeys(self.ampl_obj.sets['END_USES_CATEGORIES'])
+        conso_energy_sector ['ELECTRICITY']           = act_sector[0]
+        conso_energy_sector ['HEAT_HIGH_T']           = act_sector[1]
+        conso_energy_sector ['HEAT_LOW_T']            = act_sector[2]
+        conso_energy_sector ['MOBILITY_PASSENGER']    = act_sector[3]
+        conso_energy_sector ['MOBILITY_FREIGHT']      = act_sector[4]
+        conso_energy_sector ['NON_ENERGY']            = act_sector[5]
 
-        self.ampl_obj.set_params('allow_foss',allow_foss)
+        # value : dict(tuple: float)
+        self.ampl_obj.set_params('conso_energy_sector',conso_energy_sector)
 
-        curr_year_wnd = deepcopy(self.ampl_obj.sets['YEARS_WND'])
-        if 'YEAR_2020' in curr_year_wnd:
-            curr_year_wnd.pop(0)
-        re_tech = self.ampl_obj.sets['RE_TECH']
-
-        lst_tpl_re_tech = [(y,t) for y in curr_year_wnd for t in re_tech]
-
-        for i in lst_tpl_re_tech:
-            new_value = self.ampl_obj.params['c_inv'][i]*(1-sub_renew)
-            self.ampl_obj.set_params('c_inv',{i:new_value})
+        self.ampl_obj.set_params('allow_foss',act_foss)

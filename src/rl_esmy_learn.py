@@ -42,7 +42,8 @@ import shutil
 import sobol
 
 import rl_esmy_stats
-import rl_esmy_graphs
+import rl_esmy_graphs_v0
+import rl_esmy_graphs_v1
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.sac import SAC
@@ -65,7 +66,7 @@ from stable_baselines3.sac import SAC
 
 # #--------- Recovering passed arguments ---------#
 
-v = 0
+v = 1
 policy = 'MlpPolicy'
 gamma = 0.3
 act_fun = torch.nn.modules.activation.ReLU
@@ -74,17 +75,17 @@ nb_done = 0
 
 # #-------- Defining learning variables --------#
 
-total_timesteps = 50
+total_timesteps = 40
 batch_timesteps = 10
 
-rundir = '2022_10_06-12_12_13'
+rundir = '2022_11_08-09_14_40'
 out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
 
-learning = True
-fill_df = True
-plot = False
+learning = False
+fill_df = False
+plot = True
 
-df_learning = pd.DataFrame(columns=['step', 'cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050','act_1','act_2','reward','status_2050','batch', 'episode'])
+df_learning = pd.DataFrame(columns=['step', 'cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050','act_1','act_2','act_3','act_4','act_5','act_6','act_7','reward','status_2050','batch', 'episode'])
 
 if learning:
     rundir = datetime.now()
@@ -122,7 +123,7 @@ if learning:
         print('Creating out_dir {}'.format(out_dir_batch))
         system('mkdir -p {}'.format(out_dir_batch))
     
-    env = gym.make('esmymo-v0',out_dir=out_dir)
+    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v)
     env     = DummyVecEnv([lambda:env])
     model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=100)
     mymodel = out_dir_batch+"test0"
@@ -145,7 +146,8 @@ if learning:
         sys.stdout = open(out_dir_batch+'stdout','w')
     
         it0 = total_timesteps - remain_steps
-        env = gym.make('esmymo-v0',out_dir=out_dir)
+        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v)
+        
         env     = DummyVecEnv([lambda:env])
         
         model.set_env(env)
@@ -176,7 +178,6 @@ if fill_df:
     nb_batch = len(next(os.walk(out_dir+'_batchs'))[1])-1
     df_learning = rl_esmy_stats.fill_df(out_dir+'_batchs/', df_learning,nb_batch)
     df_learning = df_learning.reset_index().iloc[:,1:]
-    df_learning['episode'] = df_learning.index//5+1
     rl_esmy_stats.updated_status_2050(df_learning)
     open_file = open(out_dir+'df_learning_pkl',"wb")
     pkl.dump(df_learning, open_file)
@@ -187,17 +188,25 @@ if plot:
     df_learning = open(out_dir+'df_learning_pkl','rb')
     df_learning = pkl.load(df_learning)
     
-    # rl_esmy_graphs.pdf_generator(df_learning,out_dir, type_graph='cum_gwp')   
+    switcher = {'0':rl_esmy_graphs_v0,
+                '1':rl_esmy_graphs_v1}
+    
+    grph_mth = switcher.get(str(v))
+    
+    if not os.path.isdir(out_dir+ '_graphs'):
+        os.makedirs(out_dir+ '_graphs')
+    
+    
+    # rl_esmy_graphs.pdf_generator(df_learning, out_dir, n_act = 6, type_graph='cum_gwp')   
     # rl_esmy_graphs.gif(out_dir,'pdf_cum_gwp')
     
-    # rl_esmy_graphs.pdf_generator(df_learning,out_dir,type_graph='act')   
-    # rl_esmy_graphs.gif(out_dir,'pdf_act')
+    grph_mth.pdf_generator(df_learning,out_dir, type_graph='act')   
+    grph_mth.gif(out_dir,'pdf_act')
     
-    # rl_esmy_graphs.kde_generator(df_learning, out_dir)
-    # rl_esmy_graphs.gif(out_dir,'kde')
-    
-    # rl_esmy_graphs.ln_generator(df_learning, out_dir, type_graph = 'act')
+    # rl_esmy_graphs.ln_generator(df_learning, out_dir, n_act = 6, type_graph = 'act')
     # rl_esmy_graphs.gif(out_dir,'ln_act')
+    
+    grph_mth.reward_fig(df_learning,out_dir)
     
     # rl_esmy_graphs.sp_generator(df_learning, out_dir)
     # rl_esmy_graphs.gif(out_dir,'sp')
@@ -205,10 +214,10 @@ if plot:
     # rl_esmy_graphs.sp_generator(df_learning, out_dir,'stat')
     # rl_esmy_graphs.gif(out_dir,'sp',type_distr='stat')
     
-    rl_esmy_graphs.reward_fig(df_learning,out_dir)
+    # rl_esmy_graphs.kde_generator(df_learning, out_dir)
+    # rl_esmy_graphs.gif(out_dir,'kde')
     
-    if not os.path.isdir(out_dir+ '_graphs'):
-        os.makedirs(out_dir+ '_graphs')
+    
     system('cp {}*.mp4 {}'.format(out_dir,out_dir+'_graphs'))
     system('rm {}*.mp4'.format(out_dir))
 

@@ -12,6 +12,15 @@ register(
     max_episode_steps = 50,
 )
 
+register(
+    # state = []
+    # action = []
+    # Second environment using the monthly version of esmy
+    id='esmymo-v1',
+    entry_point='gym_esmy.envs:EsmyMoV1',
+    max_episode_steps = 50,
+)
+
 
 register(
     # state = []

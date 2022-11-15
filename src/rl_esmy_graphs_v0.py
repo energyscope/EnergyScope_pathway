@@ -20,8 +20,8 @@ import seaborn as sns
 pylibPath = os.path.abspath("../pylib")    # WARNING ! pwd is where the MAIN file was launched !!!
 
 if pylibPath not in sys.path:
-    sys.path.insert(0, pylibPath)
-
+    sys.path.insert(0, pylibPath)     
+        
 def hm_generator(dict_ep, output_path, i, output_type):
 
     if output_type == 'action':
@@ -30,8 +30,30 @@ def hm_generator(dict_ep, output_path, i, output_type):
                 os.makedirs(output_path + 'step_{}'.format(k))
             plt.figure(k)
             plt.imshow(dict_ep[k].T, extent = [0,1,0,0.5], interpolation="quadric")
-            plt.savefig(output_path + 'step_{}/graph_hm_{}.png'.format(k,i), dpi=300)
-            plt.close()        
+            plt.savefig(output_path + 'step_{}/graph_hm_{}.png'.format(k,i), dpi=300, transparent=True)
+            plt.close()
+
+def kde_generator(df_learning,output_path, type_distr = 'cum'):
+    dict_year = {0:'2020',1:'2025',2:'2030',3:'2035',4:'2040'}
+    palette ={"Failure": "C0", "Success": "C1"}
+    for i in df_learning['step'].unique():
+        data_1 = df_learning.loc[df_learning['step']==i]
+        if not os.path.isdir(output_path + 'step_{}'.format(i)):
+                os.makedirs(output_path + 'step_{}'.format(i))
+        for j in df_learning['batch'].unique():
+            if type_distr == 'cum':
+                data = data_1.loc[df_learning['batch']<=j]
+            else:
+                data = data_1.loc[df_learning['batch']==j]
+            g = sns.JointGrid(data = data,x='act_1', y='act_2',xlim=(0,1), ylim=(0,0.5), hue ='status_2050',palette=palette)
+            g.plot_joint(sns.kdeplot, s=100, alpha=.5, thresh = .1)
+            g.plot_marginals(sns.histplot, kde=True)
+            g.fig.suptitle('Actions taken in {}'.format(dict_year[i]))
+            g.ax_joint.set_xlabel('Allow fossil fuels')
+            g.ax_joint.set_ylabel('Incentivize RE tech')
+            sns.move_legend(g.ax_joint, "upper right", title='Status episode', frameon=True)
+            g.savefig(output_path + 'step_{}/graph_kde_{}.png'.format(i,j), dpi=300, transparent=True)
+            plt.close()
 
 def sp_generator(df_learning, output_path, type_distr = 'cum'):
     dict_year = {0:'2020',1:'2025',2:'2030',3:'2035',4:'2040'}
@@ -52,10 +74,8 @@ def sp_generator(df_learning, output_path, type_distr = 'cum'):
             g.ax_joint.set_xlabel('Allow fossil fuels')
             g.ax_joint.set_ylabel('Incentivize RE tech')
             sns.move_legend(g.ax_joint, "upper right", title='Status episode', frameon=True)
-            g.savefig(output_path + 'step_{}/graph_sp_{}.png'.format(i,j), dpi=300)
+            g.savefig(output_path + 'step_{}/graph_sp_{}.png'.format(i,j), dpi=300, transparent=True)
             plt.close()
-        
-
 
 def ln_generator(df_learning, output_path, type_graph = 'act'):
     dict_year = {0:'2020',1:'2025',2:'2030',3:'2035',4:'2040'}
@@ -79,11 +99,12 @@ def ln_generator(df_learning, output_path, type_graph = 'act'):
             plt.subplots_adjust(right=0.9)
             plt.xticks(range(len(list_year)),list_year)
             plt.xlabel('Time of decision making')
-            plt.savefig(output_path + 'graph_ln_act_{}.png'.format(j), dpi=300)
+            plt.savefig(output_path + 'graph_ln_act_{}.png'.format(j), dpi=300, transparent=True)
             plt.close()
 
 def pdf_generator(df_learning, output_path, type_graph = 'act'):
     list_year = ['2020','2025','2030','2035','2040']
+    sectors = ['ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T','MOBILITY_PASSENGER','MOBILITY_FREIGHT','NON_ENERGY']
     palette ={"Failure": "C0", "Success": "C1"}
     clip_dict = {1:[0,1], 2:[0,0.5]}
     x_dict = {1:'Allow fossil fuels', 2: 'Incentivize RE tech'}
@@ -96,10 +117,11 @@ def pdf_generator(df_learning, output_path, type_graph = 'act'):
                 for k in df_learning['step'].unique():
                     data_step = data.loc[data['step']==k]
                     ax = axes[k,j-1]
-                    sns.kdeplot(ax=ax,data = data_step,x='act_{}'.format(j), hue ='status_2050',palette=palette, legend=False, clip=clip_dict[j])
+                    sns.kdeplot(ax=ax,data = data_step,x='act_{}'.format(j), hue ='status_2050',palette=palette, legend=False, clip=clip_dict[j], linewidth = 3)
                     ax.set_yticks([])
                     ax.set(xlabel=x_dict[j],ylabel=list_year[k])
                     ax.label_outer()
+                    ax.tick_params(axis='x', width=3)
             plt.figtext(0.5, 0.03, 
                 "episodes: {} & rate of success: {}%".format(data['episode'].iloc[-1],round(100*(data['status_2050']=='Success').sum()/len(data.index),1)),
                 horizontalalignment ="center",
@@ -108,7 +130,7 @@ def pdf_generator(df_learning, output_path, type_graph = 'act'):
                     'alpha':0.3, 'pad':5})
             fig.legend(['Success','Failure'],loc="upper right")
             plt.subplots_adjust(right=0.9)
-            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300)
+            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300, transparent=True)
             plt.close()
         elif type_graph == 'cum_gwp':
             fig, axes = plt.subplots(5, 2, figsize=(15, 5),sharex='col')
@@ -134,7 +156,7 @@ def pdf_generator(df_learning, output_path, type_graph = 'act'):
                     'alpha':0.3, 'pad':5})
             fig.legend(['Success','Failure'],loc="upper right")
             plt.subplots_adjust(right=0.9)
-            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300)
+            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300, transparent=True)
             plt.close()
 
 def reward_fig(df_learning, output_path):
@@ -146,31 +168,8 @@ def reward_fig(df_learning, output_path):
     plt.plot(reward, 'k-', label="Reward")
     plt.plot(r_average, 'r-', label="Rolling average")
     plt.legend()
-    plt.savefig(output_path + '/_graphs/reward.png', dpi=300)
+    plt.savefig(output_path + '_graphs/reward.png', dpi=300, transparent=True)
     plt.close()
-
-
-def kde_generator(df_learning,output_path, type_distr = 'cum'):
-    dict_year = {0:'2020',1:'2025',2:'2030',3:'2035',4:'2040'}
-    palette ={"Failure": "C0", "Success": "C1"}
-    for i in df_learning['step'].unique():
-        data_1 = df_learning.loc[df_learning['step']==i]
-        if not os.path.isdir(output_path + 'step_{}'.format(i)):
-                os.makedirs(output_path + 'step_{}'.format(i))
-        for j in df_learning['batch'].unique():
-            if type_distr == 'cum':
-                data = data_1.loc[df_learning['batch']<=j]
-            else:
-                data = data_1.loc[df_learning['batch']==j]
-            g = sns.JointGrid(data = data,x='act_1', y='act_2',xlim=(0,1), ylim=(0,0.5), hue ='status_2050',palette=palette)
-            g.plot_joint(sns.kdeplot, s=100, alpha=.5, thresh = .1)
-            g.plot_marginals(sns.histplot, kde=True)
-            g.fig.suptitle('Actions taken in {}'.format(dict_year[i]))
-            g.ax_joint.set_xlabel('Allow fossil fuels')
-            g.ax_joint.set_ylabel('Incentivize RE tech')
-            sns.move_legend(g.ax_joint, "upper right", title='Status episode', frameon=True)
-            g.savefig(output_path + 'step_{}/graph_kde_{}.png'.format(i,j), dpi=300)
-            plt.close()
 
 def gif(output_path, type_graph, type_distr = 'cum'):
         if type_graph in ['sp','kde']:
@@ -185,3 +184,67 @@ def gif(output_path, type_graph, type_distr = 'cum'):
             cmd = cmd.format(output_path+'graph_'+type_graph+'_%01d.png',output_path)
             os.system(cmd)
             system('rm {}*.png'.format(output_path))
+
+###################################################
+#     FORMER FUNCTIONS (TFL-poster session)       #
+###################################################
+
+def pdf_generator_poster(df_learning, output_path, type_graph = 'act'):
+    list_year = ['2020','2025','2030','2035','2040']
+    sectors = ['ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T','MOBILITY_PASSENGER','MOBILITY_FREIGHT','NON_ENERGY']
+    palette ={"Failure": "C0", "Success": "C1"}
+    clip_dict = {1:[0,1], 2:[0,0.5]}
+    x_dict = {1:'Allow fossil fuels', 2: 'Incentivize RE tech'}
+    for i in df_learning['batch'].unique():
+        i = 20
+        data = df_learning.loc[df_learning['batch']<=i]
+        data = data.loc[data['status_2050']=='Success']
+        if type_graph == 'act':
+            fig, axes = plt.subplots(5, 2, figsize=(15, 5))
+            fig.suptitle('Actions over time and learning')
+            for j in range(1,3):
+                for k in df_learning['step'].unique():
+                    data_step = data.loc[data['step']==k]
+                    ax = axes[k,j-1]
+                    sns.kdeplot(ax=ax,data = data_step,x='act_{}'.format(j), hue ='status_2050',palette=palette, legend=False, clip=clip_dict[j], linewidth = 3)
+                    ax.set_yticks([])
+                    ax.set(xlabel=x_dict[j],ylabel=list_year[k])
+                    ax.label_outer()
+                    ax.tick_params(axis='x', colors='white', width=3)
+                    plt.setp(ax.spines.values(),color='white')
+            plt.figtext(0.5, 0.03, 
+                "episodes: {} & rate of success: {}%".format(data['episode'].iloc[-1],round(100*(data['status_2050']=='Success').sum()/len(data.index),1)),
+                horizontalalignment ="center",
+                wrap = True, fontsize = 10, 
+                bbox ={'facecolor':'grey', 
+                    'alpha':0.3, 'pad':5})
+            fig.legend(['Success','Failure'],loc="upper right")
+            plt.subplots_adjust(right=0.9)
+            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300, transparent=True)
+            plt.close()
+        elif type_graph == 'cum_gwp':
+            fig, axes = plt.subplots(5, 2, figsize=(15, 5),sharex='col')
+            fig.suptitle('Cumulative gwp over time and learning')
+            for j in range(2):
+                if j == 0:
+                    status_2050 = 'Success'
+                else:
+                    status_2050 = 'Failure'
+                data_status = data.loc[data['status_2050']==status_2050]
+                for k in df_learning['step'].unique():
+                    data_step = data_status.loc[data_status['step']==k]
+                    ax = axes[k,j]
+                    sns.histplot(ax=ax,data = data_step,x='cum_gwp',legend=False,color=palette[status_2050])
+                    ax.set_yticks([])
+                    ax.set(ylabel=list_year[k])
+                    ax.label_outer()
+            plt.figtext(0.5, 0.03, 
+                "episodes: {} & rate of success: {}%".format(data['episode'].iloc[-1],round(100*(data['status_2050']=='Success').sum()/len(data.index),1)),
+                horizontalalignment ="center",
+                wrap = True, fontsize = 10, 
+                bbox ={'facecolor':'grey', 
+                    'alpha':0.3, 'pad':5})
+            fig.legend(['Success','Failure'],loc="upper right")
+            plt.subplots_adjust(right=0.9)
+            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300, transparent=True)
+            plt.close()
