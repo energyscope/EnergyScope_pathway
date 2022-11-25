@@ -25,7 +25,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class EsmyMoV0(gym.Env):
+class EsmyMoV01(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):
@@ -125,14 +125,14 @@ class EsmyMoV0(gym.Env):
         self.observation_space = spaces.Box(low=self.obslow, high=self.obshigh, dtype=np.float32)
 
         #----------------------- Action space ----------------------#
-        self.max_allow_fossil_scal = 1.0
-        self.min_allow_fossil_scal = 0.0
+        self.max_allow_fossil_scal = [1.0]
+        self.min_allow_fossil_scal = [0.0]
 
-        self.max_sub_renew_scal = 0.5
-        self.min_sub_renew_scal = 0.0
+        self.max_sub_renew_scal = [0.5] * (len(self.ampl_obj_0.sets['RE_TECH']))
+        self.min_sub_renew_scal = [0.0] * (len(self.ampl_obj_0.sets['RE_TECH']))
 
-        actlow = np.array([self.min_allow_fossil_scal, self.min_sub_renew_scal])
-        acthigh = np.array([self.max_allow_fossil_scal, self.max_sub_renew_scal])
+        actlow = np.array(self.min_allow_fossil_scal + self.min_sub_renew_scal)
+        acthigh = np.array(self.max_allow_fossil_scal + self.max_sub_renew_scal)
 
         self.actlow = actlow
         self.acthigh  = acthigh
@@ -308,7 +308,14 @@ class EsmyMoV0(gym.Env):
 
         self.ampl_obj.get_outputs()
 
-        self.file_action.write('{} {} {:.2f} {:.2f}\n'.format(self.i_epoch,self.it,action[0],action[1]))
+        act_to_print = '{} {}'.format(self.i_epoch,self.it)
+
+        for i in range(len(action)):
+            act_to_print += ' {:.2f}'.format(action[i])
+        
+        act_to_print += '\n'
+
+        self.file_action.write(act_to_print)
         self.file_action.flush()
     
     def _scale_obs(self,obs):
@@ -318,7 +325,7 @@ class EsmyMoV0(gym.Env):
     def _get_action_to_ampl(self,action):
         action = action.astype('float64')
         allow_foss = action[0]
-        sub_renew = action[1]
+        sub_renew = action[1:]
 
         self.ampl_obj.set_params('allow_foss',allow_foss)
 
@@ -326,9 +333,10 @@ class EsmyMoV0(gym.Env):
         if 'YEAR_2020' in curr_year_wnd:
             curr_year_wnd.pop(0)
         re_tech = self.ampl_obj.sets['RE_TECH']
+        nb_re_tech = len(re_tech)
 
         lst_tpl_re_tech = [(y,t) for y in curr_year_wnd for t in re_tech]
 
-        for i in lst_tpl_re_tech:
-            new_value = self.ampl_obj.params['c_inv'][i]*(1-sub_renew)
+        for ind, i in enumerate(lst_tpl_re_tech):
+            new_value = self.ampl_obj.params['c_inv'][i]*(1-sub_renew[ind%nb_re_tech])
             self.ampl_obj.set_params('c_inv',{i:new_value})

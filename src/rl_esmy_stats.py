@@ -9,7 +9,6 @@ Created on Fri Aug  26 2022
 
 print("General imports")
 import numpy as np
-from numpy import pi
 import os,sys
 from os import system
 import pandas as pd
@@ -26,8 +25,9 @@ def fill_df(output_dir, df_learning, nb_batch):
         df_obs = pd.read_csv(output_dir+'batch{}/observation.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
         df_act = pd.read_csv(output_dir+'batch{}/action.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
         df_rew = pd.read_csv(output_dir+'batch{}/reward.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
+        df_cost = pd.read_csv(output_dir+'batch{}/cost.txt'.format(i), header = None, sep = ' ').reset_index(drop=True)
 
-        df_temp = pd.concat([df_obs,df_act.iloc[:,2:],df_rew.iloc[:,1:]],axis=1, join='inner')
+        df_temp = pd.concat([df_obs,df_cost.iloc[:,1:],df_act.iloc[:,2:],df_rew.iloc[:,1:]],axis=1, join='inner')
         df_temp['batch'] = i
         df_temp['episode'] = n_epoch_batch + df_act.iloc[:,0]
         df_temp.columns = df_learning.columns

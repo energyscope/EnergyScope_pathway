@@ -25,11 +25,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class EsmyMoV0(gym.Env):
+class EsmyMoV2(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):
-        print("Initializing the EsmyMoV0", flush=True)
+        print("Initializing the EsmyMo2", flush=True)
 
         out_dir = kwargs['out_dir']
         self.v = kwargs['v']
@@ -42,6 +42,8 @@ class EsmyMoV0(gym.Env):
         self.it = 0
         self.cum_gwp_init = 0.0
         self.cum_gwp = self.cum_gwp_init
+        self.cum_cost_init = 0.0
+        self.cum_cost = self.cum_cost_init
         self.target_2050 = 3406.92
         self.target_2035 = 86445
         self.n_year_opti = 10
@@ -103,21 +105,24 @@ class EsmyMoV0(gym.Env):
         self.ampl_obj_0.clean_history()
         self.ampl_pre = AmplPreProcessor(self.ampl_obj_0, self.n_year_opti, self.n_year_overlap)
 
-        # Maximum of phases to accomplish the transition
-        self.min_it = 0.0
-        self.max_it = len(self.ampl_pre.years_opti)
 
         # self.carbon_budget = 1756703.8 #Linear decrease between 106600kt_CO2 in 2020 (from EC Trends towards 2050) and 3406.92 (from Gauthier)
         self.carbon_budget = 1224935.4 #Infered from CO2-emissions of Belgium in 2020 (106.6Mt), of world in 2020 (34.81Gt, from ourworldindata) and world carbon budget (400Gt, from climate analytics)
 
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
+        self.cost_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
 
         #---------------------- Observation space --------------------#
         self.min_gwp = 3e5
         self.max_gwp = 5e6
 
-        obslow = np.array([self.min_gwp, self.min_it])
-        obshigh = np.array([self.max_gwp, self.max_it])
+        self.min_cost = 3e5
+        self.max_cost = 3e6
+
+        self.max_it = len(self.ampl_pre.years_opti)
+
+        obslow = np.array([self.min_gwp, self.min_cost])
+        obshigh = np.array([self.max_gwp, self.max_cost])
 
         self.obslow = obslow
         self.obshigh = obshigh
@@ -125,14 +130,15 @@ class EsmyMoV0(gym.Env):
         self.observation_space = spaces.Box(low=self.obslow, high=self.obshigh, dtype=np.float32)
 
         #----------------------- Action space ----------------------#
-        self.max_allow_fossil_scal = 1.0
-        self.min_allow_fossil_scal = 0.0
+        self.max_allow_fossil = [1] * (len(self.ampl_obj_0.sets['NRE_RESOURCES'])+1)
+        self.min_allow_fossil = [0] * (len(self.ampl_obj_0.sets['NRE_RESOURCES'])+1)
 
-        self.max_sub_renew_scal = 0.5
-        self.min_sub_renew_scal = 0.0
+        self.max_sub_renew_scal = [0.5]
+        self.min_sub_renew_scal = [0.0]
 
-        actlow = np.array([self.min_allow_fossil_scal, self.min_sub_renew_scal])
-        acthigh = np.array([self.max_allow_fossil_scal, self.max_sub_renew_scal])
+
+        actlow = np.array(self.min_allow_fossil + self.min_sub_renew_scal)
+        acthigh = np.array(self.max_allow_fossil + self.max_sub_renew_scal)
 
         self.actlow = actlow
         self.acthigh  = acthigh
@@ -148,6 +154,7 @@ class EsmyMoV0(gym.Env):
         self.file_rew  = open('{}/reward.txt'.format(out_dir), 'w')
         self.file_observation = open('{}/observation.txt'.format(out_dir),'w')
         self.file_action = open('{}/action.txt'.format(out_dir),'w')
+        self.file_cost = open('{}/cost.txt'.format(out_dir),'w')
 
 
 #------------------------------------------------------------------------------#
@@ -220,8 +227,10 @@ class EsmyMoV0(gym.Env):
         self.it = 0
         self.i_epoch += 1
         self.cum_gwp = self.cum_gwp_init
+        self.cum_cost = self.cum_cost_init
         self.ampl_obj_0.clean_history()
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
+        self.cost_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
         self.ampl_obj = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options)
         self.ampl_pre = AmplPreProcessor(self.ampl_obj, self.n_year_opti, self.n_year_overlap)
 
@@ -243,9 +252,11 @@ class EsmyMoV0(gym.Env):
     # Besides writing information in output file, returns the state in which the agent is. This state consists of the amounts of PV and storage capacity
     def _get_observation(self):
         gwp_dict = self.ampl_obj.collect_gwp(self.curr_years_wnd)
+        self.cum_cost, cost_dict = self.ampl_obj.collect_cost('TotalTransitionCost',self.curr_years_wnd)
 
         for y in self.curr_years_wnd:
             self.gwp_per_year[y] = gwp_dict[y]
+            self.cost_per_year[y] = cost_dict[y]
         
         t_phase = self.ampl_obj.params['t_phase'].value()
         self.cum_gwp = self.gwp_per_year['YEAR_2020'] * (1+t_phase/2)
@@ -260,12 +271,20 @@ class EsmyMoV0(gym.Env):
 
         self.file_observation.write('{} {:.1f}'.format(self.it,self.cum_gwp))
         for k in self.gwp_per_year:
-            self.file_observation.write(' ')
-            self.file_observation.write('{:.1f}'.format(self.gwp_per_year[k]))
+            self.file_observation.write(' {:.1f}'.format(self.gwp_per_year[k]))
         self.file_observation.write('\n')
         self.file_observation.flush()
 
-        return self._scale_obs(np.array([self.cum_gwp, self.it], dtype=np.float32))
+        cost_to_print = '{} {:.2f}'.format(self.it,self.cum_cost)
+
+        for k in self.cost_per_year:
+            cost_to_print += ' {:.2f}'.format(self.cost_per_year[k])
+
+        cost_to_print += '\n'
+        self.file_cost.write(cost_to_print)
+        self.file_cost.flush()
+
+        return self._scale_obs(np.array([self.cum_gwp, self.cum_cost], dtype=np.float32))
     
     # Returns the reward depending on the state the agent ends up in, after taking the action
     def _get_reward(self):
@@ -273,7 +292,6 @@ class EsmyMoV0(gym.Env):
             status_2050 = 'Failure_imp'
             reward = -200
             done = 1
-            raise Exception('The EnergyScope optimization has not converged to the optimal solution')
         else:
             status_2050 = ''
             if self.it < self.max_it - 1:
@@ -288,7 +306,7 @@ class EsmyMoV0(gym.Env):
                     status_2050 = 'Success'
                 done = 1
 
-        self.file_rew.write('{} {:.6f} {}\n'.format(self.it,reward,status_2050))
+        self.file_rew.write('{} {:.2f} {}\n'.format(self.it,reward,status_2050))
         self.file_rew.flush()
 
         return reward, done
@@ -308,19 +326,41 @@ class EsmyMoV0(gym.Env):
 
         self.ampl_obj.get_outputs()
 
-        self.file_action.write('{} {} {:.2f} {:.2f}\n'.format(self.i_epoch,self.it,action[0],action[1]))
+        act_to_print = '{} {}'.format(self.i_epoch,self.it)
+
+        for i in range(len(action)):
+            act_to_print += ' {:.2f}'.format(action[i])
+        
+        act_to_print += '\n'
+
+        self.file_action.write(act_to_print)
         self.file_action.flush()
     
     def _scale_obs(self,obs):
         low, high = self.observation_space.low, self.observation_space.high
         return 2.0 * ((obs - low) / (high-low)) - 1.0
-
+    
     def _get_action_to_ampl(self,action):
         action = action.astype('float64')
-        allow_foss = action[0]
-        sub_renew = action[1]
+        act_foss = action[:-1]
+        sub_renew = action[-1]
+        allow_foss_res = dict.fromkeys(self.ampl_obj.sets['NRE_RESOURCES'])
+        allow_foss_res ['ELECTRICITY']          = act_foss[0]
+        allow_foss_res ['GASOLINE']             = act_foss[1]
+        allow_foss_res ['DIESEL']               = act_foss[2]
+        allow_foss_res ['LFO']                  = act_foss[3]
+        allow_foss_res ['GAS']                  = act_foss[4]
+        allow_foss_res ['COAL']                 = act_foss[5]
+        allow_foss_res ['URANIUM']              = act_foss[6]
+        allow_foss_res ['WASTE']                = act_foss[7]
+        allow_foss_res ['H2']                   = act_foss[8]
+        allow_foss_res ['AMMONIA']              = act_foss[9]
+        allow_foss_res ['METHANOL']             = act_foss[10]
+        
+        # value : dict(tuple: float)
+        self.ampl_obj.set_params('allow_foss_res',allow_foss_res)
 
-        self.ampl_obj.set_params('allow_foss',allow_foss)
+        self.ampl_obj.set_params('allow_foss', act_foss[-1])
 
         curr_year_wnd = deepcopy(self.ampl_obj.sets['YEARS_WND'])
         if 'YEAR_2020' in curr_year_wnd:

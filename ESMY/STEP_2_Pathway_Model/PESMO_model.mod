@@ -242,37 +242,41 @@ subject to end_uses_t {y in YEARS_WND diff YEAR_ONE, l in LAYERS, t in PERIODS}:
 #------
 
 # [Eq. 1]	
-subject to totalcost_cal {y in YEARS_WND diff YEAR_ONE}:
+subject to totalcost_cal {y in YEARS_UP_TO union YEARS_WND}:
 	TotalCost [y] = sum {j in TECHNOLOGIES} (tau [y,j]  * C_inv [y,j] + C_maint [y,j]) + sum {i in RESOURCES} C_op [y,i];
 	
 # [Eq. 3] Investment cost of each technology
-subject to investment_cost_calc {y in YEARS_WND diff YEAR_ONE,j in TECHNOLOGIES}: 
+subject to investment_cost_calc {y in YEARS_UP_TO union YEARS_WND,j in TECHNOLOGIES}: 
 	C_inv [y,j] = c_inv [y,j] * F [y,j];
 		
 # [Eq. 4] O&M cost of each technology
-subject to main_cost_calc {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}: 
+subject to main_cost_calc {y in YEARS_UP_TO union YEARS_WND, j in TECHNOLOGIES}: 
 	C_maint [y,j] = c_maint [y,j] * F [y,j];		
 
 # [Eq. 5] Total cost of each resource
-subject to op_cost_calc {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	C_op [y,i] = sum {t in PERIODS} (c_op [y,i] * F_t [y,i, t] * t_op [t] ) ;
+## To store resources used
+var Res {YEARS, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
+subject to store_res_up_to {y in YEARS_WND diff YEAR_ONE, j in RESOURCES}:
+	Res [y, j] = sum {t in PERIODS} (F_t [y,j,t] * t_op [t]);
+subject to op_cost_calc {y in YEARS_UP_TO union YEARS_WND, i in RESOURCES}:
+	C_op [y,i] = c_op [y,i] * Res [y, i] ;
 
 ## Emissions
 #-----------
 
 # [Eq. 6]
-subject to totalGWP_calc {y in YEARS_WND diff YEAR_ONE}:
+subject to totalGWP_calc {y in YEARS_UP_TO union YEARS_WND}:
 	TotalGWP [y] =  sum {i in RESOURCES} GWP_op [y,i];
 	#JUST RESOURCES : TotalGWP [y] =  sum {i in RESOURCES} GWP_op [y,i];
 	#BASED ON LCA:    TotalGWP [y] = sum {j in TECHNOLOGIES} (GWP_constr [y,j] / lifetime [y,j]) + sum {i in RESOURCES} GWP_op [y,i];
 	
 # [Eq. 7]
-subject to gwp_constr_calc {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
+subject to gwp_constr_calc {y in YEARS_UP_TO union YEARS_WND, j in TECHNOLOGIES}:
 	GWP_constr [y,j] = gwp_constr [y,j] * F [y,j];
 
 # [Eq. 8]
-subject to gwp_op_calc {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	GWP_op [y,i] = gwp_op [y,i] * sum {t in PERIODS} ( F_t [y,i, t] * t_op [t] );	
+subject to gwp_op_calc {y in YEARS_UP_TO union YEARS_WND, i in RESOURCES}:
+	GWP_op [y,i] = gwp_op [y,i] * Res [y,i];	
 
 # [Eq. XX] total transition gwp calculation
 subject to totalGWPTransition_calculation : # category: GWP_calc
@@ -298,7 +302,7 @@ subject to capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
 
 # [Eq. 12] Resources availability equation
 subject to resource_availability {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	sum {t in PERIODS} (F_t [y,i, t] * t_op [t]) <= avail [y,i];
+	Res [y,i] <= avail [y,i];
 
 # [Eq. 2.12-bis] Constant flow of import for resources listed in SET RES_IMPORT_CONSTANT
 var Import_constant {y in YEARS diff YEAR_ONE, RES_IMPORT_CONSTANT} >= 0;
@@ -545,7 +549,7 @@ subject to Opex_tot_cost_calculation :# category: COST_calc
 					                 (C_opex [y_start] + C_opex [y_stop])/2 *annualised_factor[p] ); #In euros_2015
 
 # [Eq. XX] Compute operating cost for years
-subject to Opex_cost_calculation{y in YEARS_WND} : # category: COST_calc
+subject to Opex_cost_calculation{y in YEARS_WND union YEARS_UP_TO} : # category: COST_calc
 	C_opex [y] = sum {j in TECHNOLOGIES} C_maint [y,j] + sum {i in RESOURCES} C_op [y,i]; #In â‚¬_y
 
 # [Eq. XX] We could either limit the max investment on a period or fix that these investments must be equals in â‚¬_2015

@@ -2,11 +2,6 @@
 #	mod file to save variables along the way											
 # -------------------------------------------------------------------------------------------------------------------------		
 
-## To store resources used
-var Res_wnd {YEARS_WND diff YEAR_ONE, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
-subject to store_res_up_to {y in YEARS_WND diff YEAR_ONE, j in RESOURCES}:
-	Res_wnd [y, j] = sum {t in PERIODS} (F_t [y,j,t] * t_op [t]);
-
 ## To store share of production and consumption of END_USE layers
 var Tech_wnd {YEARS_WND diff YEAR_ONE, LAYERS, TECHNOLOGIES diff STORAGE_TECH union RESOURCES}, default 0; #[GWh] Variable to store share of different end-use layer over the years in the current window
 subject to store_tech {y in YEARS_WND diff YEAR_ONE, tech in (TECHNOLOGIES diff STORAGE_TECH) union RESOURCES, l in LAYERS}:

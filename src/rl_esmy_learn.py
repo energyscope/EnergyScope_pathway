@@ -30,7 +30,6 @@ if pylibPath not in sys.path:
     sys.path.insert(0, pylibPath)
 
 out_dir = os.path.abspath('../out/')
-from fctSaveNN import SaveNeuralNetwork
 
 print("About to import RL modules")
 import gym
@@ -43,51 +42,40 @@ import sobol
 
 import rl_esmy_stats
 import rl_esmy_graphs_v0
+import rl_esmy_graphs_v01
 import rl_esmy_graphs_v1
+import rl_esmy_graphs_v2
+import rl_esmy_graphs_v21
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.sac import SAC
-
-# from stable_baselines.common.env_checker import check_env
-# rundir = datetime.now()
-# rundir = rundir.strftime('%Y_%m_%d-%H_%M_%S')
-# v = 0
-# out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
-# if not os.path.isdir(out_dir):
-#     print('Creating out_dir {}'.format(out_dir))
-#     system('mkdir -p {}'.format(out_dir))
-# env = gym.make('esmymo-v0',out_dir=out_dir)
-# check_env(env)
-
-
 
 #---------------- Defining dict -----------------#
 
 
 # #--------- Recovering passed arguments ---------#
 
-v = 1
+v = '0'
 policy = 'MlpPolicy'
 gamma = 0.3
 act_fun = torch.nn.modules.activation.ReLU
 layers = [16,16]
-nb_done = 0
 
 # #-------- Defining learning variables --------#
 
-total_timesteps = 40
-batch_timesteps = 10
+total_timesteps = 8500
+batch_timesteps = 500
 
-rundir = '2022_11_08-09_14_40'
+rundir = '2022_10_06-12_12_13'
 out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
 
-learning = False
-fill_df = False
+learning_from_scratch = True
+keep_on_learning = False
+fill_df = True
 plot = True
 
-df_learning = pd.DataFrame(columns=['step', 'cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050','act_1','act_2','act_3','act_4','act_5','act_6','act_7','reward','status_2050','batch', 'episode'])
-
-if learning:
+if learning_from_scratch:
+    nb_done = 0
     rundir = datetime.now()
     rundir = rundir.strftime('%Y_%m_%d-%H_%M_%S')
 
@@ -123,7 +111,7 @@ if learning:
         print('Creating out_dir {}'.format(out_dir_batch))
         system('mkdir -p {}'.format(out_dir_batch))
     
-    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v)
+    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
     env     = DummyVecEnv([lambda:env])
     model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=100)
     mymodel = out_dir_batch+"test0"
@@ -135,6 +123,7 @@ if learning:
     remain_steps = total_timesteps - nb_done * batch_timesteps
     i = nb_done + 1
     
+    txt_files = []
     while remain_steps > 0:
     
         out_dir_batch = out_dir + 'batch{}/'.format(i)    
@@ -146,7 +135,7 @@ if learning:
         sys.stdout = open(out_dir_batch+'stdout','w')
     
         it0 = total_timesteps - remain_steps
-        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v)
+        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
         
         env     = DummyVecEnv([lambda:env])
         
@@ -160,21 +149,103 @@ if learning:
     
         i += 1
         remain_steps -= batch_timesteps
+        lst_files = os.listdir(out_dir)
+        txt_files = [x for x in lst_files if x.endswith('.txt')]
+        txt_files.remove('set_up.txt')
+        for f in txt_files:
+            system('cp {}{} {}'.format(out_dir,f,out_dir_batch))
         system('cp {}{}.txt {}'.format(out_dir,'action',out_dir_batch))
         system('cp {}{}.txt {}'.format(out_dir,'observation',out_dir_batch))
         system('cp {}{}.txt {}'.format(out_dir,'reward',out_dir_batch))
     
     
-    system('rm {}{}.txt'.format(out_dir,'action'))
-    system('rm {}{}.txt'.format(out_dir,'observation'))
-    system('rm {}{}.txt'.format(out_dir,'reward'))
+    for f in txt_files:
+        system('rm {}{}'.format(out_dir,f))
     
     if not os.path.isdir(out_dir+ '_batchs'):
         os.makedirs(out_dir+ '_batchs')
     system('cp -R {}batch* {}'.format(out_dir,out_dir+'_batchs'))
     system('rm -R {}batch*'.format(out_dir))
 
+
+if keep_on_learning:
+    
+    batches_dir = out_dir+'_batchs/'
+    err_msg = 'There are no batches yet'
+    assert os.path.isdir(batches_dir), err_msg
+
+    nb_done = len(next(os.walk(batches_dir))[1])-1
+    
+    remain_steps = total_timesteps
+    i = nb_done + 1
+    
+    mymodel = batches_dir+'batch{}/test{}'.format(nb_done,nb_done)
+    
+    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    env     = DummyVecEnv([lambda:env])
+    model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=100)
+    model.set_parameters(mymodel)
+    
+    txt_files = []
+    while remain_steps > 0:
+    
+        out_dir_batch = out_dir + 'batch{}/'.format(i)    
+        
+        if not os.path.isdir(out_dir_batch):
+            print('Creating out_dir {}'.format(out_dir_batch))
+            system('mkdir {}'.format(out_dir_batch))
+    
+        sys.stdout = open(out_dir_batch+'stdout','w')
+    
+        it0 = total_timesteps - remain_steps
+        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+        
+        env     = DummyVecEnv([lambda:env])
+        
+        model.set_env(env)
+    
+        model.learn(batch_timesteps, log_interval=10, reset_num_timesteps = True)
+        
+        mymodel = out_dir_batch+"test{}".format(i)
+        model.save(mymodel)
+    
+    
+        i += 1
+        remain_steps -= batch_timesteps
+        lst_files = os.listdir(out_dir)
+        txt_files = [x for x in lst_files if x.endswith('.txt')]
+        txt_files.remove('set_up.txt')
+        for f in txt_files:
+            system('cp {}{} {}'.format(out_dir,f,out_dir_batch))
+        system('cp {}{}.txt {}'.format(out_dir,'action',out_dir_batch))
+        system('cp {}{}.txt {}'.format(out_dir,'observation',out_dir_batch))
+        system('cp {}{}.txt {}'.format(out_dir,'reward',out_dir_batch))
+    
+    
+    for f in txt_files:
+        system('rm {}{}'.format(out_dir,f))
+    
+    if not os.path.isdir(out_dir+ '_batchs'):
+        os.makedirs(out_dir+ '_batchs')
+    system('cp -R {}batch* {}'.format(out_dir,batches_dir))
+    system('rm -R {}batch*'.format(out_dir))
+    
+
 if fill_df:
+    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    lst_files = os.listdir(out_dir)
+    txt_files = [x for x in lst_files if x.endswith('.txt')]
+    txt_files.remove('set_up.txt')
+    for f in txt_files:
+        system('rm {}{}'.format(out_dir,f))
+    nb_act = env.action_space.shape[0]
+    lst_act = ['act_{}'.format(i) for i in range(1,nb_act+1)]
+    columns = ['step']
+    columns += ['cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050']
+    columns += ['cum_cost','cost_2020','cost_2025','cost_2030','cost_2035','cost_2040','cost_2045','cost_2050']
+    columns += lst_act
+    columns += ['reward','status_2050','batch', 'episode']
+    df_learning = pd.DataFrame(columns=columns)
     nb_batch = len(next(os.walk(out_dir+'_batchs'))[1])-1
     df_learning = rl_esmy_stats.fill_df(out_dir+'_batchs/', df_learning,nb_batch)
     df_learning = df_learning.reset_index().iloc[:,1:]
@@ -189,7 +260,10 @@ if plot:
     df_learning = pkl.load(df_learning)
     
     switcher = {'0':rl_esmy_graphs_v0,
-                '1':rl_esmy_graphs_v1}
+                '01':rl_esmy_graphs_v01,
+                '1':rl_esmy_graphs_v1,
+                '2':rl_esmy_graphs_v2,
+                '21':rl_esmy_graphs_v21}
     
     grph_mth = switcher.get(str(v))
     
@@ -197,14 +271,15 @@ if plot:
         os.makedirs(out_dir+ '_graphs')
     
     
-    # rl_esmy_graphs.pdf_generator(df_learning, out_dir, n_act = 6, type_graph='cum_gwp')   
-    # rl_esmy_graphs.gif(out_dir,'pdf_cum_gwp')
+    grph_mth.pdf_generator(df_learning,out_dir, type_graph='act')
+    grph_mth.gif(out_dir, type_graph='pdf_act')
     
-    grph_mth.pdf_generator(df_learning,out_dir, type_graph='act')   
-    grph_mth.gif(out_dir,'pdf_act')
+    # grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_gwp')
+    # grph_mth.gif(out_dir,'pdf_cum_gwp')
+
+    # grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_cost')
+    # grph_mth.gif(out_dir,'pdf_cum_cost')
     
-    # rl_esmy_graphs.ln_generator(df_learning, out_dir, n_act = 6, type_graph = 'act')
-    # rl_esmy_graphs.gif(out_dir,'ln_act')
     
     grph_mth.reward_fig(df_learning,out_dir)
     

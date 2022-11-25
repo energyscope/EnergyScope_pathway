@@ -168,6 +168,18 @@ class AmplObject:
         
         return gwp_dict
     
+    def collect_cost(self,objective_name, years):
+        objective = self.ampl.get_objective(objective_name)
+        objective = objective.value()
+
+        cost_dict = dict.fromkeys(years)
+        TotalCost = self.vars['TotalCost']
+
+        for y in years:
+            cost_dict[y] = TotalCost[y].value()
+        
+        return [objective, cost_dict]
+    
     #############################
     #       STATIC METHODS      #
     #############################
