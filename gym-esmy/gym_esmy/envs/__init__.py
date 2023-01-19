@@ -3,4 +3,10 @@ from gym_esmy.envs.ESMY_MO_env_v01   import EsmyMoV01
 from gym_esmy.envs.ESMY_MO_env_v1   import EsmyMoV1
 from gym_esmy.envs.ESMY_MO_env_v2   import EsmyMoV2
 from gym_esmy.envs.ESMY_MO_env_v21   import EsmyMoV21
+from gym_esmy.envs.ESMY_MO_env_v3   import EsmyMoV3
+from gym_esmy.envs.ESMY_MO_env_v31   import EsmyMoV31
+from gym_esmy.envs.ESMY_MO_env_v32   import EsmyMoV32
+from gym_esmy.envs.ESMY_MO_env_v4   import EsmyMoV4
+from gym_esmy.envs.ESMY_MO_env_v41   import EsmyMoV41
+from gym_esmy.envs.ESMY_MO_env_v5   import EsmyMoV5
 from gym_esmy.envs.ESMY_TD_env_v0   import EsmyTdV0

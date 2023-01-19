@@ -39,8 +39,14 @@ def fill_df(output_dir, df_learning, nb_batch):
     return df_learning
 
 def updated_status_2050(df_learning):
-    idx_success = list(df_learning.index[df_learning['status_2050']=='Success'])
-    idx_failure = list(df_learning.index[df_learning['status_2050']=='Failure'])
-    df_learning.loc[[j-i for j in idx_success for i in range(1,5)],'status_2050'] = 'Success'
-    df_learning.loc[[j-i for j in idx_failure for i in range(1,5)],'status_2050'] = 'Failure'
-    df_learning.loc[df_learning['status_2050'].isnull(),'status_2050'] = 'Failure_imp'
+    ep_success = df_learning['episode'].loc[df_learning['status_2050']=='Success']
+    ep_failure = df_learning['episode'].loc[df_learning['status_2050']=='Failure']
+    ep_failure_imp = df_learning['episode'].loc[df_learning['status_2050']=='Failure_imp']
+
+    df_learning['status_2050'].loc[df_learning['episode'].isin(ep_success)] = 'Success'
+    df_learning['status_2050'].loc[df_learning['episode'].isin(ep_failure)] = 'Failure'
+    df_learning['status_2050'].loc[df_learning['episode'].isin(ep_failure_imp)] = 'Failure_imp'
+    
+    df_learning = df_learning.dropna()
+    
+    return df_learning

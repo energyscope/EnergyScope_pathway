@@ -19,11 +19,7 @@ set PHASE_STOP["2025_2030"] :=	YEAR_2030;
 set PHASE_STOP["2030_2035"] :=	YEAR_2035;																													
 set PHASE_STOP["2035_2040"] :=	YEAR_2040;																													
 set PHASE_STOP["2040_2045"] :=	YEAR_2045;																													
-set PHASE_STOP["2045_2050"] :=	YEAR_2050;																													
-																														
-####MONTHLY VERSION : 
-
-param peak_sh_factor	:=	1.17;																												
+set PHASE_STOP["2045_2050"] :=	YEAR_2050;																																																								
 																														
 # --------------------------																														
 # SETS not depending on TD																														

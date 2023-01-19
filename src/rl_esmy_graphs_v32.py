@@ -24,9 +24,14 @@ if pylibPath not in sys.path:
 
 def pdf_generator(df_learning, output_path, type_graph = 'act'):
     list_year = ['2020','2025','2030','2035','2040']
-    labels = ['ELECTRICITY', 'GASOLINE', 'DIESEL', 'LFO', 'GAS', 'COAL', 'URANIUM', 'WASTE', 'H2', 'AMMONIA', 'METHANOL', 'Allow fossils','Incent. RE tech']
-    clip_dict = {1: [0,1], 2:[0,1], 3:[0,1], 4:[0,1], 5:[0,1], 6:[0,1], 7:[0,1], 8:[0,1], 9:[0,1], 10:[0,1], 11:[0,1], 12:[0,1], 13:[0,0.5]}
+    # labels = ['ELECTRICITY', 'COAL', 'GAS', 'LFO','H2', 'METHANOL', 'Incent. RE tech']
+    labels = ['Allow fossil fuels', 'Incent. RE tech']
+    # clip_dict = {1: [0,1], 2:[0,1], 3:[0,1], 4:[0,1], 5:[0,1], 6:[0,1], 7:[0,0.5]}
+    clip_dict = {1: [0,1], 2:[0,0.5]}
     n_act = len([i for i in list(df_learning) if 'act' in i])
+    obs = ['RE_installed','elec_LT_heat','elec_HT_heat','fperc_BEV']
+    n_obs = len(obs)
+    xticks = [[[0,1]]+[[0,0.5]]]
     for i in df_learning['batch'].unique():
         data = df_learning.loc[df_learning['batch']<=i]
         if type_graph == 'act':
@@ -38,8 +43,9 @@ def pdf_generator(df_learning, output_path, type_graph = 'act'):
                     ax = axes[k,j]
                     unique = data['status_2050'].unique()
                     palette = dict(zip(unique, sns.color_palette(n_colors=len(unique))))
-                    sns.kdeplot(ax=ax,data = data_step,x='act_{}'.format(j+1), hue ='status_2050', palette=palette, legend=False, clip=clip_dict[j+1])
+                    sns.kdeplot(ax=ax,data = data_step,x='act_{}'.format(j+1), hue ='status_2050', palette=palette, legend=False, clip=xticks[0][j])
                     ax.set_yticks([])
+                    ax.set_xticks(xticks[0][j])
                     ax.set(xlabel=labels[j],ylabel=list_year[k])
                     ax.label_outer()
             success_rate = round(100*(data['status_2050']=='Success').sum()/len(data.index),1)
@@ -70,11 +76,10 @@ def pdf_generator(df_learning, output_path, type_graph = 'act'):
                     ax = axes[k,j]
                     # unique = data['status_2050'].unique()
                     # palette = dict(zip(unique, sns.color_palette(n_colors=len(unique))))
-                    sns.histplot(ax=ax,data = data_step,x=type_graph,legend=False,color=palette[status_2050], log_scale=True)
+                    sns.histplot(ax=ax,data = data_step,x=type_graph,legend=False,color=palette[status_2050])
                     ax.set_yticks([])
                     ax.set(ylabel=list_year[k])
                     ax.label_outer()
-                    ax.set_xlim([5e5, 5e8])
             plt.figtext(0.5, 0.03, 
                 "episodes: {} & rate of success: {}%".format(data['episode'].iloc[-1],round(100*(data['status_2050']=='Success').sum()/len(data.index),1)),
                 horizontalalignment ="center",
@@ -86,6 +91,34 @@ def pdf_generator(df_learning, output_path, type_graph = 'act'):
             plt.subplots_adjust(right=0.9)
             plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300, transparent=True)
             plt.close()
+        elif type_graph == 'obs':
+            fig, axes = plt.subplots(len(list_year), n_obs, figsize=(15, 5))
+            list_year = ['2030','2035','2040','2045','2050']
+            fig.suptitle('States over time and learning')
+            for j in range(n_obs):
+                for k in df_learning['step'].unique():
+                    data_step = data.loc[data['step']==k]
+                    ax = axes[k,j]
+                    unique = data['status_2050'].unique()
+                    palette = dict(zip(unique, sns.color_palette(n_colors=len(unique))))
+                    sns.histplot(ax=ax,data = data_step,x=obs[j],multiple="stack", hue ='status_2050', palette=palette, legend=False)#, clip=[0,1])
+                    ax.set_yticks([])
+                    ax.set_xticks([0,1])
+                    ax.set(xlabel=obs[j],ylabel=list_year[k])
+                    ax.label_outer()
+            success_rate = round(100*(data['status_2050']=='Success').sum()/len(data.index),1)
+            leg = list(palette.keys())
+            fig.legend(leg[::-1],loc="upper right")
+            plt.figtext(0.5, 0.03, 
+                "episodes: {} & rate of success: {}%".format(data['episode'].iloc[-1],success_rate),
+                horizontalalignment ="center",
+                wrap = True, fontsize = 10, 
+                bbox ={'facecolor':'grey', 
+                    'alpha':0.3, 'pad':5})
+            plt.subplots_adjust(right=0.9)
+            plt.savefig(output_path + 'graph_pdf_{}_{}.png'.format(type_graph,i), dpi=300, transparent=True)
+            plt.close()
+
 
 def reward_fig(df_learning, output_path):
     n_episode = df_learning['episode'].iloc[-1]
@@ -99,6 +132,70 @@ def reward_fig(df_learning, output_path):
     plt.savefig(output_path + '_graphs/reward.png', dpi=300, transparent=True)
     plt.close()
 
+def reward_fig_plus(df_learning, output_path):
+    data = df_learning.loc[df_learning['reward'] != 0]
+    data_complete = data.loc[data['step'] == 4]
+
+    low = min(data['reward'])
+    high = max(data['reward'])
+
+    data['reward_scaled'] = 2.0 * ((data['reward'] - low) / (high-low)) - 1.0
+
+    sns.relplot(data = data, x='cum_gwp',y='cum_cost',hue='status_2050')
+    plt.savefig(output_path + '_graphs/gwp_cost_rew_status.png', dpi=300, transparent=False)
+    plt.close()
+    sns.relplot(data = data, x='episode',y='reward',hue='status_2050')
+    plt.ylim(-50, 110)
+    plt.savefig(output_path + '_graphs/reward_ep_scat_FC.png', dpi=300, transparent=False)
+    plt.close()
+
+    sns.relplot(data = data, x='episode',y='reward_scaled',hue='status_2050')
+    plt.savefig(output_path + '_graphs/reward_ep_scat_FC_scaled.png', dpi=300, transparent=False)
+    plt.close()
+
+    cum_gwp = list(data['cum_gwp'])
+    cum_cost = list(data['cum_cost'])
+
+    cum_gwp_complete = list(data_complete['cum_gwp'])
+    cum_cost_complete = list(data_complete['cum_cost'])
+
+    sorted_list = sorted([[cum_gwp[i], cum_cost[i]] for i in range(len(cum_gwp))], reverse = False)
+    pareto_front = [sorted_list[0]]
+
+    sorted_list_complete = sorted([[cum_gwp_complete[i], cum_cost_complete[i]] for i in range(len(cum_gwp_complete))], reverse = False)
+    pareto_front_complete = [sorted_list_complete[0]]
+
+
+    for pair in sorted_list[1:]:
+        if pair[1] <= pareto_front[-1][1]:
+                    pareto_front.append(pair)
+
+    pf_X = [pair[0] for pair in pareto_front]
+    pf_Y = [pair[1] for pair in pareto_front]
+
+
+    for pair_complete in sorted_list_complete[1:]:
+        if pair_complete[1] <= pareto_front_complete[-1][1]:
+                    pareto_front_complete.append(pair_complete)
+
+    pf_X_complete = [pair_complete[0] for pair_complete in pareto_front_complete]
+    pf_Y_complete = [pair_complete[1] for pair_complete in pareto_front_complete]
+
+    fig= plt.figure()
+    sns.relplot(data = data,x = 'cum_gwp', y = 'cum_cost', hue = 'step',size='reward')
+    # plt.plot(pf_X, pf_Y, color = 'orange',linewidth=5)
+    plt.savefig(output_path + '_graphs/gwp_cost_rew_pareto.png', dpi=300, transparent=False)
+    plt.close()
+
+    fig= plt.figure()
+    sns.relplot(data = data,x = 'cum_gwp', y = 'cum_cost', hue = 'step',size='reward')
+    # plt.plot(pf_X, pf_Y, color = 'orange',linewidth=5)
+    plt.plot(pf_X_complete, pf_Y_complete, color = 'orange',linewidth=5)
+    plt.ylim(0.9*min(pf_Y), 1576611.3990000002)
+    plt.savefig(output_path + '_graphs/gwp_cost_rew_pareto_zoom.png', dpi=300, transparent=False)
+    plt.close()
+
+
 def gif(output_path, type_graph, type_distr = 'cum'):
         if type_graph in ['sp','kde']:
             for i in range(5):
@@ -107,7 +204,7 @@ def gif(output_path, type_graph, type_distr = 'cum'):
                 cmd = cmd.format(output_dir+'graph_'+type_graph+'_%01d.png',output_path,i,type_distr)
                 os.system(cmd)
                 shutil.rmtree(output_dir)
-        elif type_graph in ['ln_act','pdf_act','pdf_cum_gwp', 'pdf_cum_cost']:
+        elif type_graph in ['ln_act','pdf_act','pdf_cum_gwp', 'pdf_cum_cost','pdf_obs']:
             cmd = 'ffmpeg -r 5 -i {} -vcodec mpeg4 -y {}mov_'+type_graph+'.mp4'
             cmd = cmd.format(output_path+'graph_'+type_graph+'_%01d.png',output_path)
             os.system(cmd)

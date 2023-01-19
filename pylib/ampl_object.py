@@ -97,6 +97,7 @@ class AmplObject:
             if len(obj.instances()) <= 1:
                 self.sets[name] = obj.getValues().toList()
             else:
+                A=4
                 self.sets[name] = self.get_subset(obj)
 
     """"
@@ -136,7 +137,7 @@ class AmplObject:
     def clean_history(self):
         open(os.path.join(self.dir,'fix.mod'), 'w').close()
         open(os.path.join(self.dir,'PESTD_data_remaining_wnd.dat'), 'w').close()
-        open(os.path.join(self.dir,'seq_opti.dat'), 'w').close()
+        open(os.path.join(self.dir,'PES_seq_opti.dat'), 'w').close()
 
 
     def set_init_sol(self):
@@ -294,46 +295,46 @@ class AmplObject:
         df.index.name = None # get rid of the name of the index (multilevel)
         return df
 
-    # @staticmethod
-    # def to_pd_pivot(amplpy_df):
-    #     """
-    #     Function to transform an amplpy.DataFrame into pandas.DataFrame for easier manipulation
+    @staticmethod
+    def to_pd_pivot(amplpy_df):
+        """
+        Function to transform an amplpy.DataFrame into pandas.DataFrame for easier manipulation
 
-    #     Parameters
-    #     ----------
-    #     amplpy_df : amplpy.DataFrame
-    #     amplpy dataframe to transform
+        Parameters
+        ----------
+        amplpy_df : amplpy.DataFrame
+        amplpy dataframe to transform
 
 
-    #     Returns
-    #     -------
-    #     df : pandas.DataFrame
-    #     DataFrame transformed as 'long' dataframe (can be easily pivoted later)
-    #     """
+        Returns
+        -------
+        df : pandas.DataFrame
+        DataFrame transformed as 'long' dataframe (can be easily pivoted later)
+        """
     
-    #     nindices = amplpy_df.getNumIndices()
-    #     headers = amplpy_df.getHeaders()
-    #     columns = {header: list(amplpy_df.getColumn(header)) for header in headers}
-    #     df = pd.DataFrame(columns)
-    #     if nindices==1:
-    #         df = df.set_index(headers[0])
-    #         df.index.name = None # get rid of the name of the index (multilevel)
-    #     elif nindices==2:
-    #         df = df.pivot(index=headers[0], columns=headers[1], values=headers[2])
-    #         df.index.name = None # get rid of the name of the index (multilevel)
-    #     elif nindices==3:
-    #         dic = dict()
-    #         for i in set(columns[headers[0]]):
-    #             dic[i] = df[df[headers[0]]==i].pivot(index=headers[2], columns=headers[1], values=headers[3])
-    #             dic[i].index.name = None # to get rid of name (multilevel)
-    #         df = dic
-    #     elif nindices==4:
-    #         dic = dict()
-    #         for i in set(columns[headers[0]]):
-    #             dic[i] = dict()
-    #             for j in set(columns[headers[3]]):
-    #                 dic[i][int(j)] = df.loc[(df[headers[0]]==i) & (df[headers[3]]==j),:].pivot(index=headers[2], columns=headers[1], values=headers[4])
-    #                 dic[i][int(j)].index.name = None # to get rid of name (multilevel)
-    #         df = dic
+        nindices = amplpy_df.getNumIndices()
+        headers = amplpy_df.getHeaders()
+        columns = {header: list(amplpy_df.getColumn(header)) for header in headers}
+        df = pd.DataFrame(columns)
+        if nindices==1:
+            df = df.set_index(headers[0])
+            df.index.name = None # get rid of the name of the index (multilevel)
+        elif nindices==2:
+            df = df.pivot(index=headers[0], columns=headers[1], values=headers[2])
+            df.index.name = None # get rid of the name of the index (multilevel)
+        elif nindices==3:
+            dic = dict()
+            for i in set(columns[headers[0]]):
+                dic[i] = df[df[headers[0]]==i].pivot(index=headers[2], columns=headers[1], values=headers[3])
+                dic[i].index.name = None # to get rid of name (multilevel)
+            df = dic
+        elif nindices==4:
+            dic = dict()
+            for i in set(columns[headers[0]]):
+                dic[i] = dict()
+                for j in set(columns[headers[3]]):
+                    dic[i][int(j)] = df.loc[(df[headers[0]]==i) & (df[headers[3]]==j),:].pivot(index=headers[2], columns=headers[1], values=headers[4])
+                    dic[i][int(j)].index.name = None # to get rid of name (multilevel)
+            df = dic
         
-    #     return df
+        return df

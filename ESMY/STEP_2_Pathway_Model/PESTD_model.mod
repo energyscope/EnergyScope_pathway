@@ -39,7 +39,8 @@ set YEAR_ONE_NEXT within YEARS;
 ## MAIN SETS: Sets whose elements are input directly in the data file
 set PERIODS := 1 .. 8760; # time periods (hours of the year)
 set HOURS := 1 .. 24; # hours of the day
-set TYPICAL_DAYS:= 1 .. 12; # typical days
+param nbr_tds > 0; #number of typical days
+set TYPICAL_DAYS := 1 .. nbr_tds ordered; #nbt_tds ordered; # typical days
 set T_H_TD within {PERIODS, HOURS, TYPICAL_DAYS}; # set linking periods, hours, days, typical days
 set SECTORS; # sectors of the energy system
 set END_USES_INPUT; # Types of demand (end-uses). Input to the model
@@ -154,7 +155,6 @@ param solar_area	 {YEARS} >= 0; # Maximum land available for PV deployment [km2]
 param power_density_pv >=0 default 0;# Maximum power irradiance for PV.
 param power_density_solar_thermal >=0 default 0;# Maximum power irradiance for solar thermal.
 
-
 ##Additional parameter (not presented in the paper)
 param total_time := sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (t_op [h, td]); # [h]. added just to simplify equations
 
@@ -263,12 +263,12 @@ subject to investment_cost_calc {y in YEARS_UP_TO union YEARS_WND,j in TECHNOLOG
 subject to main_cost_calc {y in YEARS_UP_TO union YEARS_WND, j in TECHNOLOGIES}: 
 	C_maint [y,j] = c_maint [y,j] * F [y,j];		
 
-var Res {YEARS, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
-subject to store_res_up_to {y in YEARS_WND diff YEAR_ONE, j in RESOURCES}:
-	Res [y, j] = sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,i, h, td] * t_op [h, td] ) ;
+# var Res {YEARS diff {'YEAR_2015'}, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
+# subject to store_res {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
+# 	Res [y, i] = sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,i, h, td] * t_op [h, td] ) ;
 # [Eq. 5] Total cost of each resource
 subject to op_cost_calc {y in YEARS_UP_TO union YEARS_WND, i in RESOURCES}:
-	C_op [y,i] =  c_op [y,i] * Res [y, i] ;
+	C_op [y,i] =  c_op [y,i] * sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,i, h, td] * t_op [h, td] ) ;
 
 ## Emissions
 #-----------
@@ -285,7 +285,7 @@ subject to gwp_constr_calc {y in YEARS_UP_TO union YEARS_WND, j in TECHNOLOGIES}
 
 # [Eq. 8]
 subject to gwp_op_calc {y in YEARS_UP_TO union YEARS_WND, i in RESOURCES}:
-	GWP_op [y,i] = gwp_op [y,i] * Res [y,i];	
+	GWP_op [y,i] = gwp_op [y,i] * sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,i, h, td] * t_op [h, td] );	
 
 # [Eq. XX] total transition gwp calculation
 subject to totalGWPTransition_calculation : # category: GWP_calc
@@ -311,7 +311,7 @@ subject to capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
 
 # [Eq. 12] Resources availability equation
 subject to resource_availability {y in YEARS_WND diff YEAR_ONE, i in RESOURCES}:
-	Res [y,i] <= avail [y,i];
+	sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (F_t [y,i, h, td] * t_op [h, td] ) <= avail [y,i];
 
 # [Eq. 2.12-bis] Constant flow of import for resources listed in SET RES_IMPORT_CONSTANT
 var Import_constant {y in YEARS diff YEAR_ONE, RES_IMPORT_CONSTANT} >= 0;

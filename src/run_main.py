@@ -19,7 +19,8 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 # from ampl_graph import AmplGraph
 
-type_of_model = 'MO'
+type_of_model = 'TD'
+nbr_tds = 12
 
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
@@ -41,7 +42,7 @@ else:
     mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
               os.path.join(pth_model,'fix.mod')]
     dat_path = [os.path.join(pth_model,'PESTD_data_all_years.dat'),
-                os.path.join(pth_model,'PESTD_12TD.dat')]
+                os.path.join(pth_model,'PESTD_{}TD.dat'.format(nbr_tds))]
 
 dat_path += [os.path.join(pth_model,'PES_data_all_years.dat'),
              os.path.join(pth_model,'PES_seq_opti.dat'),
@@ -79,8 +80,8 @@ if __name__ == '__main__':
     ## Paths
     pth_output_all = os.path.join(curr_dir.parent,'out')
     
-    N_year_opti = [30]
-    N_year_overlap = [0]
+    N_year_opti = [10]
+    N_year_overlap = [5]
 
     for m in range(len(N_year_opti)):
         
@@ -110,16 +111,16 @@ if __name__ == '__main__':
             
             ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
             
-            ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
+            # ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
             
             solve_result = ampl.run_ampl()
 
-            ampl.get_outputs()
+            # ampl.get_outputs()
             
             if i > 0:
                 curr_years_wnd.remove(ampl_pre.year_to_rm)
             
-            ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
+            # ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
             
             ampl.set_init_sol()
             

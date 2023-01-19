@@ -198,6 +198,8 @@ var GWP_op {YEARS, RESOURCES} >= 0; #  GWP_op [ktCO2-eq.]: Total yearly emission
 var Network_losses {YEARS, END_USES_TYPES, PERIODS} >= 0; # Net_loss [GW]: Losses in the networks (normally electricity grid and DHN)
 var Storage_level {YEARS, STORAGE_TECH, PERIODS} >= 0; # Sto_level [GWh]: Energy stored at each period
 
+# Variables RL:
+
 #########################################
 ###      CONSTRAINTS Eqs [1-42]       ###
 #########################################
@@ -255,8 +257,8 @@ subject to main_cost_calc {y in YEARS_UP_TO union YEARS_WND, j in TECHNOLOGIES}:
 
 # [Eq. 5] Total cost of each resource
 ## To store resources used
-var Res {YEARS, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
-subject to store_res_up_to {y in YEARS_WND diff YEAR_ONE, j in RESOURCES}:
+var Res {YEARS diff {'YEAR_2015'}, RESOURCES} >= 0, default 0; #[GWh] Resources used in the current window
+subject to store_res {y in YEARS_WND diff YEAR_ONE, j in RESOURCES}:
 	Res [y, j] = sum {t in PERIODS} (F_t [y,j,t] * t_op [t]);
 subject to op_cost_calc {y in YEARS_UP_TO union YEARS_WND, i in RESOURCES}:
 	C_op [y,i] = c_op [y,i] * Res [y, i] ;
