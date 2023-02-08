@@ -144,6 +144,8 @@ param solar_area	 {YEARS} >= 0; # Maximum land available for PV deployment [km2]
 param power_density_pv >=0 default 0;# Maximum power irradiance for PV.
 param power_density_solar_thermal >=0 default 0;# Maximum power irradiance for solar thermal.
 
+param gwp_cost >=0 default 0; #Cost related to the gwp emissions
+
 
 ##Additional parameter (not presented in the paper)
 param total_time := sum {t in PERIODS} (t_op [t]); # added just to simplify equations
@@ -167,6 +169,8 @@ var C_tot_opex >=0;
 var C_tot_capex >=0;
 var TotalGWPTransition >=0;
 var Delta_change {PHASE,TECHNOLOGIES} >=0;
+
+var Gwp_tot_cost >=0;
 
 ##Independent variables [Table 3] :
 var Share_mobility_public {y in YEARS} >= share_mobility_public_min [y], <= share_mobility_public_max [y]; # %_Public: Ratio [0; 1] public mobility over total passenger mobility
@@ -560,6 +564,10 @@ subject to maxInvestment {p in PHASE_WND}:
 # subject to sameInvestmentPerPhase {p in PHASE}:
 # 	 C_inv_phase [p] = Fixed_phase_investment; #In bÃ¢â€šÂ¬
 
+subject to Gwp_tot_cost_calculation:
+	Gwp_tot_cost = gwp_cost * (TotalGWP ["YEAR_2020"] + t_phase *  sum {p in PHASE_WND union PHASE_UP_TO,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
+					                 (TotalGWP [y_start] + TotalGWP [y_stop])/2));
+
 ##########################
 ### OBJECTIVE FUNCTION ###
 ##########################
@@ -570,6 +578,6 @@ subject to maxInvestment {p in PHASE_WND}:
 # 	TotalTransitionCost = C_tot_capex + C_tot_opex;
 # minimize obj: TotalTransitionCost;
 # Can choose between TotalTransitionCost_calculation and TotalGWP and TotalCost
-minimize  TotalTransitionCost: C_tot_capex + C_tot_opex;#sum {y in YEARS} TotalCost [y];
+minimize  TotalTransitionCost: C_tot_capex + C_tot_opex + Gwp_tot_cost;#sum {y in YEARS} TotalCost [y];
 # subject to New_totalTransitionCost_calculation :
 # 	TotalTransitionCost = C_tot_capex + C_tot_opex;
