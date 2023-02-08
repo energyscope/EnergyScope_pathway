@@ -37,60 +37,80 @@ class AmplCollector:
 
     """
 
-    def __init__(self, ampl_obj, output_file, expl_text):
+    def __init__(self, ampl_obj_0, output_file, expl_text):
 
-        self.ampl_obj = ampl_obj
-        self.PKL_save = dict.fromkeys(ampl_obj.sets['STORE_RESULTS'])
-        self.init_storage()
-        self.pth_output_all = Path(output_file).parent.parent
-        self.output_file = output_file
-        self.expl_text = expl_text
+        self.ampl_obj = ampl_obj_0
+        # self.PKL_save = dict.fromkeys(ampl_obj.sets['STORE_RESULTS'])
+        # self.init_storage()
+        # self.pth_output_all = Path(output_file).parent.parent
+        # self.output_file = output_file
+        # self.expl_text = expl_text
     
-    def init_storage(self):
-            
-        Res = self.ampl_obj.sets['RESOURCES']
-        Tech = self.ampl_obj.sets['TECHNOLOGIES']
-        Storage = self.ampl_obj.sets['STORAGE_TECH']
-        Tech_minus_sto = [x for x in Tech if x not in Storage]
-        Tech_plus_res = Tech_minus_sto + Res
+    def init_storage(self,ampl_obj):
+        
+        Years = self.ampl_obj.sets['YEARS'].copy()
+        if 'YEAR_2015' in Years:
+            Years.remove('YEAR_2015')
 
-        Eut = self.ampl_obj.sets['END_USES_TYPES']
-        
-        Layers = self.ampl_obj.sets['LAYERS']
-        
-        Years = self.ampl_obj.sets['YEARS']
-        
-        index_Tech_Prod_Cons = pd.MultiIndex.from_product([Years, Layers, Tech_plus_res],names = ['Year','Layer','Technology'])
-        index_RES = pd.MultiIndex.from_product([Years, Res],names = ['Year','Resource'])
-        index_Tech_Cap = pd.MultiIndex.from_product([Years, Tech],names = ['Year','Technology'])
-        index_EUD = pd.MultiIndex.from_product([Years, Layers],names = ['Year','Layer'])
-        index_C_INV = pd.MultiIndex.from_product([Years, Tech],names = ['Year','Technology'])
-        index_C_OP_MAINT = pd.MultiIndex.from_product([Years, Res + Tech],names = ['Year','Resource_Technology'])
-        index_eud = pd.MultiIndex.from_product([Years, Layers, ['EUD']],names = ['Year','Layer','Technology'])
-        
-        RES = pd.DataFrame(0,index=index_RES, columns=['Value'])
-        Tech_Cap = pd.DataFrame(0,index=index_Tech_Cap, columns=['Value'])
-        Tech_Prod_Cons = pd.DataFrame(0, index=index_Tech_Prod_Cons, columns=['Value'])
-        EUD = pd.DataFrame(0, index=index_EUD, columns=['Value'])
-        C_INV = pd.DataFrame(0,index=index_C_INV, columns=['Value'])
-        C_OP_MAINT = pd.DataFrame(0,index=index_C_OP_MAINT, columns=['Value'])
+        self.results = dict.fromkeys(list(ampl_obj.results.keys()))
+        # ampl_obj.get_results()
 
-        self.PKL_save['Res_wnd'] = RES
-        self.PKL_save['Tech_wnd'] = Tech_Prod_Cons
-        self.PKL_save['F_wnd'] = Tech_Cap
-        self.PKL_save['EUD_wnd'] = EUD
-        self.PKL_save['C_inv_wnd'] = C_INV
-        self.PKL_save['C_op_maint_wnd'] = C_OP_MAINT
-    
-    
-    def update_storage(self, dict_outputs, curr_years_wnd):
-        for k in self.PKL_save:
-            df_output = dict_outputs[k]
-            temp = df_output.reset_index()
-            if temp.shape[1] == 3:
-                self.PKL_save[k].loc[(curr_years_wnd,slice(None))] = df_output.loc[(curr_years_wnd,slice(None))]
+        for k in self.results:
+            result = ampl_obj.results[k]
+            if k == 'TotalCost':
+                self.results[k] = pd.DataFrame(index=Years,columns=result.columns)
             else:
-                self.PKL_save[k].loc[(curr_years_wnd,slice(None),slice(None))] = df_output.loc[(curr_years_wnd,slice(None),slice(None))]
+                index_elem = result.index.get_level_values(1).unique()
+                # index_elem = index_elem[index_elem.columns[0]].unique()
+                multi_ind = pd.MultiIndex.from_product([Years,index_elem],names = result.index.names)
+                columns = result.columns
+                self.results[k] = pd.DataFrame(index=multi_ind,columns=result.columns)
+
+        # Res = self.ampl_obj.sets['RESOURCES']
+        # Tech = self.ampl_obj.sets['TECHNOLOGIES']
+        # Storage = self.ampl_obj.sets['STORAGE_TECH']
+        # Tech_minus_sto = [x for x in Tech if x not in Storage]
+        # Tech_plus_res = Tech_minus_sto + Res
+
+        # Eut = self.ampl_obj.sets['END_USES_TYPES']
+        
+        # Layers = self.ampl_obj.sets['LAYERS']
+        
+        # Years = self.ampl_obj.sets['YEARS']
+        
+        # index_Tech_Prod_Cons = pd.MultiIndex.from_product([Years, Layers, Tech_plus_res],names = ['Year','Layer','Technology'])
+        # index_RES = pd.MultiIndex.from_product([Years, Res],names = ['Year','Resource'])
+        # index_Tech_Cap = pd.MultiIndex.from_product([Years, Tech],names = ['Year','Technology'])
+        # index_EUD = pd.MultiIndex.from_product([Years, Layers],names = ['Year','Layer'])
+        # index_C_INV = pd.MultiIndex.from_product([Years, Tech],names = ['Year','Technology'])
+        # index_C_OP_MAINT = pd.MultiIndex.from_product([Years, Res + Tech],names = ['Year','Resource_Technology'])
+        # index_eud = pd.MultiIndex.from_product([Years, Layers, ['EUD']],names = ['Year','Layer','Technology'])
+        
+        # RES = pd.DataFrame(0,index=index_RES, columns=['Value'])
+        # Tech_Cap = pd.DataFrame(0,index=index_Tech_Cap, columns=['Value'])
+        # Tech_Prod_Cons = pd.DataFrame(0, index=index_Tech_Prod_Cons, columns=['Value'])
+        # EUD = pd.DataFrame(0, index=index_EUD, columns=['Value'])
+        # C_INV = pd.DataFrame(0,index=index_C_INV, columns=['Value'])
+        # C_OP_MAINT = pd.DataFrame(0,index=index_C_OP_MAINT, columns=['Value'])
+
+        # self.PKL_save['Res_wnd'] = RES
+        # self.PKL_save['Tech_wnd'] = Tech_Prod_Cons
+        # self.PKL_save['F_wnd'] = Tech_Cap
+        # self.PKL_save['EUD_wnd'] = EUD
+        # self.PKL_save['C_inv_wnd'] = C_INV
+        # self.PKL_save['C_op_maint_wnd'] = C_OP_MAINT
+    
+    
+    def update_storage(self, ampl_obj):
+        for k in self.results:
+            self.results[k].update(ampl_obj.results[k])
+        # for k in self.PKL_save:
+        #     df_output = dict_outputs[k]
+        #     temp = df_output.reset_index()
+        #     if temp.shape[1] == 3:
+        #         self.PKL_save[k].loc[(curr_years_wnd,slice(None))] = df_output.loc[(curr_years_wnd,slice(None))]
+        #     else:
+        #         self.PKL_save[k].loc[(curr_years_wnd,slice(None),slice(None))] = df_output.loc[(curr_years_wnd,slice(None),slice(None))]
     
     def pkl(self):
 

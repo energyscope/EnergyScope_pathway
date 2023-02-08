@@ -19,7 +19,7 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 # from ampl_graph import AmplGraph
 
-type_of_model = 'TD'
+type_of_model = 'MO'
 nbr_tds = 12
 
 
@@ -96,7 +96,7 @@ if __name__ == '__main__':
         output_folder = os.path.join(pth_output_all,case_study)
         output_file = os.path.join(output_folder,'_Results.pkl')
         
-        ampl_0 = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
+        ampl_0 = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options, type_model = type_of_model)
         ampl_0.clean_history()
         ampl_pre = AmplPreProcessor(ampl_0, n_year_opti, n_year_overlap)
         ampl_collector = AmplCollector(ampl_0, output_file, expl_text)
@@ -109,18 +109,31 @@ if __name__ == '__main__':
             curr_years_wnd = ampl_pre.write_seq_opti(i)
             ampl_pre.remaining_update(i)
             
-            ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options)
+            ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options, type_model = type_of_model)
             
-            # ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
+            
+            ampl.set_params('gwp_limit',{('YEAR_2015'):156000})
+            ampl.set_params('gwp_limit',{('YEAR_2020'):133715})
+            ampl.set_params('gwp_limit',{('YEAR_2025'):111430})
+            ampl.set_params('gwp_limit',{('YEAR_2030'):89145})
+            ampl.set_params('gwp_limit',{('YEAR_2035'):66860})
+            ampl.set_params('gwp_limit',{('YEAR_2040'):44575})
+            ampl.set_params('gwp_limit',{('YEAR_2045'):22290})
+            ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
             
             solve_result = ampl.run_ampl()
+            
+            # ampl.get_results()
+            
+            # if i==0:
+            #     ampl_collector.init_storage(ampl)
+            
+            # ampl_collector.update_storage(ampl)
 
             # ampl.get_outputs()
             
             if i > 0:
                 curr_years_wnd.remove(ampl_pre.year_to_rm)
-            
-            # ampl_collector.update_storage(ampl.outputs,curr_years_wnd)
             
             ampl.set_init_sol()
             
@@ -128,16 +141,10 @@ if __name__ == '__main__':
             print('Time to solve the window #'+str(i+1)+': ',elapsed_i)
             
             
-            # if i == len(ampl_pre.years_opti)-1:
-            #     A = ampl_collector.PKL_save['F_wnd']
-            #     B = ampl_collector.PKL_save['C_inv_wnd']
-            #     C = ampl_collector.PKL_save['C_op_maint_wnd']
-            #     D = ampl_collector.PKL_save['Tech_wnd']
-            
             if i == len(ampl_pre.years_opti)-1:
                 elapsed = time.time()-t
                 print('Time to solve the whole problem: ',elapsed)
-                ampl_collector.pkl()
+                # ampl_collector.pkl()
                 break
 
         

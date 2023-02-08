@@ -2,8 +2,8 @@
 #	mod file to save variables along the way											
 # -------------------------------------------------------------------------------------------------------------------------		
 
-set SET_INIT_SOL := {"F_up_to",	"F_new_up_to",	"F_decom_up_to",	"F_old_up_to",	"F_used_year_start_next"};#, "Res_up_to"};
-set STORE_RESULTS := {"F_wnd", "Res", "C_inv_wnd", "C_op_maint_wnd", "Tech_wnd", "EUD_wnd"};
+set SET_INIT_SOL := {"F_up_to",	"F_new_up_to",	"F_decom_up_to",	"F_old_up_to",	"F_used_year_start_next", "Res_up_to"};
+set STORE_RESULTS := {"F_wnd", "Res", "C_inv_wnd", "C_op_maint_wnd", "EUD_wnd"};#",Tech_wnd"};
 
 ## Constraints for storing variables
 var F_wnd {YEARS_WND, TECHNOLOGIES} >= 0; # F_wnd: Installed capacity during the window of interest
@@ -30,9 +30,9 @@ var F_used_year_start_next{YEAR_ONE_NEXT, TECHNOLOGIES} >= 0;
 subject to store_F_used_year_start_next {y in YEAR_ONE_NEXT, j in TECHNOLOGIES}:
 	F_used_year_start_next[y, j] = F_used_year_start[y,j];
 
-# var Res_up_to {YEARS_UP_TO, RESOURCES} >= 0; # Res_up_to: Used resources from the start of the optimisation (2020)
-# subject to store_Res_up_to {j in RESOURCES, y in YEARS_UP_TO}:
-# 	Res_up_to[y,j] = Res[y,j];
+var Res_up_to {YEARS_UP_TO, RESOURCES} >= 0; # Res_up_to: Used resources from the start of the optimisation (2020)
+subject to store_Res_up_to {j in RESOURCES, y in YEARS_UP_TO}:
+	Res_up_to[y,j] = Res[y,j];
 
 var C_inv_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES} >= 0, default 0; #[€] Variable to store annualised investment costs of technologies
 subject to store_cost_inv {y in YEARS_WND diff YEAR_ONE, tech in TECHNOLOGIES}:

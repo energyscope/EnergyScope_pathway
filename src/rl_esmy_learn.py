@@ -46,6 +46,13 @@ import rl_esmy_graphs_v01
 import rl_esmy_graphs_v1
 import rl_esmy_graphs_v2
 import rl_esmy_graphs_v21
+import rl_esmy_graphs_v3
+import rl_esmy_graphs_v31
+import rl_esmy_graphs_v32
+import rl_esmy_graphs_v4
+import rl_esmy_graphs_v41
+import rl_esmy_graphs_v5
+import rl_esmy_graphs_v6
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.sac import SAC
@@ -55,22 +62,22 @@ from stable_baselines3.sac import SAC
 
 # #--------- Recovering passed arguments ---------#
 
-v = '0'
+v = '6'
 policy = 'MlpPolicy'
-gamma = 0.3
+gamma = 1
 act_fun = torch.nn.modules.activation.ReLU
 layers = [16,16]
 
 # #-------- Defining learning variables --------#
 
-total_timesteps = 8500
+total_timesteps = 10000
 batch_timesteps = 500
 
-rundir = '2022_10_06-12_12_13'
+rundir = '2023_02_02-11_08_29'
 out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
 
-learning_from_scratch = True
-keep_on_learning = False
+learning_from_scratch = False
+keep_on_learning = True
 fill_df = True
 plot = True
 
@@ -152,6 +159,8 @@ if learning_from_scratch:
         lst_files = os.listdir(out_dir)
         txt_files = [x for x in lst_files if x.endswith('.txt')]
         txt_files.remove('set_up.txt')
+        if 'READ_ME.txt' in txt_files:
+            txt_files.remove('READ_ME.txt')
         for f in txt_files:
             system('cp {}{} {}'.format(out_dir,f,out_dir_batch))
         system('cp {}{}.txt {}'.format(out_dir,'action',out_dir_batch))
@@ -215,6 +224,8 @@ if keep_on_learning:
         lst_files = os.listdir(out_dir)
         txt_files = [x for x in lst_files if x.endswith('.txt')]
         txt_files.remove('set_up.txt')
+        if 'READ_ME.txt' in txt_files:
+            txt_files.remove('READ_ME.txt')
         for f in txt_files:
             system('cp {}{} {}'.format(out_dir,f,out_dir_batch))
         system('cp {}{}.txt {}'.format(out_dir,'action',out_dir_batch))
@@ -236,12 +247,17 @@ if fill_df:
     lst_files = os.listdir(out_dir)
     txt_files = [x for x in lst_files if x.endswith('.txt')]
     txt_files.remove('set_up.txt')
+    if 'READ_ME.txt' in txt_files:
+        txt_files.remove('READ_ME.txt')
     for f in txt_files:
         system('rm {}{}'.format(out_dir,f))
     nb_act = env.action_space.shape[0]
     lst_act = ['act_{}'.format(i) for i in range(1,nb_act+1)]
     columns = ['step']
     columns += ['cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050']
+    # columns += ['RE_installed','elec_LT_heat','elec_HT_heat','fperc_BEV']
+    columns += ['RE_in_mix_2020', 'RE_in_mix_2025', 'RE_in_mix_2030', 'RE_in_mix_2035', 'RE_in_mix_2040', 'RE_in_mix_2045', 'RE_in_mix_2050']
+    columns += ['Energy_efficiency_2020', 'Energy_efficiency_2025', 'Energy_efficiency_2030', 'Energy_efficiency_2035', 'Energy_efficiency_2040', 'Energy_efficiency_2045', 'Energy_efficiency_2050']
     columns += ['cum_cost','cost_2020','cost_2025','cost_2030','cost_2035','cost_2040','cost_2045','cost_2050']
     columns += lst_act
     columns += ['reward','status_2050','batch', 'episode']
@@ -249,7 +265,7 @@ if fill_df:
     nb_batch = len(next(os.walk(out_dir+'_batchs'))[1])-1
     df_learning = rl_esmy_stats.fill_df(out_dir+'_batchs/', df_learning,nb_batch)
     df_learning = df_learning.reset_index().iloc[:,1:]
-    rl_esmy_stats.updated_status_2050(df_learning)
+    df_learning = rl_esmy_stats.updated_status_2050(df_learning)
     open_file = open(out_dir+'df_learning_pkl',"wb")
     pkl.dump(df_learning, open_file)
     open_file.close()
@@ -263,7 +279,14 @@ if plot:
                 '01':rl_esmy_graphs_v01,
                 '1':rl_esmy_graphs_v1,
                 '2':rl_esmy_graphs_v2,
-                '21':rl_esmy_graphs_v21}
+                '21':rl_esmy_graphs_v21,
+                '3':rl_esmy_graphs_v3,
+                '31':rl_esmy_graphs_v31,
+                '32':rl_esmy_graphs_v32,
+                '4':rl_esmy_graphs_v4,
+                '41':rl_esmy_graphs_v41,
+                '5':rl_esmy_graphs_v5,
+                '6':rl_esmy_graphs_v6}
     
     grph_mth = switcher.get(str(v))
     
@@ -271,15 +294,24 @@ if plot:
         os.makedirs(out_dir+ '_graphs')
     
     
+    grph_mth.reward_plus_plus(df_learning,out_dir,type_graph='act')
+    grph_mth.gif(out_dir, type_graph='pdf_rew_act')
+    
+    grph_mth.reward_plus_plus(df_learning,out_dir,type_graph='cost_gwp')
+    grph_mth.gif(out_dir, type_graph='pdf_rew_cost_gwp')    
     grph_mth.pdf_generator(df_learning,out_dir, type_graph='act')
     grph_mth.gif(out_dir, type_graph='pdf_act')
     
-    # grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_gwp')
-    # grph_mth.gif(out_dir,'pdf_cum_gwp')
+    grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_gwp')
+    grph_mth.gif(out_dir,'pdf_cum_gwp')
 
-    # grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_cost')
-    # grph_mth.gif(out_dir,'pdf_cum_cost')
+    grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_cost')
+    grph_mth.gif(out_dir,'pdf_cum_cost')
     
+    grph_mth.pdf_generator(df_learning,out_dir, type_graph='obs')
+    grph_mth.gif(out_dir,'pdf_obs')
+    
+    grph_mth.reward_fig_plus(df_learning,out_dir)
     
     grph_mth.reward_fig(df_learning,out_dir)
     
