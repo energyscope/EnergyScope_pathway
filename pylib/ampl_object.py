@@ -440,6 +440,7 @@ class AmplObject:
         cost_breakdown = cost_breakdown.mask((cost_breakdown > -threshold) & (cost_breakdown < threshold), np.nan)
 
         # Store into results
+        cost_breakdown.replace(0, np.nan, inplace=True)
         self.results['Cost_breakdown'] = cost_breakdown
         return
     
@@ -479,6 +480,7 @@ class AmplObject:
         gwp_breakdown = gwp_breakdown.mask((gwp_breakdown > -threshold) & (gwp_breakdown < threshold), np.nan)
 
         # store into results
+        gwp_breakdown.replace(0, np.nan, inplace=True)
         self.results['Gwp_breakdown'] = gwp_breakdown
         return
 
@@ -504,7 +506,8 @@ class AmplObject:
         # put very small values as nan
         threshold = 1e-2
         resources = resources.mask((resources > -threshold) & (resources < threshold), np.nan)
-
+        
+        resources.replace(0, np.nan, inplace=True)
         self.results['Resources'] = resources
         return
     
@@ -678,7 +681,9 @@ class AmplObject:
         sto_assets = sto_assets.mask((sto_assets > -treshold) & (sto_assets < treshold), np.nan)
 
         # Store into results
+        assets.replace(0, np.nan, inplace=True)
         self.results['Assets'] = assets
+        sto_assets.replace(0, np.nan, inplace=True)
         self.results['Sto_assets'] = sto_assets
         return
 
@@ -687,10 +692,10 @@ class AmplObject:
         logging.info('Getting Year_balance')
         sto_tech_daily = self.sets['STORAGE_DAILY'].copy()
         # Layer of which we have limited interest
-        no_plot = ['GASOLINE', 'DIESEL', 'LFO', 'WOOD', 'WET_BIOMASS',
-                        'COAL','URANIUM','WASTE','RES_WIND','RES_SOLAR',
-                        'RES_GEO','RES_HYDRO','CO2_ATM','CO2_INDUSTRY',
-                        'CO2_CAPTURED']
+        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','HEAT_HIGH_T',
+                'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
+                'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
+                'MOB_PUBLIC']
 
         # EXTRACT RESULTS FROM OPTIMISATION MODEL
         if self.type_model == 'MO':
@@ -760,8 +765,9 @@ class AmplObject:
         treshold = 1e-1
         year_balance = year_balance.mask((year_balance.min(axis=1) > -treshold) & (year_balance.max(axis=1) < treshold),
                                          np.nan)
-        year_balance.drop(columns=no_plot, inplace=True)
+        year_balance = year_balance[col_plot]
         # Store into results
+        year_balance.replace(0, np.nan, inplace=True)
         self.results['Year_balance'] = year_balance
         return
 
