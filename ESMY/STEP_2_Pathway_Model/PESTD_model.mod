@@ -550,7 +550,7 @@ subject to investment_computation {p in PHASE_WND union PHASE_UP_TO, y_start in 
 
 # [Eq. XX] 
 subject to investment_return {i in TECHNOLOGIES}:
-	C_inv_return [i] = sum {p in PHASE_WND union PHASE_UP_TO,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * (F_new [p,i] - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i])  * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
+	C_inv_return [i] = sum {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"},y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * (F_new [p,i] - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i] - F_old[p,i])  * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
 
 # [Eq. XX] Compute operating cost for transition
 subject to Opex_tot_cost_calculation :# category: COST_calc

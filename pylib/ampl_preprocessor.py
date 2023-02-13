@@ -134,7 +134,7 @@ class AmplPreProcessor:
     '''
     def remaining_update(self,i,file_in = 'PES_data_remaining.dat', file_out = 'PES_data_remaining_wnd.dat'):
         
-        curr_phases_up_to = self.phases_up_to[i]
+        curr_phases_up_to = ['2015_2020'] + self.phases_up_to[i]
         curr_phases_wnd = self.phases_opti[i]
         phase_list = deepcopy(curr_phases_up_to)
         n_year_overlap = self.n_years_overlap
