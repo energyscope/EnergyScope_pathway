@@ -540,17 +540,17 @@ subject to limit_changes_freight {p in PHASE_WND union PHASE_UP_TO, y_start in P
 	
 # [Eq. XX] Compute capital expenditure for transition
 subject to total_capex: # category: COST_calc
-	C_tot_capex = sum {i in TECHNOLOGIES} C_inv ["YEAR_2020",i] # 2015 investment
-				 + sum{p in PHASE_WND union PHASE_UP_TO} C_inv_phase [p]
+	C_tot_capex = sum{p in PHASE_WND union PHASE_UP_TO union {"2015_2020"}} C_inv_phase [p]
 				 - sum {i in TECHNOLOGIES} C_inv_return [i];# euros_2015
 
 # [Eq. XX] Compute the total investment cost per phase
-subject to investment_computation {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
+subject to investment_computation {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"}, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
 	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
 
 # [Eq. XX] 
 subject to investment_return {i in TECHNOLOGIES}:
-	C_inv_return [i] = sum {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"},y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( remaining_years [i,p] / lifetime [y_start,i] * (F_new [p,i] - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i] - F_old[p,i])  * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
+	C_inv_return [i] = sum {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"},y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} 
+	( remaining_years [i,p] / lifetime [y_start,i] * (F_new [p,i] - sum {p2 in PHASE_WND union PHASE_UP_TO} F_decom [p2,p,i])  * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2 ) ;
 
 # [Eq. XX] Compute operating cost for transition
 subject to Opex_tot_cost_calculation :# category: COST_calc

@@ -3,13 +3,8 @@
 # -------------------------------------------------------------------------------------------------------------------------		
 
 set SET_INIT_SOL := {"F_up_to",	"F_new_up_to",	"F_decom_up_to",	"F_old_up_to",	"F_used_year_start_next", "Res_up_to"};
-set STORE_RESULTS := {"F_wnd", "Res", "C_inv_wnd", "C_op_maint_wnd", "EUD_wnd"};#",Tech_wnd"};
 
 ## Constraints for storing variables
-var F_wnd {YEARS_WND, TECHNOLOGIES} >= 0; # F_wnd: Installed capacity during the window of interest
-subject to store_F_wnd {j in TECHNOLOGIES, y in YEARS_WND}:
-	F_wnd[y,j] = F[y,j];
-
 var F_up_to {YEARS_UP_TO, TECHNOLOGIES} >= 0; # F_up_to: Installed capacity from the start of the optimisation (2020)
 subject to store_F_up_to {j in TECHNOLOGIES, y in YEARS_UP_TO}:
 	F_up_to[y,j] = F[y,j];
@@ -33,15 +28,3 @@ subject to store_F_used_year_start_next {y in YEAR_ONE_NEXT, j in TECHNOLOGIES}:
 var Res_up_to {YEARS_UP_TO, RESOURCES} >= 0; # Res_up_to: Used resources from the start of the optimisation (2020)
 subject to store_Res_up_to {j in RESOURCES, y in YEARS_UP_TO}:
 	Res_up_to[y,j] = Res[y,j];
-
-var C_inv_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES} >= 0, default 0; #[€] Variable to store annualised investment costs of technologies
-subject to store_cost_inv {y in YEARS_WND diff YEAR_ONE, tech in TECHNOLOGIES}:
-	C_inv_wnd [y, tech] = tau[y,tech] * C_inv[y,tech];
-
-var C_op_maint_wnd {YEARS_WND diff YEAR_ONE, TECHNOLOGIES union RESOURCES} >= 0, default 0; #[€] Variable to store operational costs of resources or maintenance costs of technologies
-subject to store_cost_op_maint {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES union RESOURCES}:
-	C_op_maint_wnd [y, j] = (if j in TECHNOLOGIES  
-		then
-			C_maint[y,j]
-		else
-			C_op[y,j]);
