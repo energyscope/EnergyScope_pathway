@@ -155,6 +155,8 @@ param solar_area	 {YEARS} >= 0; # Maximum land available for PV deployment [km2]
 param power_density_pv >=0 default 0;# Maximum power irradiance for PV.
 param power_density_solar_thermal >=0 default 0;# Maximum power irradiance for solar thermal.
 
+param gwp_cost {YEARS} >=0 default 0; #Cost related to the gwp emissions
+
 ##Additional parameter (not presented in the paper)
 param total_time := sum {t in PERIODS, h in HOUR_OF_PERIOD [t], td in TYPICAL_DAY_OF_PERIOD [t]} (t_op [h, td]); # [h]. added just to simplify equations
 
@@ -170,6 +172,9 @@ var F_new {PHASE union {"2015_2020"}, TECHNOLOGIES} >= 0; #[GW/GWh] Accounts for
 var F_decom {PHASE,PHASE union {"2015_2020"}, TECHNOLOGIES} >= 0; #[GW] Accounts for the decommissioned capacity in a new phase
 var F_old {PHASE,TECHNOLOGIES} >=0, default 0; #[GW] Retired capacity during a phase with respect to the main output
 var C_inv_phase {PHASE} >=0; #[M€/GW] Phase total annualised investment cost
+var C_inv_phase_tech {PHASE,TECHNOLOGIES} >= 0;
+var C_op_phase_tech {PHASE,TECHNOLOGIES} >= 0;
+var C_op_phase_res {PHASE,RESOURCES} >= 0;
 var C_inv_return {TECHNOLOGIES} >=0; #[M€] Money given back for existing technologies after 2050 to compute the objective function
 #var Fixed_phase_investment;
 var C_opex {YEARS} >=0;
@@ -177,6 +182,8 @@ var C_tot_opex >=0;
 var C_tot_capex >=0;
 var TotalGWPTransition >=0;
 var Delta_change {PHASE,TECHNOLOGIES} >=0;
+
+var Gwp_tot_cost >=0;
 
 ##Independent variables [Table 3] :
 var Share_mobility_public {y in YEARS} >= share_mobility_public_min [y], <= share_mobility_public_max [y]; # %_Public: Ratio [0; 1] public mobility over total passenger mobility
@@ -547,6 +554,9 @@ subject to total_capex: # category: COST_calc
 subject to investment_computation {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"}, y_start in PHASE_START[p], y_stop in PHASE_STOP[p]}:
 	 C_inv_phase [p] = sum {i in TECHNOLOGIES} F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
 
+subject to investment_computation_tech {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"}, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in TECHNOLOGIES}:
+	 C_inv_phase_tech [p,i] = F_new [p,i] * annualised_factor [p] * ( c_inv [y_start,i] + c_inv [y_stop,i] ) / 2; #In bÃ¢â€šÂ¬
+
 # [Eq. XX] 
 subject to investment_return {i in TECHNOLOGIES}:
 	C_inv_return [i] = sum {p in PHASE_WND union PHASE_UP_TO union {"2015_2020"},y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} 
@@ -562,11 +572,21 @@ subject to Opex_tot_cost_calculation :# category: COST_calc
 subject to Opex_cost_calculation{y in YEARS_WND  union YEARS_UP_TO} : # category: COST_calc
 	C_opex [y] = sum {j in TECHNOLOGIES} C_maint [y,j] + sum {i in RESOURCES} C_op [y,i]; #In â‚¬_y
 
+subject to operation_computation_tech {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in TECHNOLOGIES}:
+	C_op_phase_tech [p,i] = t_phase *   ((C_maint [y_start,i] + C_maint [y_stop,i])/2 *annualised_factor[p] ); #In euros_2015
+
+subject to operation_computation_res {p in PHASE_WND union PHASE_UP_TO, y_start in PHASE_START[p], y_stop in PHASE_STOP[p], i in RESOURCES}:
+	C_op_phase_res [p,i] = t_phase *   ((C_op [y_start,i] + C_op [y_stop,i])/2 *annualised_factor[p] ); #In euros_2015
+
 # [Eq. XX] We could either limit the max investment on a period or fix that these investments must be equals in â‚¬_2015
 subject to maxInvestment {p in PHASE_WND}:
 	 C_inv_phase [p] <= max_inv_phase[p]; #In bÃ¢â€šÂ¬
 # subject to sameInvestmentPerPhase {p in PHASE}:
 # 	 C_inv_phase [p] = Fixed_phase_investment; #In bÃ¢â€šÂ¬
+
+subject to Gwp_tot_cost_calculation:
+	Gwp_tot_cost = t_phase *  sum {p in PHASE_WND union PHASE_UP_TO,y_start in PHASE_START [p],y_stop in PHASE_STOP [p]} ( 
+					                 (TotalGWP [y_start]*gwp_cost[y_start] + TotalGWP [y_stop]*gwp_cost[y_stop])/2);
 
 ##########################
 ### OBJECTIVE FUNCTION ###
@@ -578,6 +598,6 @@ subject to maxInvestment {p in PHASE_WND}:
 # 	TotalTransitionCost = C_tot_capex + C_tot_opex;
 # minimize obj: TotalTransitionCost;
 # Can choose between TotalTransitionCost_calculation and TotalGWP and TotalCost
-minimize  TotalTransitionCost: C_tot_capex + C_tot_opex;#sum {y in YEARS} TotalCost [y];
+minimize  TotalTransitionCost: C_tot_capex + C_tot_opex + Gwp_tot_cost;#sum {y in YEARS} TotalCost [y];
 # subject to New_totalTransitionCost_calculation :
 # 	TotalTransitionCost = C_tot_capex + C_tot_opex;
