@@ -66,8 +66,12 @@ class AmplObject:
         self.type_model = type_model
 
         # create empty dictionary to be filled with main results
-        self.results = dict.fromkeys(['TotalCost', 'Cost_breakdown', 'Gwp_breakdown', 'Resources',
-                                      'Assets', 'Sto_assets', 'Year_balance'])
+        self.results = dict.fromkeys(['TotalCost', 'C_inv_phase', 'C_inv_phase_tech',
+                                      'C_op_phase_tech','C_op_phase_res',
+                                      'Cost_breakdown', 'Cost_return', 
+                                      'TotalGwp','Gwp_breakdown', 'Resources',
+                                      'Assets', 'New_old_decom',
+                                      'F_decom','Sto_assets', 'Year_balance'])
 
         # Store names of sets
         self.get_sets()
@@ -105,10 +109,11 @@ class AmplObject:
             if len(obj.instances()) <= 1:
                 self.sets[name] = obj.getValues().toList()
             else:
-                A=4
                 self.sets[name] = self.get_subset(obj)
+        
+        
 
-    def get_var(self, var_name:str):
+    def get_elem(self, elem_name:str,type_of_elem = 'Var'):
         """Function to extract the mentioned variable and store it into self.outputs
         Parameters
         ----------
@@ -116,28 +121,33 @@ class AmplObject:
         Name of the variable to extract from the optimisation problem results. Should be written as in the .mod file
         Returns
         -------
-        var: pd.DataFrame()
+        elem: pd.DataFrame()
         DataFrame containing the values of the different elements of the variable.
         The n first columns give the n sets on which it is indexed
         and the last column give the value obtained from the optimization.
         """
-        ampl_var = self.ampl.getVariable(var_name)
+        if type_of_elem == 'Var':
+            ampl_elem = self.ampl.getVariable(elem_name)
+        elif type_of_elem == 'Param':
+            ampl_elem = self.ampl.getParameter(elem_name)
         # Getting the names of the sets
-        indexing_sets = [s.capitalize() for s in ampl_var.getIndexingSets()]
+        indexing_sets = [s.capitalize() for s in ampl_elem.getIndexingSets()]
         # Getting the data of the variable into a pandas dataframe
-        amplpy_df = ampl_var.getValues()
-        var = amplpy_df.toPandas()
-        # getting the number of indices. If var has more then 1 index, we set it as a MultiIndex
+        amplpy_df = ampl_elem.getValues()
+        elem = amplpy_df.toPandas()
+        # getting the number of indices. If elem has more then 1 index, we set it as a MultiIndex
         n_indices = amplpy_df.getNumIndices()
         if n_indices>1:
-            var.index = pd.MultiIndex.from_tuples(var.index, names=indexing_sets)
+            elem.index = pd.MultiIndex.from_tuples(elem.index, names=indexing_sets)
         else:
-            var.index = pd.Index(var.index, name=indexing_sets[0])
+            elem.index = pd.Index(elem.index, name=indexing_sets[0])
         # getting rid of '.val' (4 trailing characters of the string) into columns names such that the name of the columns correspond to the variable
-        var.rename(columns=lambda x: x[:-4], inplace=True)
-        #self.to_pd(ampl_var.getValues()).rename(columns={(var_name+'.val'):var_name})
-        self.outputs[var_name] = var
-        return var
+        if type_of_elem == 'Var':
+            elem.rename(columns=lambda x: x[:-4], inplace=True)
+            self.outputs[elem_name] = elem
+        #self.to_pd(ampl_elem.getValues()).rename(columns={(var_name+'.val'):var_name})
+
+        return elem
     """"
 
     Change the value of the parameter "name" to new "value"
@@ -156,20 +166,7 @@ class AmplObject:
         if len(self.ampl.get_parameter(name).instances()) == 1:
             self.ampl.get_parameter(name).set(1.0*value) # 1.0* aims to convert potential float32 into float64 that is compatible with ampl object
         else:
-            self.ampl.get_parameter(name).setValues(value) 
-    
-
-    """"
-
-    Collect the relevant outputs to store 
-
-    """
-    def get_outputs(self):
-
-        store_list = self.sets['STORE_RESULTS']
-
-        for k in store_list:
-            self.outputs[k] = self.to_pd(self.ampl.getVariable(k).getValues())
+            self.ampl.get_parameter(name).setValues(value)
     
 
     def clean_history(self):
@@ -306,6 +303,31 @@ class AmplObject:
                 d[n] = list()
         return d
     
+    @staticmethod
+    def get_subparam(my_param):
+        """
+        Function to extract the subsets of set containing sets from the AMPL() object
+
+        Parameters
+        ----------
+        my_set : amplpy.set.Set
+        2-dimensional set to extract
+
+
+        Returns
+        -------
+        d : dict()
+        dictionary containing the subsets as lists
+        """
+        
+        d = dict()
+        for n, o in my_param.instances():
+            try:
+                d[n] = o
+            except Exception as e:
+                d[n] = list()
+        return d
+    
 
     
     @staticmethod
@@ -382,10 +404,15 @@ class AmplObject:
         logging.info('Getting summary')
         self.get_total_cost()
         self.get_cost_breakdown()
+        self.get_cost_return()
+        self.get_total_gwp()
         self.get_gwp_breakdown()
         self.get_resources()
         self.get_assets()
+        self.get_new_old_decom()
+        self.get_F_decom()
         self.get_year_balance()
+        
         return
     
     def get_total_cost(self):
@@ -393,21 +420,65 @@ class AmplObject:
             It is stored into self.outputs['TotalCost'] and into self.results['TotalCost']
         """
         logging.info('Getting TotalCost')
-        total_cost = self.get_var('TotalCost').reset_index()
+        total_cost = self.get_elem('TotalCost').reset_index()
         total_cost['Years'] = pd.Categorical(total_cost['Years'], self.sets['YEARS_WND'])
         total_cost = total_cost[total_cost['Years'].notna()]
         total_cost = total_cost.set_index(['Years'])
         total_cost.sort_index(inplace=True)
         self.results['TotalCost'] = total_cost
+        
+        c_inv_phase = self.get_elem('C_inv_phase')
+        c_inv_phase_index = c_inv_phase.index.names
+        c_inv_phase = c_inv_phase.rename_axis(index={c_inv_phase_index[0]:'Phases'},axis=1)
+        c_inv_phase = c_inv_phase.reset_index()
+        c_inv_phase['Phases'] = pd.Categorical(c_inv_phase['Phases'],['2015_2020'] + self.sets['PHASE_UP_TO'])
+        c_inv_phase = c_inv_phase[c_inv_phase['Phases'].notna()]
+        c_inv_phase = c_inv_phase.set_index(['Phases'])
+        c_inv_phase.sort_index(inplace=True)
+        self.results['C_inv_phase'] = c_inv_phase
+        
+        c_inv_phase_tech = self.get_elem('C_inv_phase_tech')
+        c_inv_phase_tech_index = c_inv_phase_tech.index.names
+        c_inv_phase_tech = c_inv_phase_tech.rename_axis(index={c_inv_phase_tech_index[0]:'Phases'},axis=1)
+        c_inv_phase_tech = c_inv_phase_tech.reset_index()
+        phases = sorted(set(['2015_2020'] + self.sets['PHASE_UP_TO'] + self.sets['PHASE_WND']))
+        c_inv_phase_tech['Phases'] = pd.Categorical(c_inv_phase_tech['Phases'],phases)
+        c_inv_phase_tech = c_inv_phase_tech[c_inv_phase_tech['Phases'].notna()]
+        c_inv_phase_tech = c_inv_phase_tech.set_index(['Phases','Technologies'])
+        c_inv_phase_tech.sort_index(inplace=True)
+        self.results['C_inv_phase_tech'] = c_inv_phase_tech
+        
+        c_op_phase_tech = self.get_elem('C_op_phase_tech')
+        c_op_phase_tech_index = c_op_phase_tech.index.names
+        c_op_phase_tech = c_op_phase_tech.rename_axis(index={c_op_phase_tech_index[0]:'Phases'},axis=1)
+        c_op_phase_tech = c_op_phase_tech.reset_index()
+        c_op_phase_tech['Phases'] = pd.Categorical(c_op_phase_tech['Phases'],self.sets['PHASE_UP_TO'])
+        c_op_phase_tech = c_op_phase_tech[c_op_phase_tech['Phases'].notna()]
+        c_op_phase_tech = c_op_phase_tech.set_index(['Phases','Technologies'])
+        c_op_phase_tech.sort_index(inplace=True)
+        self.results['C_op_phase_tech'] = c_op_phase_tech
+        
+        c_op_phase_res = self.get_elem('C_op_phase_res')
+        c_op_phase_res_index = c_op_phase_res.index.names
+        c_op_phase_res = c_op_phase_res.rename_axis(index={c_op_phase_res_index[0]:'Phases'},axis=1)
+        c_op_phase_res = c_op_phase_res.reset_index()
+        c_op_phase_res['Phases'] = pd.Categorical(c_op_phase_res['Phases'],self.sets['PHASE_UP_TO'])
+        c_op_phase_res = c_op_phase_res[c_op_phase_res['Phases'].notna()]
+        c_op_phase_res = c_op_phase_res.set_index(['Phases','Resources'])
+        c_op_phase_res.sort_index(inplace=True)
+        self.results['C_op_phase_res'] = c_op_phase_res
+        
+        
+        return
     
     def get_cost_breakdown(self):
         """Gets the cost breakdown and stores it into the results"""
         logging.info('Getting Cost_breakdown')
 
         # Get the different costs variables
-        c_inv = self.get_var('C_inv')
-        c_maint = self.get_var('C_maint')
-        c_op = self.get_var('C_op')
+        c_inv = self.get_elem('C_inv')
+        c_maint = self.get_elem('C_maint')
+        c_op = self.get_elem('C_op')
 
         # set index names (for later merging)
         index_names = ['Years', 'Elements']
@@ -436,21 +507,76 @@ class AmplObject:
         cost_breakdown.set_index(['Years', 'Elements'], inplace=True)
 
         # put very small values as nan
-        threshold = 1e-2
+        # threshold = 1e-2
+        threshold = 0
         cost_breakdown = cost_breakdown.mask((cost_breakdown > -threshold) & (cost_breakdown < threshold), np.nan)
 
         # Store into results
         cost_breakdown.replace(0, np.nan, inplace=True)
         self.results['Cost_breakdown'] = cost_breakdown
         return
+        
     
+    def get_cost_return(self):
+        """Gets the cost return and stores it into the results"""
+        logging.info('Getting Cost_return')
+        c_inv_return = self.get_elem('C_inv_return')
+        last_year_of_wnd = self.sets['YEARS_WND'][-1]
+        cost_return = c_inv_return.copy()
+        cost_return['Years'] = [last_year_of_wnd]*len(c_inv_return.index.unique())
+        cost_return = cost_return.reset_index().set_index(['Years', 'Technologies'])
+        
+        c_inv_phase_tech = self.results['C_inv_phase_tech'].copy()
+        c_inv_phase_tech.reset_index(inplace=True)
+        c_inv_phase_tech['Phases'] = c_inv_phase_tech['Phases'].map(lambda x: 'YEAR_'+x[-4:])
+        c_inv_phase_tech.rename(columns={'Phases':'Years'},inplace=True)
+        c_inv_phase_tech = c_inv_phase_tech.set_index(['Years','Technologies'])
+        c_inv_phase_tech.sort_values(by=['Years'],inplace=True)
+        for g_name, g_df in c_inv_phase_tech.groupby(['Technologies']):
+            c_inv_phase_tech.loc[g_df.index,'cumsum'] = c_inv_phase_tech.loc[g_df.index,'C_inv_phase_tech'].cumsum()
+        
+        c_inv_phase_tech.drop(columns={'C_inv_phase_tech'},inplace=True)
+        c_inv_phase_tech = c_inv_phase_tech.loc[c_inv_phase_tech.index.get_level_values('Years') == last_year_of_wnd,:]
+        
+        cost_return = cost_return.merge(c_inv_phase_tech,left_index=True, right_index=True, how='outer')
+        
+        self.results['Cost_return'] = cost_return
+        return
+
+    def get_total_gwp(self):
+        """Get the total gwp of the energy system of the different years
+            It is stored into self.results['TotalGwp']
+        """
+        logging.info('Getting TotalGwp')
+        total_gwp = self.get_elem('TotalGWP').reset_index()
+        total_gwp['Years'] = pd.Categorical(total_gwp['Years'], self.sets['YEARS_WND'])
+        total_gwp = total_gwp[total_gwp['Years'].notna()]
+        
+        gwp_cost = pd.DataFrame(index=self.sets['YEARS_WND'],columns=['Gwp_cost'])
+        gwp_cost.index.set_names('Years',inplace=True)
+        for y in self.sets['YEARS_WND']:
+            if not(y in self.sets['YEAR_ONE']):
+                gwp_cost.loc[y] = -self.ampl.get_constraint('minimum_GWP_reduction')[y].dual()
+
+        gwp_limit = self.to_pd(self.params['gwp_limit'].getValues())
+        gwp_limit.index.set_names('Years',inplace=True)
+        gwp_limit.rename(columns={'Value':'Gwp_limit'},inplace=True)
+        gwp_limit = gwp_limit.loc[gwp_limit.index.get_level_values('Years').isin(self.sets['YEARS_WND']),:]
+
+        total_gwp = total_gwp.set_index(['Years'])
+        total_gwp = total_gwp.merge(gwp_limit, left_on=['Years'], right_index=True)\
+            .merge(gwp_cost, left_on=['Years'], right_index=True)
+        total_gwp.sort_index(inplace=True)
+        self.results['TotalGwp'] = total_gwp
+        return
+
     def get_gwp_breakdown(self):
         """Get the gwp breakdown [ktCO2e/y] of the technologies and resources"""
         logging.info('Getting Gwp_breakdown')
 
         # Get GWP_constr and GWP_op
-        gwp_constr = self.get_var('GWP_constr')  
-        gwp_op = self.get_var('GWP_op')
+        gwp_constr = self.get_elem('GWP_constr')  
+        gwp_op = self.get_elem('GWP_op')
 
         # set index names (for later merging)
         index_names = ['Years', 'Elements']
@@ -476,13 +602,15 @@ class AmplObject:
         gwp_breakdown.set_index(['Years', 'Elements'], inplace=True)
 
         # put very small values as nan
-        threshold = 1e-2
+        # threshold = 1e-2
+        threshold = 0
         gwp_breakdown = gwp_breakdown.mask((gwp_breakdown > -threshold) & (gwp_breakdown < threshold), np.nan)
 
         # store into results
         gwp_breakdown.replace(0, np.nan, inplace=True)
         self.results['Gwp_breakdown'] = gwp_breakdown
         return
+        
 
     def get_resources(self):
         """Get the Resources yearly local and exterior production, and import and exports as well as exchanges"""
@@ -492,7 +620,7 @@ class AmplObject:
 
         # Get results related to Resources and Exchanges and sum over all layers
         # year local production and import from exterior
-        resources = self.get_var('Res')
+        resources = self.get_elem('Res')
         index_names = ['Years', 'Resources']
         resources.index.names = index_names
         resources = resources.reset_index()
@@ -504,7 +632,8 @@ class AmplObject:
         resources.set_index(['Years', 'Resources'], inplace=True)
 
         # put very small values as nan
-        threshold = 1e-2
+        # threshold = 1e-2
+        threshold = 0
         resources = resources.mask((resources > -threshold) & (resources < threshold), np.nan)
         
         resources.replace(0, np.nan, inplace=True)
@@ -549,13 +678,13 @@ class AmplObject:
 
         # EXTRACTING OPTIMISATION MODEL RESULTS
         # installed capacity
-        f = self.get_var('F')
+        f = self.get_elem('F')
         tech = self.sets['TECHNOLOGIES'].copy()
         sto_tech_daily = self.sets['STORAGE_DAILY'].copy()
         sto_tech_daily.remove('BEV_BATT')
         sto_tech_daily.remove('PHEV_BATT')
         
-        F_t = self.get_var('F_t')
+        F_t = self.get_elem('F_t')
         F_t_tech = F_t.loc[F_t.index.get_level_values('Resources union technologies').isin(tech),:]
         
         F_t_tech = F_t_tech.rename_axis(index={'Resources union technologies':'Technologies'},axis=1)
@@ -568,21 +697,21 @@ class AmplObject:
                 .rename(columns={'F_t':'F_year'})
             f_year = f_year.loc[~f_year.index.get_level_values('Technologies').isin(sto_tech_daily),:]
             # Get Storage_power (power balance at each month)
-            storage_in = self.get_var('Storage_in') \
+            storage_in = self.get_elem('Storage_in') \
                 .groupby(['Years', 'I in storage_tech', 'Periods']).sum()
             storage_in = storage_in.loc[~storage_in.index.get_level_values('I in storage_tech').isin(sto_tech_daily),:]
-            storage_out = self.get_var('Storage_out') \
+            storage_out = self.get_elem('Storage_out') \
                 .groupby(['Years', 'I in storage_tech', 'Periods']).sum()
             storage_out = storage_out.loc[~storage_out.index.get_level_values('I in storage_tech').isin(sto_tech_daily),:]
         else:
-            f_year = self.from_agg_to_year(ts=F_t
+            f_year = self.from_agg_to_year(ts=F_t_tech
                                              .reset_index().set_index(['Typical_days', 'Hours'])) \
                 .groupby(['Years', 'Technologies']).sum() \
                 .rename(columns={'F_t': 'F_year'})
             # Get Storage_power (power balance at each hour)
-            storage_in = self.get_var('Storage_in') \
+            storage_in = self.get_elem('Storage_in') \
                 .groupby(['Years', 'I in storage_tech', 'Hours', 'Typical_days']).sum()
-            storage_out = self.get_var('Storage_out') \
+            storage_out = self.get_elem('Storage_out') \
                 .groupby(['Years', 'I in storage_tech', 'Hours', 'Typical_days']).sum()
 
 
@@ -609,10 +738,12 @@ class AmplObject:
         assets.sort_values(by=['Years', 'Technologies'], axis=0, ignore_index=True, inplace=True)
         assets.set_index(['Years', 'Technologies'], inplace=True)
         # put very small values as nan
-        treshold = 1e-2
-        assets = assets.mask((assets > -treshold) & (assets < treshold), np.nan)
-        treshold = 1e-1
-        assets['F_year'] = assets['F_year'].mask((assets['F_year'] > -treshold) & (assets['F_year'] < treshold), np.nan)
+        # threshold = 1e-2
+        threshold = 0
+        assets = assets.mask((assets > -threshold) & (assets < threshold), np.nan)
+        # threshold = 1e-1
+        threshold = 0
+        assets['F_year'] = assets['F_year'].mask((assets['F_year'] > -threshold) & (assets['F_year'] < threshold), np.nan)
 
         # STORAGE ASSETS COMPUTATIONS
         # compute the balance
@@ -677,8 +808,8 @@ class AmplObject:
         sto_assets.sort_values(by=['Years', 'Technologies'], axis=0, ignore_index=True, inplace=True)
         sto_assets.set_index(['Years', 'Technologies'], inplace=True)
         # put very small values as nan
-        treshold = 1
-        sto_assets = sto_assets.mask((sto_assets > -treshold) & (sto_assets < treshold), np.nan)
+        threshold = 1
+        sto_assets = sto_assets.mask((sto_assets > -threshold) & (sto_assets < threshold), np.nan)
 
         # Store into results
         assets.replace(0, np.nan, inplace=True)
@@ -686,23 +817,65 @@ class AmplObject:
         sto_assets.replace(0, np.nan, inplace=True)
         self.results['Sto_assets'] = sto_assets
         return
+    
+    def get_new_old_decom(self):
+        F_new = self.get_elem('F_new')
+        f_new_index = F_new.index.names
+        F_new = F_new.rename_axis(index={f_new_index[0]:'Phases'},axis=1)
+        
+        F_old = self.get_elem('F_old')
+        f_old_index = F_old.index.names
+        F_old = F_old.rename_axis(index={f_old_index[0]:'Phases'},axis=1)
+        
+        F_decom = self.get_elem('F_decom')
+        F_decom = F_decom.groupby(['Phase','Technologies']).sum()
+        f_decom_index = F_decom.index.names
+        F_decom = F_decom.rename_axis(index={f_decom_index[0]:'Phases'},axis=1)
+        
 
+        index_names = ['Phases', 'Technologies']
+    
+        assets = F_new.merge(F_old, left_on=['Phases', 'Technologies'], right_index=True)\
+                .merge(F_decom, left_on=['Phases', 'Technologies'], right_index=True).reset_index()
+        # set Years and Technologies as categorical data and sort it
+        assets['Phases'] = pd.Categorical(assets['Phases'], ['2015_2020']+self.sets['PHASE_UP_TO'])
+        assets = assets[assets['Phases'].notna()]
+        self.categorical_esmy(df=assets, col_name='Technologies', el_name='Technologies')
+        assets.sort_values(by=['Phases', 'Technologies'], axis=0, ignore_index=True, inplace=True)
+        assets.set_index(index_names, inplace=True)
+        # put very small values as nan
+        # threshold = 1e-2
+        threshold = 0
+        assets = assets.mask((assets < threshold), np.nan)
+        assets.dropna(how='all',inplace=True)
+        
+        self.results['New_old_decom'] = assets
+        return
+    
+    def get_F_decom(self):
+        F_decom = self.get_elem('F_decom')
+        f_decom_index = F_decom.index.names
+        F_decom = F_decom.rename_axis(index={f_decom_index[0]:'Phases'},axis=1)
+        self.results['F_decom'] = F_decom
+        return
+        
+    
     def get_year_balance(self):
         """Get the year energy balance of each layer"""
         logging.info('Getting Year_balance')
         sto_tech_daily = self.sets['STORAGE_DAILY'].copy()
         # Layer of which we have limited interest
-        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','HEAT_HIGH_T',
-                'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
-                'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
-                'MOB_PUBLIC']
+        # col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','HEAT_HIGH_T',
+        #         'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
+        #         'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
+        #         'MOB_PUBLIC']
 
         # EXTRACT RESULTS FROM OPTIMISATION MODEL
         if self.type_model == 'MO':
-            end_uses = -self.from_agg_to_year(ts=self.get_var('End_uses')) \
+            end_uses = -self.from_agg_to_year(ts=self.get_elem('End_uses')) \
                 .groupby(['Years', 'Layers']).sum()
         else:
-            end_uses = -self.from_agg_to_year(ts=self.get_var('End_uses')
+            end_uses = -self.from_agg_to_year(ts=self.get_elem('End_uses')
                                                 .reset_index().set_index(['Typical_days', 'Hours'])) \
                 .groupby(['Years', 'Layers']).sum()
 
@@ -762,10 +935,11 @@ class AmplObject:
         year_balance.set_index(['Years', 'Elements'], inplace=True)
 
         # put very small values as nan
-        treshold = 1e-1
-        year_balance = year_balance.mask((year_balance.min(axis=1) > -treshold) & (year_balance.max(axis=1) < treshold),
+        # threshold = 1e-1
+        threshold = 0
+        year_balance = year_balance.mask((year_balance.min(axis=1) > -threshold) & (year_balance.max(axis=1) < threshold),
                                          np.nan)
-        year_balance = year_balance[col_plot]
+        # year_balance = year_balance[col_plot]
         # Store into results
         year_balance.replace(0, np.nan, inplace=True)
         self.results['Year_balance'] = year_balance
