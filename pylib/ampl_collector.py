@@ -101,6 +101,7 @@ class AmplCollector:
         recap_file = os.path.join(self.pth_output_all,'_Recap.csv')
         t = datetime.fromtimestamp(time())
         if not os.path.exists(Path(recap_file)):
+            Path(recap_file).parent.mkdir(parents=True,exist_ok=True)
             with open(recap_file,'w+') as f:
                 writer = csv.writer(f)
                 writer.writerow(['Case_study','Comment','Date_Time'])

@@ -48,8 +48,9 @@ class AmplGraph:
         self.case_study = case_study
         self.color_dict_full = self.dict_color_full()
         self.outdir = os.path.join(Path(self.pkl_file).parent.absolute(),'graphs/')
-        if not os.path.isdir(self.outdir):
-            system('mkdir {}'.format(self.outdir))
+        if not os.path.exists(Path(self.outdir)):
+            Path(self.outdir).mkdir(parents=True,exist_ok=True)
+
         self.threshold = 0.03
         self.category = self._group_sets()
         self.cost_return_eff = self._get_cost_return_for_each_year()
@@ -117,8 +118,8 @@ class AmplGraph:
             fig.update_traces(mode='none')
             plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
             pio.show(fig)
-            if not os.path.isdir(self.outdir+"Layers"):
-                system('mkdir {}'.format(self.outdir+"Layers"))
+            if not os.path.exists(Path(self.outdir+"Layers/")):
+                Path(self.outdir+"Layers").mkdir(parents=True,exist_ok=True)
             fig.write_image(self.outdir+"Layers/"+k+".pdf", width=1200, height=550)
             plt.close()
         
@@ -936,8 +937,8 @@ class AmplGraph:
                 plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
                 if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                     pio.show(fig)
-                    if not os.path.isdir(self.outdir+"Tech_Cap"):
-                        system('mkdir {}'.format(self.outdir+"Tech_Cap"))
+                    if not os.path.exists(Path(self.outdir+"Tech_Cap/")):
+                        Path(self.outdir+"Tech_Cap").mkdir(parents=True,exist_ok=True)
                     fig.write_image(self.outdir+"Tech_Cap/"+sector+".pdf", width=1200, height=550)
                 plt.close()
             
@@ -1025,8 +1026,8 @@ class AmplGraph:
             plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
             if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                 pio.show(fig)
-                if not os.path.isdir(self.outdir+"Load_factor"):
-                    system('mkdir {}'.format(self.outdir+"Load_factor"))
+                if not os.path.exists(Path(self.outdir+"Load_factor/")):
+                    Path(self.outdir+"Load_factor").mkdir(parents=True,exist_ok=True)
                 fig.write_image(self.outdir+"Load_factor/"+sector+".pdf", width=1200, height=550)
             plt.close()
     
@@ -1073,8 +1074,8 @@ class AmplGraph:
             plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
             if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                 pio.show(fig)
-                if not os.path.isdir(self.outdir+"Load_factor_scaled"):
-                    system('mkdir {}'.format(self.outdir+"Load_factor_scaled"))
+                if not os.path.exists(Path(self.outdir+"Load_factor_scaled/")):
+                    Path(self.outdir+"Load_factor_scaled").mkdir(parents=True,exist_ok=True)
                 fig.write_image(self.outdir+"Load_factor_scaled/"+sector+".pdf", width=1200, height=550)
             plt.close()
             
