@@ -59,9 +59,9 @@ dat_path += [os.path.join(pth_model,'PES_data_remaining_wnd.dat'),
 ## Options for ampl and gurobi
 gurobi_options = ['predual=-1',
                 'method = 2', # 2 is for barrier method
-                'crossover=-1',
+                'crossover=0', #-1 let gurobi decides
                 'prepasses = 3',
-                'barconvtol=1e-6',                
+                'barconvtol=1e-6',
                 'presolve=-1'] # Not a good idea to put it to 0 if the model is too big
 
 gurobi_options_str = ' '.join(gurobi_options)
@@ -135,7 +135,7 @@ if __name__ == '__main__':
                 
                 ampl.get_results()
                 
-                if i==0:
+                if i==0: 
                     ampl_collector.init_storage(ampl)
                 
                 
@@ -164,39 +164,44 @@ if __name__ == '__main__':
             a_website = "https://www.google.com"
             webbrowser.open_new(a_website)
             ampl_graph.graph_resource()
-            ampl_graph.graph_cost()
-            ampl_graph.graph_gwp_per_sector()
-            ampl_graph.graph_cost_inv_phase_tech()
-            ampl_graph.graph_cost_return()
-            ampl_graph.graph_cost_op_phase()
+            # ampl_graph.graph_cost()
+            # ampl_graph.graph_gwp_per_sector()
+            # ampl_graph.graph_cost_inv_phase_tech()
+            # ampl_graph.graph_cost_return()
+            # ampl_graph.graph_cost_op_phase()
         
-            # 
-            ampl_graph.graph_layer()
-            ampl_graph.graph_gwp()
-            ampl_graph.graph_tech_cap()
-            ampl_graph.graph_total_cost_per_year()
-            ampl_graph.graph_load_factor()
-            df_unused = ampl_graph.graph_load_factor_2()
-            ampl_graph.graph_new_old_decom()
+            
+            # ampl_graph.graph_layer()
+            # ampl_graph.graph_gwp()
+            # ampl_graph.graph_tech_cap()
+            # ampl_graph.graph_total_cost_per_year()
+            # ampl_graph.graph_load_factor()
+            # df_unused = ampl_graph.graph_load_factor_2(plot = False)
+            # ampl_graph.graph_new_old_decom()
             
         if graph_comp:
             ampl_graph = AmplGraph(output_file, ampl_0,case_study)
             
             
+            # Reference case: TD-Perfect foresight
             case_study_1 = '{}_{}_{}_gwp_limit_all_the_way'.format('TD',30,0)
             output_folder_1 = os.path.join(pth_output_all,case_study_1)
             output_file_1 = os.path.join(output_folder_1,'_Results.pkl')
             
-            case_study_2 = '{}_{}_{}_gwp_limit_all_the_way'.format('TD',10,5)
-            output_folder_2 = os.path.join(pth_output_all,case_study_2)
+            output_folder_2 = output_folder
             output_file_2 = os.path.join(output_folder_2,'_Results.pkl')
             
             
             output_files = [output_file_1,output_file_2]
             
             # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
-            ampl_graph.graph_comparison(output_files,'C_op_phase')
+            # ampl_graph.graph_comparison(output_files,'C_op_phase')
             # ampl_graph.graph_comparison(output_files,'Tech_cap')
+            # ampl_graph.graph_comparison(output_files,'Cost_return')
+            # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+            # ampl_graph.graph_comparison(output_files,'Resources')
+            ampl_graph.graph_comparison(output_files,'Layer')
+            
 
             
         ###############################################################################
