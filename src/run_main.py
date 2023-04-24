@@ -30,7 +30,7 @@ pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
 if type_of_model == 'MO':
     mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
                 os.path.join(pth_model,'PESMO_store_variables.mod'),
-                os.path.join(pth_model,'PESMO_RL.mod'),
+                os.path.join(pth_model,'PESMO_RL/PESMO_RL_v7.mod'),
                 os.path.join(pth_model,'PES_store_variables.mod')]
     mod_2_path = [os.path.join(pth_model,'PESMO_initialise_2020.mod'),
                   os.path.join(pth_model,'fix.mod')]
@@ -71,7 +71,6 @@ ampl_options = {'show_stats': 1,
                 'presolve': 10,
                 'presolve_eps': 1e-6,
                 'presolve_fixeps': 1e-6,
-                # 'presolve': False,
                 'show_boundtol': 0,
                 'gurobi_options': gurobi_options_str,
                 '_log_input_only': False}
@@ -82,7 +81,7 @@ ampl_options = {'show_stats': 1,
 
 run_opti = False
 graph = True
-graph_comp = False
+graph_comp = True
 
 if __name__ == '__main__':
     
@@ -122,14 +121,29 @@ if __name__ == '__main__':
                 ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options, type_model = type_of_model)
                 
                 
-                ampl.set_params('gwp_limit',{('YEAR_2015'):156000})
-                ampl.set_params('gwp_limit',{('YEAR_2020'):121250}) #121250 133715
-                ampl.set_params('gwp_limit',{('YEAR_2025'):101610}) #101610 111430
-                ampl.set_params('gwp_limit',{('YEAR_2030'):81969})  #81969 89145
-                ampl.set_params('gwp_limit',{('YEAR_2035'):62328}) #62328 66860
-                ampl.set_params('gwp_limit',{('YEAR_2040'):42688}) #42688 44575
-                ampl.set_params('gwp_limit',{('YEAR_2045'):23047}) #23047 22290
-                ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
+                # ampl.set_params('gwp_limit_transition',1224935.4)
+                
+                # 1st column: gwp_trajectory for TD_PF with gwp_budget of 1224935.4ktCO2_eq for the transition
+                # 2nd column: linear gwp_trajectory starting in 2020 (Pathway paper)
+                # 3rd column: linear gwp_trajectory starting in 2015 (GL's thesis)
+                
+                # YEAR_2015 : xxx         xxx    156000
+                # YEAR_2020 : 123713.4258 121250 133715
+                # YEAR_2025 : 63610.12101 101610 111430
+                # YEAR_2030 : 39991.25308 81969 89145
+                # YEAR_2035 : 23792.18604 62328 66860
+                # YEAR_2040 : 23200.18966 42688 44575
+                # YEAR_2045 : 6090.469921 23047 22290
+                # YEAR_2050 : 3406.924541 3406.92 3406.92
+                
+                
+                ampl.set_params('gwp_limit',{('YEAR_2020'):123713.4258}) 
+                ampl.set_params('gwp_limit',{('YEAR_2025'):63610.12101}) 
+                ampl.set_params('gwp_limit',{('YEAR_2030'):39991.25308})  
+                ampl.set_params('gwp_limit',{('YEAR_2035'):23792.18604}) 
+                ampl.set_params('gwp_limit',{('YEAR_2040'):23200.18966}) 
+                ampl.set_params('gwp_limit',{('YEAR_2045'):6090.469921}) 
+                ampl.set_params('gwp_limit',{('YEAR_2050'):3406.924541})
                 
                 solve_result = ampl.run_ampl()
                 
@@ -162,22 +176,23 @@ if __name__ == '__main__':
         if graph:
             ampl_graph = AmplGraph(output_file, ampl_0, case_study)
             a_website = "https://www.google.com"
-            webbrowser.open_new(a_website)
+            # webbrowser.open_new(a_website)
             ampl_graph.graph_resource()
-            # ampl_graph.graph_cost()
-            # ampl_graph.graph_gwp_per_sector()
-            # ampl_graph.graph_cost_inv_phase_tech()
-            # ampl_graph.graph_cost_return()
-            # ampl_graph.graph_cost_op_phase()
-        
+            ampl_graph.graph_cost()
+            ampl_graph.graph_gwp_per_sector()
+            ampl_graph.graph_cost_inv_phase_tech()
+            ampl_graph.graph_cost_return()
+            ampl_graph.graph_cost_op_phase()
             
-            # ampl_graph.graph_layer()
-            # ampl_graph.graph_gwp()
-            # ampl_graph.graph_tech_cap()
-            # ampl_graph.graph_total_cost_per_year()
-            # ampl_graph.graph_load_factor()
-            # df_unused = ampl_graph.graph_load_factor_2(plot = False)
-            # ampl_graph.graph_new_old_decom()
+            ampl_graph.graph_layer()
+            ampl_graph.graph_gwp()
+            ampl_graph.graph_tech_cap()
+            ampl_graph.graph_total_cost_per_year()
+            ampl_graph.graph_load_factor()
+            df_unused = ampl_graph.graph_load_factor_scaled()
+            ampl_graph.graph_new_old_decom()
+            
+            ampl_graph.graph_paper()
             
         if graph_comp:
             ampl_graph = AmplGraph(output_file, ampl_0,case_study)
@@ -194,13 +209,15 @@ if __name__ == '__main__':
             
             output_files = [output_file_1,output_file_2]
             
-            # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
-            # ampl_graph.graph_comparison(output_files,'C_op_phase')
-            # ampl_graph.graph_comparison(output_files,'Tech_cap')
-            # ampl_graph.graph_comparison(output_files,'Cost_return')
-            # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
-            # ampl_graph.graph_comparison(output_files,'Resources')
+            ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
+            ampl_graph.graph_comparison(output_files,'C_op_phase')
+            ampl_graph.graph_comparison(output_files,'Resources')
+            ampl_graph.graph_comparison(output_files,'Cost_return')
+            ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+            ampl_graph.graph_comparison(output_files,'Tech_cap')
             ampl_graph.graph_comparison(output_files,'Layer')
+            ampl_graph.graph_comparison(output_files,'GWP_per_sector')
+            ampl_graph.graph_comparison(output_files,'Load_factor')
             
 
             

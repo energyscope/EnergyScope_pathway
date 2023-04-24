@@ -107,7 +107,10 @@ class AmplObject:
         
         for name, obj in self.ampl.getSets():
             if len(obj.instances()) <= 1:
-                self.sets[name] = obj.getValues().toList()
+                try:
+                    self.sets[name] = obj.getValues().toList()
+                except RuntimeError: # In case there is no data for the set
+                    self.sets[name] = []
             else:
                 self.sets[name] = self.get_subset(obj)
         
@@ -139,6 +142,8 @@ class AmplObject:
         n_indices = amplpy_df.getNumIndices()
         if n_indices>1:
             elem.index = pd.MultiIndex.from_tuples(elem.index, names=indexing_sets)
+        elif n_indices == 0:
+            elem = elem
         else:
             elem.index = pd.Index(elem.index, name=indexing_sets[0])
         # getting rid of '.val' (4 trailing characters of the string) into columns names such that the name of the columns correspond to the variable
