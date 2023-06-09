@@ -81,3 +81,7 @@ src/__pycache__/rl_esmy_stats.cpython-37.pyc
 _Versions.xlsx
 
 pylib/ampl_collector_old.py
+
+ESMY/STEP_2_Pathway_Model/PESMO_RL.mod
+
+ESMY/STEP_2_Pathway_Model_SMR/

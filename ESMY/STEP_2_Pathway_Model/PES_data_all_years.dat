@@ -41,7 +41,7 @@ set END_USES_TYPES_OF_CATEGORY["MOBILITY_PASSENGER"] :=	MOB_PUBLIC	MOB_PRIVATE;
 set END_USES_TYPES_OF_CATEGORY["MOBILITY_FREIGHT"] :=	MOB_FREIGHT_RAIL	MOB_FREIGHT_BOAT	MOB_FREIGHT_ROAD;																											
 set END_USES_TYPES_OF_CATEGORY["NON_ENERGY"] :=	AMMONIA	HVC	METHANOL	;																										
 																														
-set TECHNOLOGIES_OF_END_USES_TYPE["ELECTRICITY"] := 	NUCLEAR	CCGT	CCGT_AMMONIA	COAL_US	COAL_IGCC			PV	WIND_ONSHORE	WIND_OFFSHORE		HYDRO_RIVER		GEOTHERMAL;																
+set TECHNOLOGIES_OF_END_USES_TYPE["ELECTRICITY"] := 	NUCLEAR	CCGT	CCGT_AMMONIA	COAL_US	COAL_IGCC			PV	WIND_ONSHORE	WIND_OFFSHORE		HYDRO_RIVER		GEOTHERMAL NUCLEAR_SMR;																
 set TECHNOLOGIES_OF_END_USES_TYPE["HEAT_HIGH_T"] := 	IND_COGEN_GAS	IND_COGEN_WOOD	IND_COGEN_WASTE	IND_BOILER_GAS	IND_BOILER_WOOD	IND_BOILER_OIL	IND_BOILER_COAL	IND_BOILER_WASTE	IND_DIRECT_ELEC;																					
 set TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DHN"] := 	DHN_HP_ELEC	DHN_COGEN_GAS	DHN_COGEN_WOOD	DHN_COGEN_WET_BIOMASS	DHN_COGEN_BIO_HYDROLYSIS	DHN_COGEN_WASTE	DHN_BOILER_GAS	DHN_BOILER_WOOD	DHN_BOILER_OIL	DHN_DEEP_GEO	DHN_SOLAR		;																	
 set TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] := 	DEC_HP_ELEC	DEC_THHP_GAS	DEC_COGEN_GAS	DEC_COGEN_OIL	DEC_ADVCOGEN_GAS	DEC_ADVCOGEN_H2	DEC_BOILER_GAS	DEC_BOILER_WOOD	DEC_BOILER_OIL	DEC_SOLAR	DEC_DIRECT_ELEC;																			
@@ -114,9 +114,9 @@ param diff_2015_phase :=
 2040_2045 27.5																														
 2045_2050 32.5; 																														
 																														
-param	limit_LT_renovation	:=	0.33	;#25% of refurbishment per period (5years) 																										
-param	limit_pass_mob_changes	:=	0.5	;#25% of refurbishment per period (5years) 																										
-param	limit_freight_changes	:=	0.5	;#25% of refurbishment per period (5years) 																										
+param	limit_LT_renovation	:=	0.33	;#33% of refurbishment per period (5years) 																										
+param	limit_pass_mob_changes	:=	0.5	;#50% of refurbishment per period (5years) 																										
+param	limit_freight_changes	:=	0.5	;#50% of refurbishment per period (5years) 																										
 																														
 param c_grid_extra :=	3.68E+02	;	# cost to reinforce the grid due to intermittent renewable energy penetration. See 2.2.2																											
 																														
