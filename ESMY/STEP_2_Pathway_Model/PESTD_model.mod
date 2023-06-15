@@ -101,7 +101,7 @@ param electricity_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_elec [-]: fa
 param heating_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_sh [-]: factor for sharing space heating across typical days (adding up to 1)
 param mob_pass_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_pass [-]: factor for sharing passenger transportation across Typical days (adding up to 1) based on https://www.fhwa.dot.gov/policy/2013cpr/chap1.cfm
 param mob_freight_time_series {HOURS, TYPICAL_DAYS} >= 0, <= 1; # %_fr [-]: factor for sharing freight transportation across Typical days (adding up to 1)
-param c_p_t {TECHNOLOGIES, HOURS, TYPICAL_DAYS} default 1; #Hourly capacity factor [-]. If = 1 (default value) <=> no impact.
+param c_p_t {YEARS, TECHNOLOGIES, HOURS, TYPICAL_DAYS} default 1; #Hourly capacity factor [-]. If = 1 (default value) <=> no impact.
 
 ## Parameters added to define scenarios and technologies [Table 2]
 param end_uses_demand_year {YEARS, END_USES_INPUT, SECTORS} >= 0 default 0; # end_uses_year [GWh]: table end-uses demand vs sectors (input to the model). Yearly values. [Mpkm] or [Mtkm] for passenger or freight mobility.
@@ -305,7 +305,7 @@ subject to size_limit {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
 	
 # [Eq. 10] relation between power and capacity via period capacity factor. This forces max hourly output (e.g. renewables)
 subject to capacity_factor_t {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES, h in HOURS, td in TYPICAL_DAYS}:
-	F_t [y,j, h, td] <= F [y,j] * c_p_t [j, h, td];
+	F_t [y,j, h, td] <= F [y,j] * c_p_t [y, j, h, td];
 	
 # [Eq. 11] relation between mult_t and mult via yearly capacity factor. This one forces total annual output
 subject to capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES}:
@@ -418,7 +418,7 @@ subject to Freight_shares {y in YEARS_WND diff YEAR_ONE} :
 
 # [Eq. 26] relation between decentralised thermal solar power and capacity via period capacity factor.
 subject to thermal_solar_capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, h in HOURS, td in TYPICAL_DAYS}:
-	F_t_solar [y, j, h, td] <= F_solar[y, j] * c_p_t["DEC_SOLAR", h, td];
+	F_t_solar [y, j, h, td] <= F_solar[y, j] * c_p_t[y, "DEC_SOLAR", h, td];
 	
 # [Eq. 27] Overall thermal solar is the sum of specific thermal solar 	
 subject to thermal_solar_total_capacity {y in YEARS_WND diff YEAR_ONE}:
