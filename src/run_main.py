@@ -6,9 +6,13 @@ Created on Mon May 17 10:21 2021
 """
 
 import os, sys
+from os import system
 from pathlib import Path
 import webbrowser
 import time
+import rheia.UQ.uncertainty_quantification as rheia_uq
+import multiprocessing as mp
+import pickle as pkl
 
 curr_dir = Path(os.path.dirname(__file__))
 
@@ -19,14 +23,37 @@ from ampl_object import AmplObject
 from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 from ampl_graph import AmplGraph
+from ampl_uq_graph import AmplUQGraph
 
-type_of_model = 'MO'
+
+type_of_model = 'TD'
 nbr_tds = 12
+
+
+SMR = False
+gwp_budget = True
+if gwp_budget:
+    budget_iso_lin = False
+    
+CO2_neutrality_2050 = False
+
+run_opti = True
+deterministic = False
+graph = False
+graph_comp = False
+
+if run_opti:
+    if not(deterministic):
+        case_study_uq = 'run_2_gwp_budget_isoRL_moret_smr_2_1.5_MO'
 
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
 
-pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
+if SMR:
+    pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model_SMR')
+else:
+    pth_model = os.path.join(pth_esmy,'STEP_2_Pathway_Model')
+
 if type_of_model == 'MO':
     mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
                 os.path.join(pth_model,'PESMO_store_variables.mod'),
@@ -38,7 +65,7 @@ if type_of_model == 'MO':
 else:
     mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
             os.path.join(pth_model,'PESTD_store_variables.mod'),
-            os.path.join(pth_model,'PESTD_RL.mod'),
+            os.path.join(pth_model,'PESTD_RL/PESTD_RL_v8.mod'),
             os.path.join(pth_model,'PES_store_variables.mod')]
     mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
               os.path.join(pth_model,'fix.mod')]
@@ -79,10 +106,6 @@ ampl_options = {'show_stats': 1,
 ''' main script '''
 ###############################################################################
 
-run_opti = False
-graph = True
-graph_comp = True
-
 if __name__ == '__main__':
     
     ## Paths
@@ -98,8 +121,32 @@ if __name__ == '__main__':
         n_year_opti = N_year_opti[m]
         n_year_overlap = N_year_overlap[m]
         
-        case_study = '{}_{}_{}_gwp_limit_all_the_way'.format(type_of_model,n_year_opti,n_year_overlap)
-        expl_text = 'GWP limit all the way up to 2050, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+        if gwp_budget:
+            if SMR:
+                if budget_iso_lin:
+                    case_study = '{}_{}_{}_gwp_budget_isolin_SMR'.format(type_of_model,n_year_opti,n_year_overlap)
+                    expl_text = 'GWP budget_isolin with SMR from 2040 to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+                else:
+                    case_study = '{}_{}_{}_gwp_budget_SMR'.format(type_of_model,n_year_opti,n_year_overlap)
+                    expl_text = 'GWP budget with SMR from 2040 to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+            else:
+                if budget_iso_lin:
+                    case_study = '{}_{}_{}_gwp_budget_isolin'.format(type_of_model,n_year_opti,n_year_overlap)
+                    expl_text = 'GWP budget_isolin to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+                else:
+                    case_study = '{}_{}_{}_gwp_budget'.format(type_of_model,n_year_opti,n_year_overlap)
+                    expl_text = 'GWP budget to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+        else:
+            if SMR:
+                # case_study = '{}_{}_{}_gwp_limit_all_the_way_SMR_unlimited'.format(type_of_model,n_year_opti,n_year_overlap)
+                case_study = '{}_{}_{}_gwp_limit_all_the_way_SMR'.format(type_of_model,n_year_opti,n_year_overlap)
+                expl_text = 'GWP limit all the way up to 2050 with SMR from 2040, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+            else:
+                case_study = '{}_{}_{}_gwp_limit_all_the_way_TEST_c_p_t'.format(type_of_model,n_year_opti,n_year_overlap)
+                expl_text = 'GWP limit all the way up to 2050, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
+        if CO2_neutrality_2050:
+            case_study += '_CO2_neutrality_2050'
+            expl_text += ', CO2 neutrality by 2050'
         
         output_folder = os.path.join(pth_output_all,case_study)
         output_file = os.path.join(output_folder,'_Results.pkl')
@@ -120,34 +167,95 @@ if __name__ == '__main__':
                 
                 ampl = AmplObject(mod_1_path, mod_2_path, dat_path, ampl_options, type_model = type_of_model)
                 
-                
-                # ampl.set_params('gwp_limit_transition',1224935.4)
-                
-                # 1st column: gwp_trajectory for TD_PF with gwp_budget of 1224935.4ktCO2_eq for the transition
-                # 2nd column: linear gwp_trajectory starting in 2020 (Pathway paper)
-                # 3rd column: linear gwp_trajectory starting in 2015 (GL's thesis)
-                
-                # YEAR_2015 : xxx         xxx    156000
-                # YEAR_2020 : 123713.4258 121250 133715
-                # YEAR_2025 : 63610.12101 101610 111430
-                # YEAR_2030 : 39991.25308 81969 89145
-                # YEAR_2035 : 23792.18604 62328 66860
-                # YEAR_2040 : 23200.18966 42688 44575
-                # YEAR_2045 : 6090.469921 23047 22290
-                # YEAR_2050 : 3406.924541 3406.92 3406.92
-                
-                
-                ampl.set_params('gwp_limit',{('YEAR_2020'):123713.4258}) 
-                ampl.set_params('gwp_limit',{('YEAR_2025'):63610.12101}) 
-                ampl.set_params('gwp_limit',{('YEAR_2030'):39991.25308})  
-                ampl.set_params('gwp_limit',{('YEAR_2035'):23792.18604}) 
-                ampl.set_params('gwp_limit',{('YEAR_2040'):23200.18966}) 
-                ampl.set_params('gwp_limit',{('YEAR_2045'):6090.469921}) 
-                ampl.set_params('gwp_limit',{('YEAR_2050'):3406.924541})
-                
-                solve_result = ampl.run_ampl()
-                
-                ampl.get_results()
+                if gwp_budget:
+                    if budget_iso_lin:
+                        ampl.set_params('gwp_limit_transition',1991102.29892735)
+                    else:
+                        ampl.set_params('gwp_limit_transition',1224935.4)
+                else:
+                    
+                    # 1st column: gwp_trajectory for TD_PF with gwp_budget of 1224935.4ktCO2_eq for the transition
+                    # 2nd column: linear gwp_trajectory starting in 2020 (Pathway paper). To avoid having H2_RE in the mix in 2020, comment the line related to gwp_limit in YEAR_2020. The TotalGWP in 2020 will be ~123737
+                    # 3rd column: linear gwp_trajectory starting in 2015 (GL's thesis)
+                    
+                    # YEAR_2015 : xxx         xxx    156000
+                    # YEAR_2020 : 123713.4258 121250 133715
+                    # YEAR_2025 : 63610.12101 101610 111430
+                    # YEAR_2030 : 39991.25308 81969 89145
+                    # YEAR_2035 : 23792.18604 62328 66860
+                    # YEAR_2040 : 23200.18966 42688 44575
+                    # YEAR_2045 : 6090.469921 23047 22290
+                    # YEAR_2050 : 3406.924541 3406.92 3406.92
+
+                    ampl.set_params('gwp_limit',{('YEAR_2020'):121250}) 
+                    ampl.set_params('gwp_limit',{('YEAR_2025'):101610}) 
+                    ampl.set_params('gwp_limit',{('YEAR_2030'):81969})  
+                    ampl.set_params('gwp_limit',{('YEAR_2035'):62328}) 
+                    ampl.set_params('gwp_limit',{('YEAR_2040'):42688}) 
+                    ampl.set_params('gwp_limit',{('YEAR_2045'):23047}) 
+                    ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
+                    
+                if CO2_neutrality_2050:
+                    ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
+                    
+                if deterministic:                
+                    solve_result = ampl.run_ampl()
+                    ampl.get_results()
+                else:
+                    pol_order = 2
+                    dict_uq = {'case':'ES_PATHWAY',
+                            'n jobs':                1,
+                            'pol order':             pol_order,
+                            'objective names':       ['total_transition_cost'],
+                            'objective of interest': 'total_transition_cost',
+                            'draw pdf cdf':          [True, 1e5],
+                            'results dir':           case_study_uq,
+                            'ampl_obj':               [mod_1_path, mod_2_path, dat_path, ampl_options, type_of_model],
+                            'ampl_collector':       ampl_collector
+                            }
+                    
+                    folder = '/Users/xrixhon/.pyenv/versions/3.7.6/lib/python3.7/site-packages/rheia/RESULTS/ES_PATHWAY/UQ/'
+                    if not(Path(os.path.join(folder,case_study_uq,'samples.csv')).is_file()):
+                        rheia_uq.run_uq(dict_uq, design_space = 'design_space.csv')
+                    elapsed = time.time()-t
+                    print('Time to solve the whole problem: ',elapsed)
+                    
+                    result_dir = ['run_2_gwp_budget_isoRL_moret_smr_2_1.5_MO_full',
+                                  'run_2_gwp_budget_isoRL_moret_smr_2_1.5_TD']
+                    ref_case = 'TD_30_0_gwp_budget'
+                    ampl_uq_graph = AmplUQGraph(case_study_uq,ampl_0,ref_case,result_dir_comp = result_dir, pol_order=pol_order)
+                    # ampl_uq_graph.graph_sobol()
+                    # ampl_uq_graph.graph_pdf()
+                    # ampl_uq_graph.graph_cdf()
+                    # ampl_uq_graph.graph_tech_cap()
+                    # ampl_uq_graph.graph_layer()
+                    
+                    elements = ['H2_ELECTROLYSIS',
+                                'CCGT_AMMONIA',
+                                'SYN_METHANOLATION',
+                                'METHANE_TO_METHANOL',
+                                'NUCLEAR_SMR',
+                                'BIOMETHANATION',
+                                'BIO_HYDROLYSIS']
+                    outputs = ['F'] * len(elements)
+                    
+                    elements_2 = [['AMMONIA_RE','AMMONIA'],
+                                ['GAS_RE','GAS'],
+                                ['H2_RE','H2'],
+                                ['METHANOL_RE','METHANOL']]
+                    elements += elements_2
+                    
+                    outputs += ['Ft'] * len(elements_2)
+                    
+                    
+                    years = ['YEAR_2050'] * len(elements)
+                    ampl_uq_graph.get_spec_output(dict_uq,outputs,elements,years,focus='High',calc_Sobol=False)
+                    ampl_uq_graph.get_spec_output(dict_uq,outputs,elements,years,focus='Low',calc_Sobol=False)
+                    
+                    # ampl_uq_graph.get_spec_sample(224)
+                    
+                    
+                    break
                 
                 if i==0: 
                     ampl_collector.init_storage(ampl)
@@ -169,37 +277,47 @@ if __name__ == '__main__':
                     print('Time to solve the whole problem: ',elapsed)
                     ampl_collector.clean_collector()
                     ampl_collector.pkl()
-                    
-                    A = 4
-                    
                     break
         if graph:
             ampl_graph = AmplGraph(output_file, ampl_0, case_study)
             a_website = "https://www.google.com"
             # webbrowser.open_new(a_website)
-            ampl_graph.graph_resource()
-            ampl_graph.graph_cost()
-            ampl_graph.graph_gwp_per_sector()
-            ampl_graph.graph_cost_inv_phase_tech()
-            ampl_graph.graph_cost_return()
-            ampl_graph.graph_cost_op_phase()
+            # ampl_graph.graph_resource()
+            # ampl_graph.graph_cost()
+            # ampl_graph.graph_gwp_per_sector()
+            # ampl_graph.graph_cost_inv_phase_tech()
+            # ampl_graph.graph_cost_return()
+            # ampl_graph.graph_cost_op_phase()
             
             ampl_graph.graph_layer()
-            ampl_graph.graph_gwp()
+            # ampl_graph.graph_gwp()
             ampl_graph.graph_tech_cap()
-            ampl_graph.graph_total_cost_per_year()
-            ampl_graph.graph_load_factor()
-            df_unused = ampl_graph.graph_load_factor_scaled()
-            ampl_graph.graph_new_old_decom()
+            # ampl_graph.graph_total_cost_per_year()
+            # ampl_graph.graph_load_factor()
+            # df_unused = ampl_graph.graph_load_factor_scaled()
+            # ampl_graph.graph_new_old_decom()
             
-            ampl_graph.graph_paper()
+            # ampl_graph.graph_paper()
             
         if graph_comp:
             ampl_graph = AmplGraph(output_file, ampl_0,case_study)
             
             
             # Reference case: TD-Perfect foresight
-            case_study_1 = '{}_{}_{}_gwp_limit_all_the_way'.format('TD',30,0)
+            if gwp_budget:
+                if  SMR or CO2_neutrality_2050:
+                    if budget_iso_lin:
+                        case_study_1 = '{}_{}_{}_gwp_budget_isolin'.format('TD',30,0)
+                    else:
+                        case_study_1 = '{}_{}_{}_gwp_budget'.format('TD',30,0)
+                else:
+                    if budget_iso_lin:
+                        case_study_1 = '{}_{}_{}_gwp_budget_isolin'.format('TD',30,0)
+                    else:
+                        case_study_1 = '{}_{}_{}_gwp_budget'.format('TD',30,0) 
+            else:
+                case_study_1 = '{}_{}_{}_gwp_limit_all_the_way'.format('TD',30,0)
+
             output_folder_1 = os.path.join(pth_output_all,case_study_1)
             output_file_1 = os.path.join(output_folder_1,'_Results.pkl')
             

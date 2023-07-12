@@ -28,8 +28,8 @@ class AmplCollector:
 
     Parameters
     ----------
-    ampl_obj : AmplObject object of ampl_object module
-        Ampl object containing the optimisation problem and its attributes
+    ampl_pre : AmplPreprocessor object of ampl_preprocessor module
+        Ampl Preprocessor containing an Ampl object and its sets
     output_file : pathlib.Path
         Path towards the output file where to pickle the results
     expl_text : String
@@ -95,25 +95,26 @@ class AmplCollector:
         for k in self.results:
             self.results[k].dropna(how='all',inplace=True)
 
-    def pkl(self):
+    def pkl(self, write_in_recap = True):
 
-        case_name = os.path.basename(os.path.normpath(Path(self.output_file).parent))
-        recap_file = os.path.join(self.pth_output_all,'_Recap.csv')
-        t = datetime.fromtimestamp(time())
-        if not os.path.exists(Path(recap_file)):
-            Path(recap_file).parent.mkdir(parents=True,exist_ok=True)
-            with open(recap_file,'w+') as f:
-                writer = csv.writer(f)
-                writer.writerow(['Case_study','Comment','Date_Time'])
-        df = pd.read_csv(recap_file)
-        if case_name in df.Case_study.values:
-            df.loc[df['Case_study'] == case_name,'Comment'] = self.expl_text
-            df.loc[df['Case_study'] == case_name,'Date_Time'] = t
-            df.to_csv(recap_file, index=False)                                              
-        else:
-            with open(recap_file, 'a') as f:
-                writer = csv.writer(f)
-                writer.writerow([case_name,self.expl_text,t])
+        if write_in_recap:        
+            case_name = os.path.basename(os.path.normpath(Path(self.output_file).parent))
+            recap_file = os.path.join(self.pth_output_all,'_Recap.csv')
+            t = datetime.fromtimestamp(time())
+            if not os.path.exists(Path(recap_file)):
+                Path(recap_file).parent.mkdir(parents=True,exist_ok=True)
+                with open(recap_file,'w+') as f:
+                    writer = csv.writer(f)
+                    writer.writerow(['Case_study','Comment','Date_Time'])
+            df = pd.read_csv(recap_file)
+            if case_name in df.Case_study.values:
+                df.loc[df['Case_study'] == case_name,'Comment'] = self.expl_text
+                df.loc[df['Case_study'] == case_name,'Date_Time'] = t
+                df.to_csv(recap_file, index=False)                                              
+            else:
+                with open(recap_file, 'a') as f:
+                    writer = csv.writer(f)
+                    writer.writerow([case_name,self.expl_text,t])
                 
         if not os.path.exists(Path(self.output_file).parent):
             os.makedirs(Path(self.output_file).parent)

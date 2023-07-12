@@ -53,6 +53,8 @@ import rl_esmy_graphs_v4
 import rl_esmy_graphs_v41
 import rl_esmy_graphs_v5
 import rl_esmy_graphs_v6
+import rl_esmy_graphs_v7
+import rl_esmy_graphs_v8
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.sac import SAC
@@ -62,8 +64,9 @@ from stable_baselines3.sac import SAC
 
 # #--------- Recovering passed arguments ---------#
 
-v = '6'
+v = '9'
 policy = 'MlpPolicy'
+type_of_model = 'MO'
 gamma = 1
 act_fun = torch.nn.modules.activation.ReLU
 layers = [16,16]
@@ -73,13 +76,13 @@ layers = [16,16]
 total_timesteps = 10000
 batch_timesteps = 500
 
-rundir = '2023_02_02-11_08_29'
+rundir = '2023_04_26-14_28_05'
 out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
 
-learning_from_scratch = False
-keep_on_learning = True
-fill_df = True
-plot = True
+learning_from_scratch = True
+keep_on_learning = False
+fill_df = False
+plot = False
 
 if learning_from_scratch:
     nb_done = 0
@@ -118,7 +121,8 @@ if learning_from_scratch:
         print('Creating out_dir {}'.format(out_dir_batch))
         system('mkdir -p {}'.format(out_dir_batch))
     
-    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, type_of_model=type_of_model new_step_api=False)
+    env = gym.make('esmy-v{}'.format(v),out_dir=out_dir, v=v, type_of_model=type_of_model, new_step_api=False)
     env     = DummyVecEnv([lambda:env])
     model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=100)
     mymodel = out_dir_batch+"test0"
@@ -142,7 +146,9 @@ if learning_from_scratch:
         sys.stdout = open(out_dir_batch+'stdout','w')
     
         it0 = total_timesteps - remain_steps
-        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+
+        # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+        env = gym.make('esmy-v{}'.format(v),out_dir=out_dir, v=v, type_of_model=type_of_model, new_step_api=False)
         
         env     = DummyVecEnv([lambda:env])
         
@@ -190,7 +196,8 @@ if keep_on_learning:
     
     mymodel = batches_dir+'batch{}/test{}'.format(nb_done,nb_done)
     
-    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    env = gym.make('esmy-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model,new_step_api=False)
     env     = DummyVecEnv([lambda:env])
     model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=100)
     model.set_parameters(mymodel)
@@ -207,7 +214,8 @@ if keep_on_learning:
         sys.stdout = open(out_dir_batch+'stdout','w')
     
         it0 = total_timesteps - remain_steps
-        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+        # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+        env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model, new_step_api=False)
         
         env     = DummyVecEnv([lambda:env])
         
@@ -243,7 +251,8 @@ if keep_on_learning:
     
 
 if fill_df:
-    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model, new_step_api=False)
     lst_files = os.listdir(out_dir)
     txt_files = [x for x in lst_files if x.endswith('.txt')]
     txt_files.remove('set_up.txt')
@@ -255,7 +264,6 @@ if fill_df:
     lst_act = ['act_{}'.format(i) for i in range(1,nb_act+1)]
     columns = ['step']
     columns += ['cum_gwp','gwp_2020','gwp_2025','gwp_2030','gwp_2035','gwp_2040','gwp_2045','gwp_2050']
-    # columns += ['RE_installed','elec_LT_heat','elec_HT_heat','fperc_BEV']
     columns += ['RE_in_mix_2020', 'RE_in_mix_2025', 'RE_in_mix_2030', 'RE_in_mix_2035', 'RE_in_mix_2040', 'RE_in_mix_2045', 'RE_in_mix_2050']
     columns += ['Energy_efficiency_2020', 'Energy_efficiency_2025', 'Energy_efficiency_2030', 'Energy_efficiency_2035', 'Energy_efficiency_2040', 'Energy_efficiency_2045', 'Energy_efficiency_2050']
     columns += ['cum_cost','cost_2020','cost_2025','cost_2030','cost_2035','cost_2040','cost_2045','cost_2050']
@@ -263,7 +271,7 @@ if fill_df:
     columns += ['reward','status_2050','batch', 'episode']
     df_learning = pd.DataFrame(columns=columns)
     nb_batch = len(next(os.walk(out_dir+'_batchs'))[1])-1
-    df_learning = rl_esmy_stats.fill_df(out_dir+'_batchs/', df_learning,nb_batch)
+    df_learning = rl_esmy_stats.fill_df_learning(out_dir+'_batchs/', df_learning, nb_batch)
     df_learning = df_learning.reset_index().iloc[:,1:]
     df_learning = rl_esmy_stats.updated_status_2050(df_learning)
     open_file = open(out_dir+'df_learning_pkl',"wb")
@@ -271,6 +279,15 @@ if fill_df:
     open_file.close()
 
 if plot:
+    # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
+    env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model, new_step_api=False)
+    lst_files = os.listdir(out_dir)
+    txt_files = [x for x in lst_files if x.endswith('.txt')]
+    txt_files.remove('set_up.txt')
+    if 'READ_ME.txt' in txt_files:
+        txt_files.remove('READ_ME.txt')
+    for f in txt_files:
+        system('rm {}{}'.format(out_dir,f))
     
     df_learning = open(out_dir+'df_learning_pkl','rb')
     df_learning = pkl.load(df_learning)
@@ -286,7 +303,9 @@ if plot:
                 '4':rl_esmy_graphs_v4,
                 '41':rl_esmy_graphs_v41,
                 '5':rl_esmy_graphs_v5,
-                '6':rl_esmy_graphs_v6}
+                '6':rl_esmy_graphs_v6,
+                '7':rl_esmy_graphs_v7,
+                '8':rl_esmy_graphs_v8}
     
     grph_mth = switcher.get(str(v))
     
@@ -294,26 +313,30 @@ if plot:
         os.makedirs(out_dir+ '_graphs')
     
     
-    grph_mth.reward_plus_plus(df_learning,out_dir,type_graph='act')
-    grph_mth.gif(out_dir, type_graph='pdf_rew_act')
+    # grph_mth.reward_plus_plus(df_learning,out_dir,env,type_graph='act')
+    # grph_mth.gif(out_dir, type_graph='pdf_rew_act')
     
-    grph_mth.reward_plus_plus(df_learning,out_dir,type_graph='cost_gwp')
-    grph_mth.gif(out_dir, type_graph='pdf_rew_cost_gwp')    
-    grph_mth.pdf_generator(df_learning,out_dir, type_graph='act')
-    grph_mth.gif(out_dir, type_graph='pdf_act')
+    # grph_mth.reward_plus_plus(df_learning,out_dir,env,type_graph='cost_gwp')
+    # grph_mth.gif(out_dir, type_graph='pdf_rew_cost_gwp') 
     
-    grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_gwp')
-    grph_mth.gif(out_dir,'pdf_cum_gwp')
+    # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act')
+    # grph_mth.gif(out_dir, type_graph='pdf_act')
+    
+    # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act_plus')
+    # grph_mth.gif(out_dir, type_graph='pdf_act_plus')    
+    
+    # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='cum_gwp')
+    # grph_mth.gif(out_dir,'pdf_cum_gwp')
 
-    grph_mth.pdf_generator(df_learning,out_dir, type_graph='cum_cost')
-    grph_mth.gif(out_dir,'pdf_cum_cost')
+    # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='cum_cost')
+    # grph_mth.gif(out_dir,'pdf_cum_cost')
     
-    grph_mth.pdf_generator(df_learning,out_dir, type_graph='obs')
+    grph_mth.pdf_generator(df_learning,out_dir,env, type_graph='obs')
     grph_mth.gif(out_dir,'pdf_obs')
     
-    grph_mth.reward_fig_plus(df_learning,out_dir)
+    # grph_mth.reward_fig_plus(df_learning,out_dir)
     
-    grph_mth.reward_fig(df_learning,out_dir)
+    # grph_mth.reward_fig(df_learning,out_dir)
     
     # rl_esmy_graphs.sp_generator(df_learning, out_dir)
     # rl_esmy_graphs.gif(out_dir,'sp')

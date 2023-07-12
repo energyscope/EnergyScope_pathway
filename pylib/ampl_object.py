@@ -171,7 +171,7 @@ class AmplObject:
         if len(self.ampl.get_parameter(name).instances()) == 1:
             self.ampl.get_parameter(name).set(1.0*value) # 1.0* aims to convert potential float32 into float64 that is compatible with ampl object
         else:
-            self.ampl.get_parameter(name).setValues(value)
+            self.ampl.get_parameter(name).set_values(value)
     
 
     def clean_history(self):
@@ -209,15 +209,19 @@ class AmplObject:
         
         return gwp_dict
     
-    def collect_cost(self,objective_name, years):
+    def collect_cost(self,objective_name, years=None):
         objective = self.ampl.get_objective(objective_name)
         objective = objective.value()
-
-        cost_dict = dict.fromkeys(years)
-        TotalCost = self.vars['TotalCost']
-
-        for y in years:
-            cost_dict[y] = TotalCost[y].value()
+        
+        if years != None:
+            cost_dict = dict.fromkeys(years)
+            TotalCost = self.vars['TotalCost']
+    
+            for y in years:
+                cost_dict[y] = TotalCost[y].value()
+        else:
+            cost_dict = []
+                    
         
         return [objective, cost_dict]
     

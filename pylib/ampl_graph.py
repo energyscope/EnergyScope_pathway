@@ -85,7 +85,7 @@ class AmplGraph:
         if ampl_collector == None:
             ampl_collector = self.ampl_collector
         
-        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','HEAT_HIGH_T',
+        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
                 'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
                 'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
                 'MOB_PUBLIC']
@@ -98,7 +98,7 @@ class AmplGraph:
             for y in results.index.get_level_values(0).unique():
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y,:] 
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y,threshold=0)
+                    temp_y = self._remove_low_values(temp_y, threshold=0.01)
                     df_to_plot.update(temp_y)
                     if not temp_y.empty:
                         temp_df = df_to_plot.reset_index()
@@ -134,12 +134,15 @@ class AmplGraph:
                 pio.show(fig)
             
                 title = "<b>{} - Layer balance</b><br>[TWh]".format(k)
-                if k in ['GAS','H2','WOOD']:
+                if k in ['GAS','H2','WOOD','WET_BIOMASS']:
                     EUD_2020 = 0
                     EUD_2050 = 0
                 else:
                     EUD_2020 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') & (df_to_plot['Years']=='2020')][k].values[0]
-                    EUD_2050 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') & (df_to_plot['Years']=='2050')][k].values[0]
+                    if k in ['METHANOL']:
+                        EUD_2050 = EUD_2020
+                    else:
+                        EUD_2050 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') & (df_to_plot['Years']=='2050')][k].values[0]
                     
                 temp_pos = df_to_plot[df_to_plot[k]>0]
                 temp_pos = temp_pos.groupby(['Years']).sum()
@@ -1196,6 +1199,7 @@ class AmplGraph:
                     result_1[k] = result_1[k].set_index(['Years','Elements'])
                     df_to_plot[k] = pd.DataFrame(result_1[k][k].sub(result_0[k][k],fill_value=0))
                     df_to_plot[k]['Type'] = result_0[k]['Type']
+                    df_to_plot[k].loc[df_to_plot[k]['Type'].isnull(),'Type'] = result_1[k].loc[df_to_plot[k]['Type'].isnull()]['Type']
                 else:
                     result_0_k = result_0[k].set_index(['Years','Technologies','var'])
                     result_1_k = result_1[k].set_index(['Years','Technologies','var'])
@@ -1292,6 +1296,14 @@ class AmplGraph:
                           color_discrete_map=self.color_dict_full,markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
+            
+            title = "<b>GWP per sector difference versus PF</b><br>[MtCO2/y]"
+            yvals = [round(min(df_to_plot['GWP_EUD']),1),0,
+                     round(max(df_to_plot['GWP_EUD']),1)]
+            
+            self.custom_fig(fig,title,yvals,neg_value=True)
+            
+            
             fig.write_image(self.outdir+"GWP_per_sector_Diff_PF.pdf", width=1200, height=550)
             plt.close()
             
@@ -1590,7 +1602,7 @@ class AmplGraph:
         color_dict = {}
         
         if category == 'Electricity':
-            color_dict = {"NUCLEAR":"deeppink", "CCGT":"darkorange", "CCGT_AMMONIA":"slateblue", "COAL_US" : "black", "COAL_IGCC" : "dimgray", "PV" : "yellow", "WIND_ONSHORE" : "lawngreen", "WIND_OFFSHORE" : "green", "HYDRO_RIVER" : "blue", "GEOTHERMAL" : "firebrick", "ELECTRICITY" : "dodgerblue"}
+            color_dict = {"NUCLEAR":"deeppink", "NUCLEAR_SMR": "deeppink", "CCGT":"darkorange", "CCGT_AMMONIA":"slateblue", "COAL_US" : "black", "COAL_IGCC" : "dimgray", "PV" : "yellow", "WIND_ONSHORE" : "lawngreen", "WIND_OFFSHORE" : "green", "HYDRO_RIVER" : "blue", "GEOTHERMAL" : "firebrick", "ELECTRICITY" : "dodgerblue"}
         elif category == 'Heat_low_T':
             color_dict = {"DHN_HP_ELEC" : "blue", "DHN_COGEN_GAS" : "orange", "DHN_COGEN_WOOD" : "sandybrown", "DHN_COGEN_WASTE" : "olive", "DHN_COGEN_WET_BIOMASS" : "seagreen", "DHN_COGEN_BIO_HYDROLYSIS" : "springgreen", "DHN_BOILER_GAS" : "darkorange", "DHN_BOILER_WOOD" : "sienna", "DHN_BOILER_OIL" : "blueviolet", "DHN_DEEP_GEO" : "firebrick", "DHN_SOLAR" : "gold", "DEC_HP_ELEC" : "cornflowerblue", "DEC_THHP_GAS" : "lightsalmon", "DEC_COGEN_GAS" : "goldenrod", "DEC_COGEN_OIL" : "mediumpurple", "DEC_ADVCOGEN_GAS" : "burlywood", "DEC_ADVCOGEN_H2" : "violet", "DEC_BOILER_GAS" : "moccasin", "DEC_BOILER_WOOD" : "peru", "DEC_BOILER_OIL" : "darkorchid", "DEC_SOLAR" : "yellow", "DEC_DIRECT_ELEC" : "deepskyblue"}
         elif category == 'Heat_high_T':
