@@ -382,7 +382,7 @@ subject to network_losses {y in YEARS_WND diff YEAR_ONE, eut in END_USES_TYPES, 
 
 # [Eq. 21] Extra grid cost for integrating 1 GW of RE is estimated to 367.8Meuros per GW of intermittent renewable (27beuros to integrate the overall potential) 
 subject to extra_grid {y in YEARS_WND diff YEAR_ONE}:
-	F [y,"GRID"] = 1 +  (c_grid_extra / c_inv[y,"GRID"]) *(    (F [y, "WIND_ONSHORE"] + F [y, "WIND_OFFSHORE"] + F [y, "PV"]      )
+	F [y,"GRID"] >= 1 +  (c_grid_extra / c_inv[y,"GRID"]) *(    (F [y, "WIND_ONSHORE"] + F [y, "WIND_OFFSHORE"] + F [y, "PV"]      )
 					                                     - (f_min [y,"WIND_ONSHORE"] + f_min [y,"WIND_OFFSHORE"] + f_min [y,"PV"]) );
 
 
@@ -422,7 +422,7 @@ subject to thermal_solar_capacity_factor {y in YEARS_WND diff YEAR_ONE, j in TEC
 	
 # [Eq. 27] Overall thermal solar is the sum of specific thermal solar 	
 subject to thermal_solar_total_capacity {y in YEARS_WND diff YEAR_ONE}:
-	F [y, "DEC_SOLAR"] = sum {j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}} F_solar[y, j];
+	F [y, "DEC_SOLAR"] >= sum {j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}} F_solar[y, j];
 
 # [Eq. 28]: Decentralised thermal technology must supply a constant share of heat demand.
 subject to decentralised_heating_balance  {y in YEARS_WND diff YEAR_ONE, j in TECHNOLOGIES_OF_END_USES_TYPE["HEAT_LOW_T_DECEN"] diff {"DEC_SOLAR"}, i in TS_OF_DEC_TECH[j], h in HOURS, td in TYPICAL_DAYS}:
