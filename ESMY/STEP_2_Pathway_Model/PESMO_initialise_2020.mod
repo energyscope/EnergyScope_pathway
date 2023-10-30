@@ -25,6 +25,12 @@ subject to no_elec_import_2020: sum {t in PERIODS} (   F_t ['YEAR_2020','ELECTRI
 subject to bioethanol_2020: sum {t in PERIODS} (F_t ['YEAR_2020','BIOETHANOL', t] * t_op[t] ) = 1504.9;# 129.4 ktoe = >
 subject to biodiesel_2020: sum {t in PERIODS} (F_t ['YEAR_2020','BIODIESEL', t] * t_op[t] ) = 4139.1;# 355.9 ktoe = >
 
+### No import of electrofuels in 2020
+subject to no_H2_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2020','H2_RE', t] * t_op[t] ) = 0.0;
+subject to no_GAS_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2020','GAS_RE', t] * t_op[t] ) = 0.0;
+subject to no_AMMONIA_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2020','AMMONIA_RE', t] * t_op[t] ) = 0.0;
+subject to no_METHANOL_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2020','METHANOL_RE', t] * t_op[t] ) = 0.0;
+
 ### Production of biomethane
 # SOURCE: https://www.cng-mobility.ch/wp-content/uploads/2020/09/EBA-Conference-1-Sept-2020-Dirk-Focroul.pdf
 subject to biogas_2020: sum {t in PERIODS} (F_t ['YEAR_2020','BIOMETHANATION', t] * t_op[t] )  = 2500;
