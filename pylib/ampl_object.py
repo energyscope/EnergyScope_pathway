@@ -71,7 +71,8 @@ class AmplObject:
                                       'Cost_breakdown', 'Cost_return', 
                                       'TotalGwp','Gwp_breakdown', 'Resources',
                                       'Assets', 'New_old_decom',
-                                      'F_decom','Sto_assets', 'Year_balance'])
+                                      'F_decom','Sto_assets', 'Year_balance',
+                                      'Transition_cost','C_tot_capex','C_tot_opex'])
 
         # Store names of sets
         self.get_sets()
@@ -97,7 +98,10 @@ class AmplObject:
         except Exception as e:
             print(e)
             raise
-        return self.ampl.getData('solve_result;').toList()[0]
+        solve_result = self.ampl.getData('solve_result;').toList()[0]
+        solve_result_num  = self.ampl.getData('solve_result_num;').toList()[0]
+        return solve_result, solve_result_num;
+        # return self.ampl.getData('solve_result;').toList()[0]
     """
 
     Function to of the LP optimization problem
@@ -224,6 +228,36 @@ class AmplObject:
                     
         
         return [objective, cost_dict]
+    
+    def set_f_min(self,assets):
+        assets.loc[assets < 0] = 0
+        assets = pd.DataFrame(assets)
+        f_max = self.get_elem('f_max',type_of_elem='Param').copy()
+        
+        assets.reset_index(inplace=True)
+        assets = assets.astype({'Years':str,'Technologies':str})
+        assets = assets.set_index(['Years','Technologies'])
+        f_max.reset_index(inplace=True)
+        f_max = f_max.astype({'Years':str,'Technologies':str})
+        f_max = f_max.set_index(['Years','Technologies'])
+        
+        temp = f_max['f_max'] - assets['F']
+        temp = -temp.loc[temp < 0]
+        temp = pd.DataFrame(temp)
+        temp = temp.rename(columns={0:assets.columns[0]})
+        
+        temp.reset_index(inplace=True)
+        temp = temp.astype({'Years':str,'Technologies':str})
+        temp = temp.set_index(['Years','Technologies'])
+        temp = assets-temp
+        assets.update(temp)
+        assets.loc[assets.index.get_level_values('Technologies') == 'DEC_SOLAR',:] = 0
+        assets.loc[assets.index.get_level_values('Technologies') == 'DHN_SOLAR',:] = 0
+        
+        solar_area = self.get_elem('solar_area',type_of_elem='Param')*1.05
+        
+        self.set_params('f_min',assets)
+        self.set_params('solar_area',solar_area)
     
     #############################
     #       STATIC METHODS      #
@@ -476,6 +510,32 @@ class AmplObject:
         c_op_phase_res = c_op_phase_res.set_index(['Phases','Resources'])
         c_op_phase_res.sort_index(inplace=True)
         self.results['C_op_phase_res'] = c_op_phase_res
+        
+        transition_cost = self.ampl.get_objective('TotalTransitionCost')
+        transition_cost = transition_cost.value()
+        year = self.sets['YEARS_WND'][-1]
+        transition_cost = pd.DataFrame([transition_cost],index=[year])
+        transition_cost = transition_cost.reset_index()
+        transition_cost = transition_cost.rename(columns={'index':'Years',0:'Transition_cost'})
+        transition_cost.set_index(['Years'],inplace=True)
+        self.results['Transition_cost'] = transition_cost
+        
+        C_tot_capex = self.get_elem('C_tot_capex')
+        year = self.sets['YEARS_WND'][-1]
+        C_tot_capex = C_tot_capex.reset_index()
+        C_tot_capex = C_tot_capex.rename(columns={'index':'Years'})
+        C_tot_capex.Years = year
+        C_tot_capex.set_index(['Years'],inplace=True)
+        self.results['C_tot_capex'] = C_tot_capex
+        
+        C_tot_opex = self.get_elem('C_tot_opex')
+        year = self.sets['YEARS_WND'][-1]
+        C_tot_opex = C_tot_opex.reset_index()
+        C_tot_opex = C_tot_opex.rename(columns={'index':'Years'})
+        C_tot_opex.Years = year
+        C_tot_opex.set_index(['Years'],inplace=True)
+        self.results['C_tot_opex'] = C_tot_opex
+        
         
         
         return

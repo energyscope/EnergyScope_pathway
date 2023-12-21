@@ -37,7 +37,7 @@ class AmplCollector:
 
     """
 
-    def __init__(self, ampl_pre, output_file, expl_text):
+    def __init__(self, ampl_pre, output_file, expl_text = ''):
 
         self.ampl_pre = ampl_pre
         self.pth_output_all = Path(output_file).parent.parent
@@ -56,7 +56,7 @@ class AmplCollector:
 
         for k in self.results:
             result = ampl_obj.results[k]
-            if k in ['TotalCost','TotalGwp']:
+            if k in ['TotalCost','TotalGwp','Transition_cost','C_tot_capex','C_tot_opex']:
                 self.results[k] = pd.DataFrame(index=Years,columns=result.columns)
             elif k == 'Cost_return':
                 index_elem = result.index.get_level_values(1).unique()
