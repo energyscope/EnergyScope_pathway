@@ -28,11 +28,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class EsmyV9(gym.Env):
+class EsmyV10(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):
-        print("Initializing the EsmyV9", flush=True)
+        print("Initializing the EsmyV10", flush=True)
 
         out_dir = kwargs['out_dir']
         self.v = kwargs['v']
@@ -56,6 +56,11 @@ class EsmyV9(gym.Env):
         self.target_2035 = 86445
         self.n_year_opti = 10
         self.n_year_overlap = 5
+
+        # self.carbon_budget = 1756703.8 #Linear decrease between 106600kt_CO2_eq in 2020 (from EC Trends towards 2050) and 3406.92 (from Gauthier)
+        self.carbon_budget = 1224935.4 #Infered from CO2_eq-emissions of Belgium in 2020 (~95Mt), of world in 2020 (34.81Gt, from ourworldindata) and world carbon budget (420Gt, from climate analytics)
+
+        self.cost_budget = 1.1e6
 
         self.skip = 123454 # For sample generation
 
@@ -105,7 +110,8 @@ class EsmyV9(gym.Env):
                         'method = 2', # 2 is for barrier method
                         'crossover=0',
                         'prepasses = 3',
-                        'barconvtol=1e-6',                
+                        'barconvtol=1e-6',
+                        'feastol=1e-6',
                         'presolve=-1'] # Not a good idea to put it to 0 if the model is too big
 
         self.gurobi_options_str = ' '.join(self.gurobi_options)
@@ -124,12 +130,6 @@ class EsmyV9(gym.Env):
         self.ampl_obj_0 = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options, type_model = self.type_of_model)
         self.ampl_obj_0.clean_history()
         self.ampl_pre = AmplPreProcessor(self.ampl_obj_0, self.n_year_opti, self.n_year_overlap)
-
-
-        # self.carbon_budget = 1756703.8 #Linear decrease between 106600kt_CO2_eq in 2020 (from EC Trends towards 2050) and 3406.92 (from Gauthier)
-        self.carbon_budget = 1224935.4 #Infered from CO2_eq-emissions of Belgium in 2020 (106.6Mt), of world in 2020 (34.81Gt, from ourworldindata) and world carbon budget (400Gt, from climate analytics)
-
-        self.cost_budget = 1.2e6
 
         self.gwp_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
         self.cost_per_year = dict.fromkeys(self.ampl_obj_0.sets['YEARS'],0.0)
@@ -179,12 +179,14 @@ class EsmyV9(gym.Env):
 
         #----------------------- Action space ----------------------#
 
-        self.max_gwp_limit = 2*[1.0] #123000 ktCO2
-        self.min_gwp_limit = 2*[0.0] #3406 ktCO2
+        self.max_gwp_limit = [1.0] #123000 ktCO2 --> Status 2020
+        self.min_gwp_limit = [0.0] #3406 ktCO2 --> Objectif 2050
 
-        actlow = np.array(self.min_gwp_limit)
-        acthigh = np.array(self.max_gwp_limit)
+        self.max_fossil = 3*[1.0]
+        self.min_fossil = 3*[0.0]
 
+        actlow = np.array(self.min_gwp_limit+self.min_fossil)
+        acthigh = np.array(self.max_gwp_limit+self.max_fossil)
 
         self.actlow = actlow
         self.acthigh  = acthigh
@@ -194,11 +196,16 @@ class EsmyV9(gym.Env):
 
 
         self.action_space = spaces.Box(low=self.actlow, high=self.acthigh, dtype=np.float32)
+        
+        # Name of the constraint impacted by the action in the model
+        self.constr = ['minimum_GWP_reduction','limit_use_gas','limit_use_lfo',
+                  'limit_use_coal']
 
         self.file_rew  = open('{}/reward.txt'.format(out_dir), 'w')
         self.file_observation = open('{}/observation.txt'.format(out_dir),'w')
         self.file_action = open('{}/action.txt'.format(out_dir),'w')
         self.file_cost = open('{}/cost.txt'.format(out_dir),'w')
+        self.file_binding = open('{}/binding.txt'.format(out_dir),'w')
 
 
 #------------------------------------------------------------------------------#
@@ -229,9 +236,8 @@ class EsmyV9(gym.Env):
         
         ampl_uq = AmplUQ(self.ampl_obj)
         
-        skip = self.skip+self.i_epoch+self.nb_done*100-1
+        sample = self.sample 
         
-        sample = ampl_uq.generate_one_sample(uq_exp = self.uq_experiment, skip=skip)
         years_wnd=['YEAR_2025','YEAR_2030','YEAR_2035','YEAR_2040','YEAR_2045','YEAR_2050']
         ampl_uq.transcript_uncertainties(sample,years_wnd)
         
@@ -259,6 +265,9 @@ class EsmyV9(gym.Env):
         
         # 3) Critique what happened
         reward, done = self._get_reward()
+        
+        # To know if the actions are binding or not
+        self._get_binding_actions()
 
         print(' ')
         print('in step - reward = {}'.format(reward))
@@ -283,6 +292,12 @@ class EsmyV9(gym.Env):
     def reset(self):
         print("RESET THE PROBLEM")
         self.it = 0
+        self.skip += self.i_epoch+self.nb_done*100
+
+        ampl_uq = AmplUQ(self.ampl_obj_0)
+
+        self.sample = ampl_uq.generate_one_sample(uq_exp = self.uq_experiment, skip=self.skip)
+
         self.i_epoch += 1
         self.cum_gwp = self.cum_gwp_init
         self.cum_cost = self.cum_cost_init
@@ -397,7 +412,7 @@ class EsmyV9(gym.Env):
                 if self.carbon_budget < self.cum_gwp:
                     status_2050 = 'Failure'
                 else:
-                    reward += 30
+                    # reward += 30
                     status_2050 = 'Success'
                 done = 1
 
@@ -443,8 +458,37 @@ class EsmyV9(gym.Env):
         years_wnd = self.ampl_obj.sets['YEARS_WND'].copy()
         years_wnd.pop(0)
         
-        gwp_limit_0 = action[0]*(123000-self.target_2050) + self.target_2050
-        gwp_limit_1 = action[1]*(123000-self.target_2050) + self.target_2050
+        # gwp_limit_0 = action[0]*(123000-self.target_2050) + self.target_2050
+        gwp_limit_1 = action[0]*(123000-self.target_2050) + self.target_2050
+
+        gas_limit =  action[1]
+        lfo_limit =  action[2]
+        coal_limit =  action[3]
         
-        self.ampl_obj.set_params('gwp_limit',{(years_wnd[0]):gwp_limit_0})
+        # self.ampl_obj.set_params('gwp_limit',{(years_wnd[0]):gwp_limit_0})
         self.ampl_obj.set_params('gwp_limit',{(years_wnd[1]):gwp_limit_1})
+
+        self.ampl_obj.set_params('allow_gas',gas_limit)
+        self.ampl_obj.set_params('allow_lfo',lfo_limit)
+        self.ampl_obj.set_params('allow_coal',coal_limit)
+    
+    def _get_binding_actions(self):
+        
+        binding_to_print= '{} {}'.format(self.i_epoch,self.it)
+        for i in self.constr:
+            binding = 0
+            for y in self.ampl_obj.sets['YEARS_WND']:
+                temp = 10
+                try:
+                    temp = self.ampl_obj.ampl.con[i][y].slack()
+                    if temp < 1e-3:
+                        binding = 1
+                        break
+                except:
+                    pass
+            binding_to_print += ' {}'.format(binding)
+        
+        binding_to_print += '\n'
+            
+        self.file_binding.write(binding_to_print)
+        self.file_binding.flush()

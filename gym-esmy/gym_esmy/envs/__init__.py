@@ -15,3 +15,5 @@ from gym_esmy.envs.ESMY_MO_env_v8   import EsmyMoV8
 
 from gym_esmy.envs.ESMY_env_v8   import EsmyV8
 from gym_esmy.envs.ESMY_env_v9   import EsmyV9
+from gym_esmy.envs.ESMY_env_v10   import EsmyV10
+from gym_esmy.envs.ESMY_env_v11   import EsmyV11

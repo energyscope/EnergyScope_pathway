@@ -148,6 +148,22 @@ register(
 register(
     # state = []
     # action = []
+    id='esmy-v10',
+    entry_point='gym_esmy.envs:EsmyV10',
+    max_episode_steps = 50,
+)
+
+register(
+    # state = []
+    # action = []
+    id='esmy-v11',
+    entry_point='gym_esmy.envs:EsmyV11',
+    max_episode_steps = 50,
+)
+
+register(
+    # state = []
+    # action = []
     # First environment using the TD version of esmy
     id='esmytd-v0',
     entry_point='gym_esmy.envs:EsmyTdV0',
