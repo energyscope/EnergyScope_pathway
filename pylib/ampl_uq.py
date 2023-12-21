@@ -193,7 +193,11 @@ class AmplUQ:
             self.ampl_obj.set_params('c_inv',c_inv.loc[(y,['GRID']),:] * (1. + up.loc[y,'c_inv_grid'].Value))
             self.ampl_obj.set_params('c_inv',c_inv.loc[(y,['EFFICIENCY']),:] * (1. + up.loc[y,'c_inv_efficiency'].Value))
             self.ampl_obj.set_params('c_inv',c_inv.loc[(y,['PV']),:] * (1. + up.loc[y,'c_inv_pv'].Value))
-
+                
+            ## Nuclear SMR
+            self.ampl_obj.set_params('c_inv',c_inv.loc[(y,['NUCLEAR_SMR']),:] * (1. + up.loc[y,'c_inv_nuclear_smr'].Value))
+            
+            
             # fmax
             self.ampl_obj.set_params('f_max',f_max.loc[(y,['PV']),:] * (1. + up.loc[y,'f_max_pv'].Value))
             self.ampl_obj.set_params('solar_area',solar_area.loc[[y]] * (1. + up.loc[y,'f_max_pv'].Value)) #To make sure the area constraint does not limit the maximum capacity of PV
@@ -227,5 +231,6 @@ class AmplUQ:
                 self.ampl_obj.set_params('f_max',f_max.loc[(y,['NUCLEAR_SMR']),:] + 6)
             if y == 'YEAR_2050' and up.loc[y,'f_max_nuclear_smr'].Value >= 0.6:
                 self.ampl_obj.set_params('f_max',f_max.loc[(y,['NUCLEAR_SMR']),:] + 6)
+            
             
             

@@ -3,6 +3,7 @@ import rheia.UQ.uncertainty_quantification as rheia_uq
 import matplotlib.pyplot as plt
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 import pandas as pd
 import plotly.io as pio
@@ -37,7 +38,7 @@ class AmplUQGraph:
 
     """
 
-    def __init__(self, case_study, ampl_obj,ref_case,result_dir_comp = [], pol_order=2):
+    def __init__(self, case_study, ampl_obj,ref_case=None,smr_case=None,result_dir_comp = [], pol_order=2):
         self.result_dir = result_dir_comp
         self.case = 'ES_PATHWAY'
         self.pol_order = pol_order
@@ -73,6 +74,13 @@ class AmplUQGraph:
         self.ref_file = os.path.join(project_path,'out',ref_case,'_Results.pkl')
         ref_results = open(self.ref_file,"rb")
         self.ref_results = pkl.load(ref_results)
+        ref_results.close()
+        
+        self.smr_case = smr_case
+        self.smr_file = os.path.join(project_path,'out',smr_case,'_Results.pkl')
+        smr_results = open(self.smr_file,"rb")
+        self.smr_results = pkl.load(smr_results)
+        smr_results.close()
         
         self.color_dict_full = self._dict_color_full()
         
@@ -89,6 +97,7 @@ class AmplUQGraph:
         col_objective = samples_plus.columns.get_loc(self.objective)
         samples_plus = samples_plus.iloc[:,:col_objective+1]
         result_ref_full = dict()
+        result_smr_full = dict()
         meaning_output = self.dict_meaning()
         for i in range(len(output)):
             
@@ -96,12 +105,20 @@ class AmplUQGraph:
             nom_values.index.name='Parameter'
             nom_values.update(self.uncert_nominal)
             
+            nom_values_ref = pd.DataFrame(index=samples_plus.columns,columns=['REF'],data=0)
+            nom_values_ref.index.name='Parameter'
+            
+            nom_values_smr = pd.DataFrame(index=samples_plus.columns,columns=['SMR'],data=0)
+            nom_values_smr.index.name='Parameter'
+            
             out = output[i]
             if out == 'F':
                 el = element[i]
             elif out == 'Ft':
                 el = element[i][0]
                 layer = element[i][1]
+            elif out == 'TotalGwp':
+                el = element[i]
             y = year[i]
             label = out+'_'+el+'_'+y
             labels[i] = label
@@ -113,6 +130,9 @@ class AmplUQGraph:
                 result_ref = self.ref_results['Assets']['F']
                 result_ref = result_ref.loc[result_ref.index.get_level_values('Technologies') == el]
                 
+                result_smr = self.smr_results['Assets']['F']
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Technologies') == el]
+                
             elif out == 'Ft':
                 results = self.ampl_uq_collector['Year_balance'][[layer,'Sample']]
                 results = results.loc[results.index.get_level_values('Elements') == el]
@@ -121,13 +141,32 @@ class AmplUQGraph:
                 result_ref = self.ref_results['Year_balance'][layer]
                 result_ref = result_ref.loc[result_ref.index.get_level_values('Elements') == el]
                 
+                result_smr = self.smr_results['Year_balance'][layer]
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Elements') == el]
+            
+            elif out == 'TotalGwp':
+                results = self.ampl_uq_collector['TotalGwp'][['TotalGWP','Sample']]
+                results.rename(columns = {'TotalGWP':label},inplace=True)
+                result_ref = self.ref_results['TotalGwp']['TotalGWP']
+                result_smr = self.smr_results['TotalGwp']['TotalGWP']
+                results.index.name = 'Years'
+                result_ref.index.name = 'Years'
+                result_smr.index.name = 'Years'
+                
                 
             results = results.loc[results.index.get_level_values('Years') == y]
             result_ref = result_ref.loc[result_ref.index.get_level_values('Years') == y]
+            result_smr = result_smr.loc[result_smr.index.get_level_values('Years') == y]
+            
             if result_ref.empty:
                 result_ref_full[label] = 0
             else:
                 result_ref_full[label] = result_ref.values[0]
+            
+            if result_smr.empty:
+                result_smr_full[label] = 0
+            else:
+                result_smr_full[label] = result_smr.values[0]
 
             results.reset_index(inplace=True)
             results = results.set_index(['Sample'])
@@ -147,25 +186,18 @@ class AmplUQGraph:
             max_list[i] = max_temp
             
             if i == self.objective:
-                transition_cost_ref = self.get_transition_cost_ref()
-                # nom_values.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*2-1
-                nom_values.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*1-0
+                transition_cost_ref = self.get_transition_cost(case_study='ref')
+                transition_cost_smr = self.get_transition_cost(case_study='smr')
+                nom_values_ref.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (transition_cost_smr-min_temp)/(max_temp-min_temp)*1-0
             elif i in labels:
-                # nom_values.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*2-1
-                nom_values.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_ref.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (result_smr_full[i]-min_temp)/(max_temp-min_temp)*1-0
                 
-            # samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*2-1
-            # samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0
-            
-            #AFTER HERE
-            samples_plot[i] = ((samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0)+(0.5-nom_values.loc[i].values[0])
-            
-            nom_values.loc[i]+=(0.5-nom_values.loc[i])
-            
-            #BEFORE HERE
+            samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0
         
         samples_plot.reset_index(inplace=True)
-        samples_plot['Significance'] = 'Not significant'
+        samples_plot['Significance'] = 'Neutral'
 
         dict_uq['draw pdf cdf'] = [False, 1e5]
         
@@ -176,15 +208,19 @@ class AmplUQGraph:
                 el = element[i]
             elif out == 'Ft':
                 el = element[i][0]
+            elif out == 'TotalGwp':
+                el = 'Total gwp'
             
             output_of_interest = meaning_output[el]
             
             if out == 'F':
-                output_of_interest+=' - Capacity'
-                output_of_interest+= ' [{}; {}] GW'.format(round(min_list[j],1),round(max_list[j],1))
+                output_of_interest +=' - Capacity'
+                output_of_interest += ' [{}; {}] GW'.format(round(min_list[j],1),round(max_list[j],1))
             elif out == 'Ft':
-                output_of_interest+=' - Supply'
-                output_of_interest+= ' [{}; {}] TWh'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+                output_of_interest +=' - Import'
+                output_of_interest += ' [{}; {}] TWh'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            elif out == 'TotalGwp':
+                output_of_interest += ' [{}; {}] MtCO2'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
             
             
             if calc_Sobol:
@@ -202,67 +238,107 @@ class AmplUQGraph:
             dict_sobol[self.objective] += ' [{}; {}] b€'.format(round(min_list[self.objective]/1000),round(max_list[self.objective]/1000))
             dict_sobol[j] = output_of_interest
             n_threshold = len([i for i in sobol if i > 1/len(sobol)])
-            order_x = [dict_sobol[j]] + temp_sobol[:min(n_threshold,6)] + [dict_sobol[self.objective]]
+            param_to_keep = temp_sobol[:min(n_threshold,6)]
+            
+            smr_in = False
+            for p in param_to_keep:
+                if 'SMR' in p:
+                    smr_in = True
+                    dict_ref_smr = {'Parameter':p,'REF':0}
+                    dict_smr_smr = {'Parameter':p,'SMR':0.6}
+            
+            order_x = [dict_sobol[j]] + param_to_keep + [dict_sobol[self.objective]]
             
             nom_values_plot = nom_values.reset_index()
             nom_values_plot = nom_values_plot.replace({"Parameter": dict_sobol})
+            nom_values_plot = nom_values_plot.loc[nom_values_plot['Parameter'].isin(param_to_keep)]
+            
+            nom_values_ref_plot = nom_values_ref.reset_index()
+            nom_values_ref_plot = nom_values_ref_plot.replace({"Parameter": dict_sobol})
+            nom_values_ref_plot = nom_values_ref_plot.loc[nom_values_ref_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            
+            nom_values_smr_plot = nom_values_smr.reset_index()
+            nom_values_smr_plot = nom_values_smr_plot.replace({"Parameter": dict_sobol})
+            nom_values_smr_plot = nom_values_smr_plot.loc[nom_values_smr_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            if smr_in:
+                nom_values_ref_plot = nom_values_ref_plot.append(dict_ref_smr,ignore_index=True)
+                nom_values_smr_plot = nom_values_smr_plot.append(dict_smr_smr,ignore_index=True)
+
+                
+                
             
             if focus == 'High':
-                temp = samples_plot.loc[samples_plot[j] > 0.9*max(samples_plot[j])]
-                if len(temp)<10:                
-                    temp = samples_plot.nlargest(10,j)
-                temp = temp.loc[temp[j] > 0.5*max(samples_plot[j])]
+                share = 20/3
+                # temp_high = samples_plot.nlargest(round(len(samples_plot)/(share)),j)
+                temp_low = samples_plot.nsmallest(round(len(samples_plot)/(share)),j)
+                            
+                temp_high = samples_plot.loc[samples_plot[j] >0.1]
+                temp_low = samples_plot.loc[samples_plot[j] <0]
+                
+                # self.get_av_sample(temp_high['Sample'], j+'_'+focus)
                 
                 s_plot_full = samples_plot.copy()
                 
                 s_plot_full.drop(labels, axis=1,inplace=True)
                 s_plot_full[j] = samples_plot[j]
                 
-                s_plot_full.loc[s_plot_full['Sample'].isin(temp['Sample']),'Significance'] = 'Significant'
+                s_plot_full.loc[s_plot_full['Sample'].isin(temp_high['Sample']),'Significance'] = 'Significant'
+                s_plot_full.loc[s_plot_full['Sample'].isin(temp_low['Sample']),'Significance'] = 'Not significant'
                 
                 s_plot_full = pd.melt(s_plot_full,var_name='x',value_name='value',id_vars=['Significance','Sample'])
                 s_plot_full = s_plot_full.replace({"x": dict_sobol})                
                 fig = px.strip(s_plot_full,x='x',y='value',color='Significance',
-                               color_discrete_map={'Not significant': 'lavender','Significant':'blue'},
+                               color_discrete_map={'Neutral': 'white','Significant':'blue', 'Not significant':'cyan'},
                                stripmode='overlay')
-                
-                nom_values_plot = nom_values_plot.loc[nom_values_plot['Parameter'].isin(order_x)]
                 
                 s_plot_sum = s_plot_full.loc[s_plot_full['x'].isin(order_x)]
                 
                 s_plot_sum.sort_values(by='Significance',inplace=True)
                 
-                temp = nom_values_plot.loc[nom_values_plot['Parameter']==output_of_interest,'Nominal'].values[0]
+                # temp = nom_values_plot.loc[nom_values_plot['Parameter']==output_of_interest,'Nominal'].values[0]
                 
                 
                 if not(flip):
                     fig = px.strip(s_plot_sum,x='x',y='value',color='Significance',
-                                    color_discrete_map={'Not significant': 'lavender','Significant':'blue'},
+                                    color_discrete_map={'Neutral': 'white','Significant':'blue', 'Not significant':'cyan'},
                                     stripmode='overlay',custom_data=['Sample'])
                     fig.update_layout(xaxis_tickangle=45)
                     fig.add_trace(go.Scatter(x=nom_values_plot["Parameter"], y=nom_values_plot["Nominal"],
                                               mode='markers',
-                                              marker=dict(size=10,color='red', symbol='diamond')))
+                                              marker=dict(size=15,color='darkorange', symbol='diamond')))
+                    fig.add_trace(go.Scatter(x=nom_values_ref_plot["Parameter"], y=nom_values_ref_plot["REF"],
+                                              mode='markers',
+                                              marker=dict(size=15,color='limegreen', symbol='diamond')))
+                    fig.add_trace(go.Scatter(x=nom_values_smr_plot["Parameter"], y=nom_values_smr_plot["SMR"],
+                                              mode='markers',
+                                              marker=dict(size=15,color='deeppink', symbol='diamond')))
+                    
                     xvals=order_x
                     
-                    if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
-                        yvals=[0,1]
-                    else:
-                        yvals=[0,round(temp,2),1]
+                    # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+                    yvals=[0,1]
+                    # else:
+                    #     yvals=[0,round(temp,2),1]
                     
                 else:
                     fig = px.strip(s_plot_sum,x='value',y='x',color='Significance',
-                                    color_discrete_map={'Not significant': 'lavender','Significant':'blue'},
+                                    color_discrete_map={'Neutral': 'white','Significant':'blue', 'Not significant':'cyan'},
                                     stripmode='overlay',custom_data=['Sample'])
                     fig.add_trace(go.Scatter(x=nom_values_plot["Nominal"], y=nom_values_plot["Parameter"],
                                               mode='markers',
-                                              marker=dict(size=10,color='red', symbol='diamond')))
+                                              marker=dict(size=15,color='darkorange', symbol='diamond')))
+                    fig.add_trace(go.Scatter(x=nom_values_ref_plot["REF"], y=nom_values_ref_plot["Parameter"],
+                                              mode='markers',
+                                              marker=dict(size=15,color='limegreen', symbol='diamond')))
+                    fig.add_trace(go.Scatter(x=nom_values_smr_plot["SMR"], y=nom_values_smr_plot["Parameter"],
+                                              mode='markers',
+                                              marker=dict(size=15,color='deeppink', symbol='diamond')))
                     order_x.reverse()
                     
-                    if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
-                        xvals=[0,1]
-                    else:
-                        xvals=[0,round(temp,2),1]
+                    # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+                    xvals=[0,1]
+                    # else:
+                    #     xvals=[0,round(temp,2),1]
                         
                     yvals = order_x
                     fig.update_yaxes(categoryorder='array', categoryarray= order_x)
@@ -274,133 +350,40 @@ class AmplUQGraph:
                                 type_graph='strip', flip = flip)
                 
                 if flip:
-                    if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
-                        xvals = ['Min','Max']
-                        fig.update_xaxes(
-                            ticktext=xvals,
-                            tickvals=[0,1]
-                            )
-                    else:
-                        xvals = ['Min',round(temp,2),'Max']
-                        fig.update_xaxes(
-                            ticktext=xvals,
-                            tickvals=[0,round(temp,2),1]
-                            )
+                    # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+                    xvals = ['Min','Max']
+                    fig.update_xaxes(
+                        ticktext=xvals,
+                        tickvals=[0,1]
+                        )
+                    # else:
+                    #     xvals = ['Min',round(temp,2),'Max']
+                    #     fig.update_xaxes(
+                    #         ticktext=xvals,
+                    #         tickvals=[0,round(temp,2),1]
+                    #         )
                 else:
-                    if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
-                        yvals = ['Min','Max']
-                        fig.update_yaxes(
-                            ticktext=yvals,
-                            tickvals=list(range(len(yvals)))
-                            )
-                    else:
-                        yvals = ['Min',round(temp,2),'Max']
-                        fig.update_yaxes(
-                            ticktext=yvals,
-                            tickvals=list(range(len(yvals)))
-                            )
+                    # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+                    yvals = ['Min','Max']
+                    fig.update_yaxes(
+                        ticktext=yvals,
+                        tickvals=list(range(len(yvals)))
+                        )
+                    # else:
+                    #     yvals = ['Min',round(temp,2),'Max']
+                    #     fig.update_yaxes(
+                    #         ticktext=yvals,
+                    #         tickvals=list(range(len(yvals)))
+                    #         )
                             
                             
                 
                 # Define the behavior of the hover tooltip
                 fig.update_layout(hovermode='closest')
-                fig.update_traces(hovertemplate='Value: %{y}<br>Sample: %{customdata}')
-                
-                pio.show(fig)
-                
-                
-            elif focus == 'Low':
-                s_plot_full = samples_plot.copy()
-                s_plot_full['Significance'] = 'Significant'
-                temp = samples_plot.loc[samples_plot[j] < 0.05]
-                if len(temp)<10:                
-                    temp = samples_plot.nsmallest(10,j)
-                temp = temp.loc[temp[j] < 0.5]
-                s_plot_full.drop(labels, axis=1,inplace=True)
-                s_plot_full[j] = samples_plot[j]
-                s_plot_full.loc[s_plot_full['Sample'].isin(temp['Sample']),'Significance'] = 'Not significant'
-                
-                s_plot_full = pd.melt(s_plot_full,var_name='x',value_name='value',id_vars=['Significance','Sample'])
-                s_plot_full = s_plot_full.replace({"x": dict_sobol})
-                fig = px.strip(s_plot_full,x='x',y='value',color='Significance',
-                               color_discrete_map={'Not significant': 'blue','Significant':'lavender'},
-                               stripmode='overlay')
-                
-                # pio.show(fig)
-                
-                s_plot_sum = s_plot_full.loc[s_plot_full['x'].isin(order_x)]
-                s_plot_sum.sort_values(by='Significance',inplace=True,ascending=False)
-                
-                temp = nom_values_plot.loc[nom_values_plot['Parameter']==output_of_interest,'Nominal'].values[0]
-                
-                if not(flip):
-                    fig = px.strip(s_plot_sum,x='x',y='value',color='Significance',
-                                    color_discrete_map={'Not significant': 'blue','Significant':'lavender'},
-                                    stripmode='overlay',custom_data=['Sample'])
-                    fig.update_layout(xaxis_tickangle=45)
-                    fig.add_trace(go.Scatter(x=nom_values_plot["Parameter"], y=nom_values_plot["Nominal"],
-                                              mode='markers',
-                                              marker=dict(size=10,color='red', symbol='diamond')))
-                    xvals= order_x
-                    
-                    if temp <= 0.02 or temp >= 0.98:
-                        yvals=[0,1]
-                    else:
-                        yvals=[0,round(temp,2),1]
-                    
-                else:
-                    fig = px.strip(s_plot_sum,x='value',y='x',color='Significance',
-                                   color_discrete_map={'Not significant': 'blue','Significant':'lavender'},
-                                   stripmode='overlay',custom_data=['Sample'])
-                    fig.add_trace(go.Scatter(x=nom_values_plot["Nominal"], y=nom_values_plot["Parameter"],
-                                             mode='markers',marker=dict(size=10,color='red', symbol='diamond')))
-                
-                    order_x.reverse()
-                    fig.update_yaxes(categoryorder='array', categoryarray= order_x)
-                    
-                    if temp <= 0.02 or temp >= 0.98:
-                        xvals=[0,1]
-                    else:
-                        xvals=[0,round(temp,2),1]
-                    yvals = order_x
-
-                title = None
-                
-                self.custom_fig(fig,title,yvals,
-                                xvals=xvals,
-                                type_graph='strip', flip = flip)
-                
-                
                 if flip:
-                    if temp <= 0.02 or temp >= 0.98:
-                        xvals = ['Min','Max']
-                        fig.update_xaxes(
-                            ticktext=xvals,
-                            tickvals=[0,1]
-                            )
-                    else:
-                        xvals = ['Min',round(temp,2),'Max']
-                        fig.update_xaxes(
-                            ticktext=xvals,
-                            tickvals=[0,round(temp,2),1]
-                            )
+                    fig.update_traces(hovertemplate='Value: %{x}<br>Sample: %{customdata}')
                 else:
-                    if temp <= 0.02 or temp >= 0.98:
-                        yvals = ['Min','Max']
-                        fig.update_yaxes(
-                            ticktext=yvals,
-                            tickvals=list(range(len(yvals)))
-                            )
-                    else:
-                        yvals = ['Min',round(temp,2),'Max']
-                        fig.update_yaxes(
-                            ticktext=yvals,
-                            tickvals=list(range(len(yvals)))
-                            )
-                
-                # Define the behavior of the hover tooltip
-                fig.update_layout(hovermode='closest')
-                fig.update_traces(hovertemplate='Value: %{y}<br>Sample: %{customdata}')
+                    fig.update_traces(hovertemplate='Value: %{y}<br>Sample: %{customdata}')
                 
                 pio.show(fig)
                 
@@ -409,11 +392,1053 @@ class AmplUQGraph:
             if not os.path.exists(Path(self.outdir+"Samples/_Raw/")):
                 Path(self.outdir+"Samples/_Raw").mkdir(parents=True,exist_ok=True)
             
-            fig.write_html(self.outdir+"Samples/_Raw/"+j+" "+focus+".html")
-            fig.write_image(self.outdir+"Samples/"+j+" "+focus+".pdf", width=1200, height=550)
+            fig.write_html(self.outdir+"Samples/_Raw/"+j+".html")
+            fig.write_image(self.outdir+"Samples/"+j+".pdf", width=1200, height=550)
+                
+    
+                
+    
+    def get_spec_output_test(self,dict_uq,output,element,year,focus='High',calc_Sobol=False, flip = True):
+        
+        labels = [None] * len(output)
+        samples_plus = self.ampl_uq_collector['Samples'].copy()
+        col_objective = samples_plus.columns.get_loc(self.objective)
+        samples_plus = samples_plus.iloc[:,:col_objective+1]
+        result_ref_full = dict()
+        result_smr_full = dict()
+        meaning_output = self.dict_meaning()
+        for i in range(len(output)):
+            
+            nom_values = pd.DataFrame(index=samples_plus.columns,columns=['Nominal'],data=0)
+            nom_values.index.name='Parameter'
+            nom_values.update(self.uncert_nominal)
+            
+            nom_values_ref = pd.DataFrame(index=samples_plus.columns,columns=['REF'],data=0)
+            nom_values_ref.index.name='Parameter'
+            
+            nom_values_smr = pd.DataFrame(index=samples_plus.columns,columns=['SMR'],data=0)
+            nom_values_smr.index.name='Parameter'
+            
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+                layer = element[i][1]
+            elif out == 'TotalGwp':
+                el = element[i]
+            y = year[i]
+            label = out+'_'+el+'_'+y
+            labels[i] = label
+            if out == 'F':
+                results = self.ampl_uq_collector['Assets'][['F','Sample']]
+                results = results.loc[results.index.get_level_values('Technologies') == el]
+                results.rename(columns = {out:label},inplace=True)
+                
+                result_ref = self.ref_results['Assets']['F']
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Technologies') == el]
+                
+                result_smr = self.smr_results['Assets']['F']
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Technologies') == el]
+                
+            elif out == 'Ft':
+                results = self.ampl_uq_collector['Year_balance'][[layer,'Sample']]
+                results = results.loc[results.index.get_level_values('Elements') == el]
+                results.rename(columns = {layer:label},inplace=True)
+                
+                result_ref = self.ref_results['Year_balance'][layer]
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Elements') == el]
+                
+                result_smr = self.smr_results['Year_balance'][layer]
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Elements') == el]
+            
+            elif out == 'TotalGwp':
+                results = self.ampl_uq_collector['TotalGwp'][['TotalGWP','Sample']]
+                results.rename(columns = {'TotalGWP':label},inplace=True)
+                result_ref = self.ref_results['TotalGwp']['TotalGWP']
+                result_smr = self.smr_results['TotalGwp']['TotalGWP']
+                results.index.name = 'Years'
+                result_ref.index.name = 'Years'
+                result_smr.index.name = 'Years'
                 
                 
+            results = results.loc[results.index.get_level_values('Years') == y]
+            result_ref = result_ref.loc[result_ref.index.get_level_values('Years') == y]
+            result_smr = result_smr.loc[result_smr.index.get_level_values('Years') == y]
+            
+            if result_ref.empty:
+                result_ref_full[label] = 0
+            else:
+                result_ref_full[label] = result_ref.values[0]
+            
+            if result_smr.empty:
+                result_smr_full[label] = 0
+            else:
+                result_smr_full[label] = result_smr.values[0]
+
+            results.reset_index(inplace=True)
+            results = results.set_index(['Sample'])
+            samples_plus[label] = results[label]
+            samples_plus.fillna(0,inplace=True)
+        
+        samples_plus.to_csv(self.samples_file,index=False)
+        dict_uq['objective names'] = dict_uq['objective names'] + labels
+        
+        samples_plot = samples_plus.copy()
+        min_list = dict.fromkeys(samples_plus.columns)
+        max_list = dict.fromkeys(samples_plus.columns)
+        for i in samples_plus.columns:
+            min_temp = min(samples_plot[i])
+            min_list[i] = min_temp
+            max_temp = max(samples_plot[i])
+            max_list[i] = max_temp
+            
+            if i == self.objective:
+                transition_cost_ref = self.get_transition_cost(case_study='ref')
+                transition_cost_smr = self.get_transition_cost(case_study='smr')
+                nom_values_ref.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (transition_cost_smr-min_temp)/(max_temp-min_temp)*1-0
+            elif i in labels:
+                nom_values_ref.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (result_smr_full[i]-min_temp)/(max_temp-min_temp)*1-0
                 
+            samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0
+        
+        samples_plot.reset_index(inplace=True)
+        samples_plot['Significance'] = 'Neutral'
+
+        dict_uq['draw pdf cdf'] = [False, 1e5]
+        
+        for i in range(len(output)):
+            j = labels[i]
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+            elif out == 'TotalGwp':
+                el = 'Total gwp'
+            
+            output_of_interest = meaning_output[el]
+            
+            if out == 'F':
+                output_of_interest +=' - Capacity'
+                output_of_interest += ' [{}; {}] GW'.format(round(min_list[j],1),round(max_list[j],1))
+            elif out == 'Ft':
+                output_of_interest +=' - Import'
+                output_of_interest += ' [{}; {}] TWh'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            elif out == 'TotalGwp':
+                output_of_interest += ' [{}; {}] MtCO2'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            
+            
+            if calc_Sobol:
+                dict_uq['objective of interest'] = j
+                rheia_uq.run_uq(dict_uq,design_space = 'design_space.csv')
+            
+            x_meaning = self.uncert_param_meaning.copy()
+            
+            names, sobol = self.my_post_process_uq.get_sobol(self.case_study, j)
+            temp_sobol = [x_meaning[names[m]]+' ('+str(round(100*sobol[m]))+ '%)' for m in range(len(names))]
+            dict_sobol = dict.fromkeys(names)
+            for k,l in enumerate(names):
+                dict_sobol[l] = temp_sobol[k]
+            dict_sobol[self.objective] = 'Total transition cost'
+            dict_sobol[self.objective] += ' [{}; {}] b€'.format(round(min_list[self.objective]/1000),round(max_list[self.objective]/1000))
+            dict_sobol[j] = output_of_interest
+            n_threshold = len([i for i in sobol if i > 1/len(sobol)])
+            param_to_keep = temp_sobol[:min(n_threshold,6)]
+            
+            smr_in = False
+            for p in param_to_keep:
+                if 'SMR' in p:
+                    smr_in = True
+                    dict_ref_smr = {'Parameter':p,'REF':0}
+                    dict_smr_smr = {'Parameter':p,'SMR':0.6}
+            
+            order_x = [dict_sobol[j]] + param_to_keep + [dict_sobol[self.objective]]
+            
+            nom_values_plot = nom_values.reset_index()
+            nom_values_plot = nom_values_plot.replace({"Parameter": dict_sobol})
+            nom_values_plot = nom_values_plot.loc[nom_values_plot['Parameter'].isin(param_to_keep)]
+            
+            nom_values_ref_plot = nom_values_ref.reset_index()
+            nom_values_ref_plot = nom_values_ref_plot.replace({"Parameter": dict_sobol})
+            nom_values_ref_plot = nom_values_ref_plot.loc[nom_values_ref_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            
+            nom_values_smr_plot = nom_values_smr.reset_index()
+            nom_values_smr_plot = nom_values_smr_plot.replace({"Parameter": dict_sobol})
+            nom_values_smr_plot = nom_values_smr_plot.loc[nom_values_smr_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            if smr_in:
+                nom_values_ref_plot = nom_values_ref_plot.append(dict_ref_smr,ignore_index=True)
+                nom_values_smr_plot = nom_values_smr_plot.append(dict_smr_smr,ignore_index=True)
+
+
+                
+            s_plot_full = samples_plot.copy()
+            
+            s_plot_full.drop(labels, axis=1,inplace=True)
+            s_plot_full[j] = samples_plot[j]
+            
+            share = 20/3
+            temp_high = samples_plot.nlargest(round(len(samples_plot)/(share)),j)
+            temp_low = samples_plot.nsmallest(round(len(samples_plot)/(share)),j)
+            
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_high['Sample']),'Significance'] = 'Significant'
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_low['Sample']),'Significance'] = 'Not significant'
+            
+            for k in s_plot_full.columns:
+                if k in dict_sobol.keys():
+                    s_plot_full.rename(columns = {k:dict_sobol[k]}, inplace = True)
+                elif k == 'Significance':
+                    pass
+                else:
+                    s_plot_full.drop(k, axis=1,inplace=True)
+            for k in s_plot_full.columns:
+                if not((k in order_x) or (k == 'Significance')):
+                    s_plot_full.drop(k, axis=1,inplace=True)
+                    
+            fig = make_subplots(rows=len(param_to_keep), cols=1,subplot_titles=param_to_keep,
+                                shared_xaxes=True)
+            
+            for k,l in enumerate(param_to_keep):
+                fig.add_trace(go.Scatter(x=s_plot_full[dict_sobol[j]], y=s_plot_full[l],mode="markers"),row=k+1, col=1)
+            
+            fig.update_layout(height=1200, width=550, title_text=dict_sobol[j])
+            
+            pio.show(fig)
+                
+            if not os.path.exists(Path(self.outdir+"Samples/TEST/")):
+                Path(self.outdir+"Samples/TEST").mkdir(parents=True,exist_ok=True)
+            if not os.path.exists(Path(self.outdir+"Samples/TEST/_Raw/")):
+                Path(self.outdir+"Samples/TEST/_Raw").mkdir(parents=True,exist_ok=True)
+            
+            fig.write_html(self.outdir+"Samples/TEST/_Raw/"+j+".html")
+            fig.write_image(self.outdir+"Samples/TEST/"+j+".pdf", width=1200, height=550*len(param_to_keep)/2)
+    
+    def get_spec_output_test_2(self,dict_uq,output,element,year,focus='High',calc_Sobol=False, flip = True):
+        
+        labels = [None] * len(output)
+        samples_plus = self.ampl_uq_collector['Samples'].copy()
+        col_objective = samples_plus.columns.get_loc(self.objective)
+        samples_plus = samples_plus.iloc[:,:col_objective+1]
+        result_ref_full = dict()
+        result_smr_full = dict()
+        meaning_output = self.dict_meaning()
+        for i in range(len(output)):
+            
+            nom_values = pd.DataFrame(index=samples_plus.columns,columns=['Nominal'],data=0)
+            nom_values.index.name='Parameter'
+            nom_values.update(self.uncert_nominal)
+            
+            nom_values_ref = pd.DataFrame(index=samples_plus.columns,columns=['REF'],data=0)
+            nom_values_ref.index.name='Parameter'
+            
+            nom_values_smr = pd.DataFrame(index=samples_plus.columns,columns=['SMR'],data=0)
+            nom_values_smr.index.name='Parameter'
+            
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+                layer = element[i][1]
+            elif out == 'TotalGwp':
+                el = element[i]
+            y = year[i]
+            label = out+'_'+el+'_'+y
+            labels[i] = label
+            if out == 'F':
+                results = self.ampl_uq_collector['Assets'][['F','Sample']]
+                results = results.loc[results.index.get_level_values('Technologies') == el]
+                results.rename(columns = {out:label},inplace=True)
+                
+                result_ref = self.ref_results['Assets']['F']
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Technologies') == el]
+                
+                result_smr = self.smr_results['Assets']['F']
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Technologies') == el]
+                
+            elif out == 'Ft':
+                results = self.ampl_uq_collector['Year_balance'][[layer,'Sample']]
+                results = results.loc[results.index.get_level_values('Elements') == el]
+                results.rename(columns = {layer:label},inplace=True)
+                
+                result_ref = self.ref_results['Year_balance'][layer]
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Elements') == el]
+                
+                result_smr = self.smr_results['Year_balance'][layer]
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Elements') == el]
+            
+            elif out == 'TotalGwp':
+                results = self.ampl_uq_collector['TotalGwp'][['TotalGWP','Sample']]
+                results.rename(columns = {'TotalGWP':label},inplace=True)
+                result_ref = self.ref_results['TotalGwp']['TotalGWP']
+                result_smr = self.smr_results['TotalGwp']['TotalGWP']
+                results.index.name = 'Years'
+                result_ref.index.name = 'Years'
+                result_smr.index.name = 'Years'
+                
+                
+            results = results.loc[results.index.get_level_values('Years') == y]
+            result_ref = result_ref.loc[result_ref.index.get_level_values('Years') == y]
+            result_smr = result_smr.loc[result_smr.index.get_level_values('Years') == y]
+            
+            if result_ref.empty:
+                result_ref_full[label] = 0
+            else:
+                result_ref_full[label] = result_ref.values[0]
+            
+            if result_smr.empty:
+                result_smr_full[label] = 0
+            else:
+                result_smr_full[label] = result_smr.values[0]
+
+            results.reset_index(inplace=True)
+            results = results.set_index(['Sample'])
+            samples_plus[label] = results[label]
+            samples_plus.fillna(0,inplace=True)
+        
+        samples_plus.to_csv(self.samples_file,index=False)
+        dict_uq['objective names'] = dict_uq['objective names'] + labels
+        
+        samples_plot = samples_plus.copy()
+        min_list = dict.fromkeys(samples_plus.columns)
+        max_list = dict.fromkeys(samples_plus.columns)
+        for i in samples_plus.columns:
+            min_temp = min(samples_plot[i])
+            min_list[i] = min_temp
+            max_temp = max(samples_plot[i])
+            max_list[i] = max_temp
+            
+            if i == self.objective:
+                transition_cost_ref = self.get_transition_cost(case_study='ref')
+                transition_cost_smr = self.get_transition_cost(case_study='smr')
+                nom_values_ref.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (transition_cost_smr-min_temp)/(max_temp-min_temp)*1-0
+            elif i in labels:
+                nom_values_ref.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (result_smr_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                
+            samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0
+        
+        samples_plot.reset_index(inplace=True)
+        samples_plot['Significance'] = 'Neutral'
+
+        dict_uq['draw pdf cdf'] = [False, 1e5]
+        
+        for i in range(len(output)):
+            j = labels[i]
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+            elif out == 'TotalGwp':
+                el = 'Total gwp'
+            
+            output_of_interest = meaning_output[el]
+            
+            if out == 'F':
+                output_of_interest +=' - Capacity'
+                output_of_interest += ' [{}; {}] GW'.format(round(min_list[j],1),round(max_list[j],1))
+            elif out == 'Ft':
+                output_of_interest +=' - Import'
+                output_of_interest += ' [{}; {}] TWh'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            elif out == 'TotalGwp':
+                output_of_interest += ' [{}; {}] MtCO2'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            
+            
+            if calc_Sobol:
+                dict_uq['objective of interest'] = j
+                rheia_uq.run_uq(dict_uq,design_space = 'design_space.csv')
+            
+            x_meaning = self.uncert_param_meaning.copy()
+            
+            names, sobol = self.my_post_process_uq.get_sobol(self.case_study, j)
+            temp_sobol = [x_meaning[names[m]]+' ('+str(round(100*sobol[m]))+ '%)' for m in range(len(names))]
+            dict_sobol = dict.fromkeys(names)
+            for k,l in enumerate(names):
+                dict_sobol[l] = temp_sobol[k]
+            dict_sobol[self.objective] = 'Total transition cost'
+            dict_sobol[self.objective] += ' [{}; {}] b€'.format(round(min_list[self.objective]/1000),round(max_list[self.objective]/1000))
+            dict_sobol[j] = output_of_interest
+            n_threshold = len([i for i in sobol if i > 1/len(sobol)])
+            param_to_keep = temp_sobol[:min(n_threshold,6)]
+            
+            smr_in = False
+            for p in param_to_keep:
+                if 'SMR' in p:
+                    smr_in = True
+                    dict_ref_smr = {'Parameter':p,'REF':0}
+                    dict_smr_smr = {'Parameter':p,'SMR':0.6}
+            
+            order_x = [dict_sobol[j]] + param_to_keep + [dict_sobol[self.objective]]
+            
+            nom_values_plot = nom_values.reset_index()
+            nom_values_plot = nom_values_plot.replace({"Parameter": dict_sobol})
+            nom_values_plot = nom_values_plot.loc[nom_values_plot['Parameter'].isin(param_to_keep)]
+            
+            nom_values_ref_plot = nom_values_ref.reset_index()
+            nom_values_ref_plot = nom_values_ref_plot.replace({"Parameter": dict_sobol})
+            nom_values_ref_plot = nom_values_ref_plot.loc[nom_values_ref_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            
+            nom_values_smr_plot = nom_values_smr.reset_index()
+            nom_values_smr_plot = nom_values_smr_plot.replace({"Parameter": dict_sobol})
+            nom_values_smr_plot = nom_values_smr_plot.loc[nom_values_smr_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            if smr_in:
+                nom_values_ref_plot = nom_values_ref_plot.append(dict_ref_smr,ignore_index=True)
+                nom_values_smr_plot = nom_values_smr_plot.append(dict_smr_smr,ignore_index=True)
+                        
+                
+            s_plot_full = samples_plot.copy()
+            
+            s_plot_full.drop(labels, axis=1,inplace=True)
+            s_plot_full[j] = samples_plot[j]
+            
+            share = 20/3
+            temp_high = samples_plot.nlargest(round(len(samples_plot)/(share)),j)
+            temp_low = samples_plot.nsmallest(round(len(samples_plot)/(share)),j)
+            
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_high['Sample']),'Significance'] = 'Significant'
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_low['Sample']),'Significance'] = 'Not significant'
+            
+            s_plot_full = pd.melt(s_plot_full,var_name='x',value_name='value',id_vars=['Significance','Sample',j])
+            s_plot_full = s_plot_full.replace({"x": dict_sobol})            
+            
+            order_x.pop(0)
+            order_x.pop()
+            
+            s_plot_sum = s_plot_full.loc[s_plot_full['x'].isin(order_x)]
+            s_plot_sum.rename(columns = {j:dict_sobol[j]}, inplace = True)
+            s_plot_sum.sort_values(by='Significance',inplace=True)
+            
+            
+    
+            
+            
+            fig = px.scatter(s_plot_sum,x='value',y=dict_sobol[j],color='x',trendline='rolling',trendline_options=dict(window=int(len(s_plot_sum)/15),center=True,min_periods = 1,win_type='triang'))
+            fig.update_traces(visible=False, selector=dict(mode="markers"))
+            
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_2/")):
+                Path(self.outdir+"Samples/TEST_2").mkdir(parents=True,exist_ok=True)
+            
+
+            xvals=[0,1]
+            yvals=[0,1]
+            # # else:
+            # #     xvals=[0,round(temp,2),1]
+                
+            # yvals = order_x
+            # fig.update_yaxes(categoryorder='array', categoryarray= order_x)
+            
+            # A = 4
+            
+            title = "<b>{}</b><br>Impacting parameters".format(dict_sobol[j])
+            title = "<b>{}</b>".format(dict_sobol[j])
+
+            self.custom_fig(fig,title,yvals,
+                            xvals=xvals,
+                            type_graph='strip', flip = flip)
+            
+            fig.add_shape(x0=fig.layout.xaxis.tickvals[0],x1=fig.layout.xaxis.tickvals[-1],
+                      y0=nom_values_ref.loc[j][0],y1=nom_values_ref.loc[j][0],
+                      type='line',layer="above",
+                      line=dict(color='rgb(90,90,90)', width=2,dash='dot'),opacity=1)
+            
+            xvals = ['Min','Max']
+            fig.update_xaxes(
+                ticktext=xvals,
+                tickvals=[0,1]
+                )
+            
+            yvals = [round(min_list[j]/1000,1),round(max_list[j]/1000,1)]
+            fig.update_yaxes(
+                ticktext=yvals,
+                tickvals=[0,1]
+                )
+
+            pio.show(fig)
+                
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_2/")):
+                Path(self.outdir+"Samples/TEST_2").mkdir(parents=True,exist_ok=True)
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_2/_Raw/")):
+                Path(self.outdir+"Samples/TEST_2/_Raw").mkdir(parents=True,exist_ok=True)
+            
+            fig.write_html(self.outdir+"Samples/TEST_2/_Raw/"+j+".html")
+            fig.write_image(self.outdir+"Samples/TEST_2/"+j+".pdf", width=1200, height=550)
+     
+    
+    
+    def get_spec_output_test_3(self,dict_uq,output,element,year,focus='High',calc_Sobol=False, flip = True):
+        
+        labels = [None] * len(output)
+        samples_plus = self.ampl_uq_collector['Samples'].copy()
+        col_objective = samples_plus.columns.get_loc(self.objective)
+        samples_plus = samples_plus.iloc[:,:col_objective+1]
+        result_ref_full = dict()
+        result_smr_full = dict()
+        meaning_output = self.dict_meaning()
+        for i in range(len(output)):
+            
+            nom_values = pd.DataFrame(index=samples_plus.columns,columns=['Nominal'],data=0)
+            nom_values.index.name='Parameter'
+            nom_values.update(self.uncert_nominal)
+            
+            nom_values_ref = pd.DataFrame(index=samples_plus.columns,columns=['REF'],data=0)
+            nom_values_ref.index.name='Parameter'
+            
+            nom_values_smr = pd.DataFrame(index=samples_plus.columns,columns=['SMR'],data=0)
+            nom_values_smr.index.name='Parameter'
+            
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+                layer = element[i][1]
+            elif out == 'TotalGwp':
+                el = element[i]
+            y = year[i]
+            label = out+'_'+el+'_'+y
+            labels[i] = label
+            if out == 'F':
+                results = self.ampl_uq_collector['Assets'][['F','Sample']]
+                results = results.loc[results.index.get_level_values('Technologies') == el]
+                results.rename(columns = {out:label},inplace=True)
+                
+                result_ref = self.ref_results['Assets']['F']
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Technologies') == el]
+                
+                result_smr = self.smr_results['Assets']['F']
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Technologies') == el]
+                
+            elif out == 'Ft':
+                results = self.ampl_uq_collector['Year_balance'][[layer,'Sample']]
+                results = results.loc[results.index.get_level_values('Elements') == el]
+                results.rename(columns = {layer:label},inplace=True)
+                
+                result_ref = self.ref_results['Year_balance'][layer]
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Elements') == el]
+                
+                result_smr = self.smr_results['Year_balance'][layer]
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Elements') == el]
+            
+            elif out == 'TotalGwp':
+                results = self.ampl_uq_collector['TotalGwp'][['TotalGWP','Sample']]
+                results.rename(columns = {'TotalGWP':label},inplace=True)
+                result_ref = self.ref_results['TotalGwp']['TotalGWP']
+                result_smr = self.smr_results['TotalGwp']['TotalGWP']
+                results.index.name = 'Years'
+                result_ref.index.name = 'Years'
+                result_smr.index.name = 'Years'
+                
+                
+            results = results.loc[results.index.get_level_values('Years') == y]
+            result_ref = result_ref.loc[result_ref.index.get_level_values('Years') == y]
+            result_smr = result_smr.loc[result_smr.index.get_level_values('Years') == y]
+            
+            if result_ref.empty:
+                result_ref_full[label] = 0
+            else:
+                result_ref_full[label] = result_ref.values[0]
+            
+            if result_smr.empty:
+                result_smr_full[label] = 0
+            else:
+                result_smr_full[label] = result_smr.values[0]
+
+            results.reset_index(inplace=True)
+            results = results.set_index(['Sample'])
+            samples_plus[label] = results[label]
+            samples_plus.fillna(0,inplace=True)
+        
+        samples_plus.to_csv(self.samples_file,index=False)
+        dict_uq['objective names'] = dict_uq['objective names'] + labels
+        
+        samples_plot = samples_plus.copy()
+        min_list = dict.fromkeys(samples_plus.columns)
+        max_list = dict.fromkeys(samples_plus.columns)
+        for i in samples_plus.columns:
+            min_temp = min(samples_plot[i])
+            min_list[i] = min_temp
+            max_temp = max(samples_plot[i])
+            max_list[i] = max_temp
+            
+            if i == self.objective:
+                transition_cost_ref = self.get_transition_cost(case_study='ref')
+                transition_cost_smr = self.get_transition_cost(case_study='smr')
+                nom_values_ref.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (transition_cost_smr-min_temp)/(max_temp-min_temp)*1-0
+            elif i in labels:
+                nom_values_ref.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (result_smr_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                
+            samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0
+        
+        samples_plot.reset_index(inplace=True)
+        samples_plot['Significance'] = 0
+
+        dict_uq['draw pdf cdf'] = [False, 1e5]
+        
+        for i in range(len(output)):
+            j = labels[i]
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+            elif out == 'TotalGwp':
+                el = 'Total gwp'
+            
+            output_of_interest = meaning_output[el]
+            
+            if out == 'F':
+                output_of_interest +=' - Capacity'
+                output_of_interest += ' [{}; {}] GW'.format(round(min_list[j],1),round(max_list[j],1))
+            elif out == 'Ft':
+                output_of_interest +=' - Import'
+                output_of_interest += ' [{}; {}] TWh'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            elif out == 'TotalGwp':
+                output_of_interest += ' [{}; {}] MtCO2'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            
+            
+            if calc_Sobol:
+                dict_uq['objective of interest'] = j
+                rheia_uq.run_uq(dict_uq,design_space = 'design_space.csv')
+            
+            x_meaning = self.uncert_param_meaning.copy()
+            
+            names, sobol = self.my_post_process_uq.get_sobol(self.case_study, j)
+            temp_sobol = [x_meaning[names[m]]+' ('+str(round(100*sobol[m]))+ '%)' for m in range(len(names))]
+            dict_sobol = dict.fromkeys(names)
+            for k,l in enumerate(names):
+                dict_sobol[l] = temp_sobol[k]
+            dict_sobol[self.objective] = 'Total transition cost'
+            dict_sobol[self.objective] += ' [{}; {}] b€'.format(round(min_list[self.objective]/1000),round(max_list[self.objective]/1000))
+            dict_sobol[j] = output_of_interest
+            n_threshold = len([i for i in sobol if i > 1/len(sobol)])
+            param_to_keep = temp_sobol[:min(n_threshold,6)]
+            param_to_keep = temp_sobol[:6]    
+
+                    
+            smr_in = False
+            for p in param_to_keep:
+                if 'SMR' in p:
+                    smr_in = True
+                    dict_ref_smr = {'Parameter':p,'REF':0}
+                    dict_smr_smr = {'Parameter':p,'SMR':0.6}
+            
+            order_x = [dict_sobol[j]] + param_to_keep + [dict_sobol[self.objective]]
+            
+            nom_values_plot = nom_values.reset_index()
+            nom_values_plot = nom_values_plot.replace({"Parameter": dict_sobol})
+            nom_values_plot = nom_values_plot.loc[nom_values_plot['Parameter'].isin(param_to_keep)]
+            
+            nom_values_ref_plot = nom_values_ref.reset_index()
+            nom_values_ref_plot = nom_values_ref_plot.replace({"Parameter": dict_sobol})
+            nom_values_ref_plot = nom_values_ref_plot.loc[nom_values_ref_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            
+            nom_values_smr_plot = nom_values_smr.reset_index()
+            nom_values_smr_plot = nom_values_smr_plot.replace({"Parameter": dict_sobol})
+            nom_values_smr_plot = nom_values_smr_plot.loc[nom_values_smr_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            if smr_in:
+                nom_values_ref_plot = nom_values_ref_plot.append(dict_ref_smr,ignore_index=True)
+                nom_values_smr_plot = nom_values_smr_plot.append(dict_smr_smr,ignore_index=True)
+
+            share = 20/3
+            temp_high = samples_plot.nlargest(round(len(samples_plot)/(share)),j)
+            temp_low = samples_plot.nsmallest(round(len(samples_plot)/(share)),j)
+            
+            # self.get_av_sample(temp_high['Sample'], j+'_'+focus)
+            
+            s_plot_full = samples_plot.copy()
+            
+            s_plot_full.drop(labels, axis=1,inplace=True)
+            s_plot_full[j] = samples_plot[j]
+            
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_high['Sample']),'Significance'] = -1
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_low['Sample']),'Significance'] = 1
+            
+            s_plot_full = pd.melt(s_plot_full,var_name='x',value_name='value',id_vars=['Significance','Sample'])
+            s_plot_full = s_plot_full.replace({"x": dict_sobol})                
+            fig = px.strip(s_plot_full,x='x',y='value',color='Significance',
+                           color_discrete_map={0: 'white', 1:'blue', -1:'cyan'},
+                           stripmode='overlay')
+            
+            s_plot_sum = s_plot_full.loc[s_plot_full['x'].isin(order_x)]
+            
+            # s_plot_sum = s_plot_sum.loc[s_plot_sum['Significance'] != 0]
+            
+            
+            n_split = 10
+            l = np.linspace(1/n_split,1,n_split)
+            mi_temp = pd.MultiIndex.from_product([param_to_keep,l])
+            df_av = pd.DataFrame(0,index=mi_temp,columns=['Value'])
+            for p in param_to_keep:
+                for m,n in enumerate(l):
+                    if m==0:
+                        inf = 0
+                    else:
+                        inf = l[m-1]
+                    s_plot_sum_temp = s_plot_sum.loc[(s_plot_sum['x']==p) & (s_plot_sum['value'] >= inf) & (s_plot_sum['value'] <= n)]
+                    df_av.loc[(p,n),'Value']=np.mean(s_plot_sum_temp['Significance'])
+            
+            
+            df_av.reset_index(inplace=True)
+            df_av.level_1=0.1
+            
+            fig = px.bar(df_av,x='level_1',y='level_0',color='Value',color_continuous_scale='RdBu')
+            fig.update_traces(width=0.3)
+            # fig.update_coloraxes(showscale=False)
+            
+            
+            order_x.pop()
+            order_x.pop(0)
+            order_x.reverse()
+            
+            # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+            xvals=[0,1]
+            # else:
+            #     xvals=[0,round(temp,2),1]
+                
+            yvals = order_x
+            fig.update_yaxes(categoryorder='array', categoryarray= order_x)
+            
+            A = 4
+            
+            title = "<b>{}</b><br>Impacting parameters".format(dict_sobol[j])
+            title = "<b>{}</b>".format(dict_sobol[j])
+
+            self.custom_fig(fig,title,yvals,
+                            xvals=xvals,
+                            type_graph='strip', flip = flip)
+            
+            if flip:
+                # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+                xvals = ['Min','Max']
+                fig.update_xaxes(
+                    ticktext=xvals,
+                    tickvals=[0,1]
+                    )
+                # else:
+                #     xvals = ['Min',round(temp,2),'Max']
+                #     fig.update_xaxes(
+                #         ticktext=xvals,
+                #         tickvals=[0,round(temp,2),1]
+                #         )
+            else:
+                # if temp <= 0.02*max(samples_plot[j]) or temp >= 0.98*max(samples_plot[j]):
+                yvals = ['Min','Max']
+                fig.update_yaxes(
+                    ticktext=yvals,
+                    tickvals=list(range(len(yvals)))
+                    )
+                # else:
+                #     yvals = ['Min',round(temp,2),'Max']
+                #     fig.update_yaxes(
+                #         ticktext=yvals,
+                #         tickvals=list(range(len(yvals)))
+                #         )
+                        
+                        
+            
+            # Define the behavior of the hover tooltip
+            fig.update_layout(hovermode='closest')
+            if flip:
+                fig.update_traces(hovertemplate='Value: %{x}<br>Sample: %{customdata}')
+            else:
+                fig.update_traces(hovertemplate='Value: %{y}<br>Sample: %{customdata}')
+            
+            pio.show(fig)
+                
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_3/")):
+                Path(self.outdir+"Samples/TEST_3").mkdir(parents=True,exist_ok=True)
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_3/_Raw/")):
+                Path(self.outdir+"Samples/TEST_3/_Raw").mkdir(parents=True,exist_ok=True)
+            
+            fig.write_html(self.outdir+"Samples/TEST_3/_Raw/"+j+".html")
+            fig.write_image(self.outdir+"Samples/TEST_3/"+j+".pdf", width=1200, height=550)
+                
+    
+    def get_spec_output_test_4(self,dict_uq,output,element,year,focus='High',calc_Sobol=False, flip = True):
+        
+        labels = [None] * len(output)
+        samples_plus = self.ampl_uq_collector['Samples'].copy()
+        col_objective = samples_plus.columns.get_loc(self.objective)
+        samples_plus = samples_plus.iloc[:,:col_objective+1]
+        result_ref_full = dict()
+        result_smr_full = dict()
+        meaning_output = self.dict_meaning()
+        for i in range(len(output)):
+            
+            nom_values = pd.DataFrame(index=samples_plus.columns,columns=['Nominal'],data=0)
+            nom_values.index.name='Parameter'
+            nom_values.update(self.uncert_nominal)
+            
+            nom_values_ref = pd.DataFrame(index=samples_plus.columns,columns=['REF'],data=0)
+            nom_values_ref.index.name='Parameter'
+            
+            nom_values_smr = pd.DataFrame(index=samples_plus.columns,columns=['SMR'],data=0)
+            nom_values_smr.index.name='Parameter'
+            
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+                layer = element[i][1]
+            elif out == 'TotalGwp':
+                el = element[i]
+            y = year[i]
+            label = out+'_'+el+'_'+y
+            labels[i] = label
+            if out == 'F':
+                results = self.ampl_uq_collector['Assets'][['F','Sample']]
+                results = results.loc[results.index.get_level_values('Technologies') == el]
+                results.rename(columns = {out:label},inplace=True)
+                
+                result_ref = self.ref_results['Assets']['F']
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Technologies') == el]
+                
+                result_smr = self.smr_results['Assets']['F']
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Technologies') == el]
+                
+            elif out == 'Ft':
+                results = self.ampl_uq_collector['Year_balance'][[layer,'Sample']]
+                results = results.loc[results.index.get_level_values('Elements') == el]
+                results.rename(columns = {layer:label},inplace=True)
+                
+                result_ref = self.ref_results['Year_balance'][layer]
+                result_ref = result_ref.loc[result_ref.index.get_level_values('Elements') == el]
+                
+                result_smr = self.smr_results['Year_balance'][layer]
+                result_smr = result_smr.loc[result_smr.index.get_level_values('Elements') == el]
+            
+            elif out == 'TotalGwp':
+                results = self.ampl_uq_collector['TotalGwp'][['TotalGWP','Sample']]
+                results.rename(columns = {'TotalGWP':label},inplace=True)
+                result_ref = self.ref_results['TotalGwp']['TotalGWP']
+                result_smr = self.smr_results['TotalGwp']['TotalGWP']
+                results.index.name = 'Years'
+                result_ref.index.name = 'Years'
+                result_smr.index.name = 'Years'
+                
+                
+            results = results.loc[results.index.get_level_values('Years') == y]
+            result_ref = result_ref.loc[result_ref.index.get_level_values('Years') == y]
+            result_smr = result_smr.loc[result_smr.index.get_level_values('Years') == y]
+            
+            if result_ref.empty:
+                result_ref_full[label] = 0
+            else:
+                result_ref_full[label] = result_ref.values[0]
+            
+            if result_smr.empty:
+                result_smr_full[label] = 0
+            else:
+                result_smr_full[label] = result_smr.values[0]
+
+            results.reset_index(inplace=True)
+            results = results.set_index(['Sample'])
+            samples_plus[label] = results[label]
+            samples_plus.fillna(0,inplace=True)
+        
+        samples_plus.to_csv(self.samples_file,index=False)
+        dict_uq['objective names'] = dict_uq['objective names'] + labels
+        
+        samples_plot = samples_plus.copy()
+        min_list = dict.fromkeys(samples_plus.columns)
+        max_list = dict.fromkeys(samples_plus.columns)
+        for i in samples_plus.columns:
+            min_temp = min(samples_plot[i])
+            min_list[i] = min_temp
+            max_temp = max(samples_plot[i])
+            max_list[i] = max_temp
+            
+            if i == self.objective:
+                transition_cost_ref = self.get_transition_cost(case_study='ref')
+                transition_cost_smr = self.get_transition_cost(case_study='smr')
+                nom_values_ref.loc[i] = (transition_cost_ref-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (transition_cost_smr-min_temp)/(max_temp-min_temp)*1-0
+            elif i in labels:
+                nom_values_ref.loc[i] = (result_ref_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                nom_values_smr.loc[i] = (result_smr_full[i]-min_temp)/(max_temp-min_temp)*1-0
+                
+            samples_plot[i] = (samples_plot[i]-min_temp)/(max_temp-min_temp)*1-0
+        
+        samples_plot.reset_index(inplace=True)
+        samples_plot['Significance'] = 0
+
+        dict_uq['draw pdf cdf'] = [False, 1e5]
+        
+        for i in range(len(output)):
+            j = labels[i]
+            out = output[i]
+            if out == 'F':
+                el = element[i]
+            elif out == 'Ft':
+                el = element[i][0]
+            elif out == 'TotalGwp':
+                el = 'Total gwp'
+            
+            output_of_interest = meaning_output[el]
+            
+            if out == 'F':
+                output_of_interest +=' - Capacity'
+                output_of_interest += ' [{}; {}] GW'.format(round(min_list[j],1),round(max_list[j],1))
+            elif out == 'Ft':
+                output_of_interest +=' - Import'
+                output_of_interest += ' [{}; {}] TWh'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            elif out == 'TotalGwp':
+                output_of_interest += ' [{}; {}] MtCO2'.format(round(min_list[j]/1000,1),round(max_list[j]/1000,1))
+            
+            
+            if calc_Sobol:
+                dict_uq['objective of interest'] = j
+                rheia_uq.run_uq(dict_uq,design_space = 'design_space.csv')
+            
+            x_meaning = self.uncert_param_meaning.copy()
+            
+            names, sobol = self.my_post_process_uq.get_sobol(self.case_study, j)
+            temp_sobol = [x_meaning[names[m]]+' ('+str(round(100*sobol[m]))+ '%)' for m in range(len(names))]
+            dict_sobol = dict.fromkeys(names)
+            for k,l in enumerate(names):
+                dict_sobol[l] = temp_sobol[k]
+            dict_sobol[self.objective] = 'Total transition cost'
+            dict_sobol[self.objective] += ' [{}; {}] b€'.format(round(min_list[self.objective]/1000),round(max_list[self.objective]/1000))
+            dict_sobol[j] = output_of_interest
+            n_threshold = len([i for i in sobol if i > 1/len(sobol)])
+            param_to_keep = temp_sobol[:min(n_threshold,6)]    
+
+                    
+            smr_in = False
+            for p in param_to_keep:
+                if 'SMR' in p:
+                    smr_in = True
+                    dict_ref_smr = {'Parameter':p,'REF':0}
+                    dict_smr_smr = {'Parameter':p,'SMR':0.6}
+            
+            order_x = [dict_sobol[j]] + param_to_keep + [dict_sobol[self.objective]]
+            
+            nom_values_plot = nom_values.reset_index()
+            nom_values_plot = nom_values_plot.replace({"Parameter": dict_sobol})
+            nom_values_plot = nom_values_plot.loc[nom_values_plot['Parameter'].isin(param_to_keep)]
+            
+            nom_values_ref_plot = nom_values_ref.reset_index()
+            nom_values_ref_plot = nom_values_ref_plot.replace({"Parameter": dict_sobol})
+            nom_values_ref_plot = nom_values_ref_plot.loc[nom_values_ref_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            
+            nom_values_smr_plot = nom_values_smr.reset_index()
+            nom_values_smr_plot = nom_values_smr_plot.replace({"Parameter": dict_sobol})
+            nom_values_smr_plot = nom_values_smr_plot.loc[nom_values_smr_plot['Parameter'].isin([dict_sobol[j]] + [dict_sobol[self.objective]])]
+            if smr_in:
+                nom_values_ref_plot = nom_values_ref_plot.append(dict_ref_smr,ignore_index=True)
+                nom_values_smr_plot = nom_values_smr_plot.append(dict_smr_smr,ignore_index=True)
+
+            share = 20/3
+            temp_high = samples_plot.nlargest(round(len(samples_plot)/(share)),j)
+            temp_low = samples_plot.nsmallest(round(len(samples_plot)/(share)),j)
+            
+            # self.get_av_sample(temp_high['Sample'], j+'_'+focus)
+            
+            s_plot_full = samples_plot.copy()
+            
+            s_plot_full.drop(labels, axis=1,inplace=True)
+            s_plot_full[j] = samples_plot[j]
+            
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_high['Sample']),'Significance'] = -1
+            s_plot_full.loc[s_plot_full['Sample'].isin(temp_low['Sample']),'Significance'] = 1
+            
+            # s_plot_full = pd.melt(s_plot_full,var_name='x',value_name='value',id_vars=['Significance','Sample'])
+            # s_plot_full = s_plot_full.replace({"x": dict_sobol})
+            s_plot_full.rename(columns=dict_sobol, inplace=True)
+            s_plot_sum = s_plot_full[order_x+['Sample']]
+            
+            order_x.pop()
+            order_x.pop(0)
+            
+            
+            fig = go.Figure()
+            
+            for x in order_x:
+                temp = s_plot_sum[[dict_sobol[j],x,'Sample']]
+                temp = temp.sort_values(by=x)
+                temp_rol = temp[dict_sobol[j]].rolling(window=int(len(temp)/5),center=True,min_periods = 1,win_type='triang').mean()
+
+                fig.add_trace(go.Scatter(x=temp[x],y=temp_rol,line_shape='spline',line=dict(width=2)))
+
+                
+                share = 20/3
+                temp_high = temp.nlargest(round(len(temp)/(share)),x)
+                temp_low = temp.nsmallest(round(len(temp)/(share)),x)
+                
+                yvals = [0,1]
+                xvals = [0,1]
+                title = 'Boxplot High - {}'.format(x)
+                
+                fig_high = px.box(temp_high, y=dict_sobol[j],
+                               title=title,notched=True)
+                fig_high.update_layout(yaxis_range=yvals)
+                
+                fig_high.write_image(self.outdir+"Samples/TEST_4/"+j+"_Box_high_{}".format(x)+".pdf", width=1200, height=550)
+                fig_high.write_html(self.outdir+"Samples/TEST_4/_Raw/"+j+"_Box_high_{}".format(x)+".html")
+                
+                title = 'Boxplot Low- {}'.format(x)
+                
+                fig_low = px.box(temp_low, y=dict_sobol[j],
+                               title=title,notched=True)
+                fig_low.update_layout(yaxis_range=yvals)
+                
+                fig_low.write_image(self.outdir+"Samples/TEST_4/"+j+"_Box_low_{}".format(x)+".pdf", width=1200, height=550)
+                fig_low.write_html(self.outdir+"Samples/TEST_4/_Raw/"+j+"_Box_low_{}".format(x)+".html")
+                
+
+            xvals=[0,1]
+            yvals=[0,1]
+            # # else:
+            # #     xvals=[0,round(temp,2),1]
+                
+            # yvals = order_x
+            # fig.update_yaxes(categoryorder='array', categoryarray= order_x)
+            
+            # A = 4
+            
+            title = "<b>{}</b><br>Impacting parameters".format(dict_sobol[j])
+            title = "<b>{}</b>".format(dict_sobol[j])
+
+            self.custom_fig(fig,title,yvals,
+                            xvals=xvals,
+                            type_graph='strip', flip = flip)
+            
+            fig.add_shape(x0=fig.layout.xaxis.tickvals[0],x1=fig.layout.xaxis.tickvals[-1],
+                      y0=nom_values_ref.loc[j][0],y1=nom_values_ref.loc[j][0],
+                      type='line',layer="above",
+                      line=dict(color='rgb(90,90,90)', width=2,dash='dot'),opacity=1)
+            
+            xvals = ['Min','Max']
+            fig.update_xaxes(
+                ticktext=xvals,
+                tickvals=[0,1]
+                )
+            
+            yvals = [round(min_list[j]/1000,1),round(result_ref_full[j]/1000,1),round(max_list[j]/1000,1)]
+            fig.update_yaxes(
+                ticktext=yvals,
+                tickvals=[0,nom_values_ref.loc[j][0],1]
+                )
+
+            pio.show(fig)
+                
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_4/")):
+                Path(self.outdir+"Samples/TEST_4").mkdir(parents=True,exist_ok=True)
+            if not os.path.exists(Path(self.outdir+"Samples/TEST_4/_Raw/")):
+                Path(self.outdir+"Samples/TEST_4/_Raw").mkdir(parents=True,exist_ok=True)
+            
+            fig.write_html(self.outdir+"Samples/TEST_4/_Raw/"+j+".html")
+            fig.write_image(self.outdir+"Samples/TEST_4/"+j+".pdf", width=1200, height=550)
+        
+        
+    
     def get_spec_sample(self,sample):
         output_file = os.path.join(Path(self.outdir).parent.absolute(),'Runs/Run{}'.format(sample))
         ampl_0  = self.ampl_obj
@@ -422,24 +1447,65 @@ class AmplUQGraph:
         ampl_graph.outdir=os.path.join(ampl_graph.outdir,'Run{}/'.format(sample))
         if not os.path.exists(Path(ampl_graph.outdir)):
             Path(ampl_graph.outdir).mkdir(parents=True,exist_ok=True)
-        ampl_graph.graph_resource()
-        ampl_graph.graph_tech_cap()
+        # ampl_graph.graph_resource()
+        # ampl_graph.graph_tech_cap()
         ampl_graph.graph_gwp_per_sector()
         ampl_graph.graph_layer()
         ampl_graph.graph_load_factor_scaled()
     
-    def get_transition_cost_ref(self):
-        output_file = self.ref_file
+    def get_av_sample(self,sample_list,case):
+        uq_collector = self.ampl_uq_collector.copy()
+        for key in uq_collector:
+            if key != 'Samples':
+                temp = uq_collector[key].loc[uq_collector[key]['Sample'].isin(sample_list)]
+                if len(temp.index.names) == 1:
+                    temp.reset_index(inplace=True)
+                    temp = temp.set_index(temp.columns[0])
+                temp.drop(['Sample'],axis=1,inplace=True)
+                uq_collector[key] = temp.groupby(temp.index.names).mean()
+            else:
+                uq_collector[key] = uq_collector[key].loc[uq_collector[key].index.get_level_values('Sample').isin(sample_list),:]
+        
+        pkl_folder = os.path.join(Path(self.outdir).parent.absolute(),'Runs/graphs/{}'.format(case))
+        if not os.path.exists(Path(pkl_folder)):
+            Path(pkl_folder).mkdir(parents=True,exist_ok=True)
+        
+        open_file = open(pkl_folder+'/_uq_collector.p',"wb")
+        pkl.dump(uq_collector, open_file)
+        open_file.close()
+        
+        output_file = os.path.join(Path(pkl_folder).absolute(),'_uq_collector.p')
         ampl_0  = self.ampl_obj
-        case_study = self.ref_case
+        case_study = self.case_study
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
-        transition_cost = ampl_graph._compute_transition_cost(self.ref_results)
+        ampl_graph.outdir=pkl_folder+'/'
+        if not os.path.exists(Path(ampl_graph.outdir)):
+            Path(ampl_graph.outdir).mkdir(parents=True,exist_ok=True)
+        ampl_graph.graph_resource()
+        ampl_graph.graph_tech_cap()
+        # ampl_graph.graph_gwp_per_sector()
+        ampl_graph.graph_layer()
+        
+        
+        
+        
+    
+    def get_transition_cost(self,case_study='ref'):
+        ampl_0  = self.ampl_obj
+        if case_study == 'ref':
+            output_file = self.ref_file
+            case_study = self.ref_case
+            ampl_graph = AmplGraph(output_file, ampl_0, case_study)
+            transition_cost = ampl_graph._compute_transition_cost(self.ref_results)
+        elif case_study == 'smr':
+            output_file = self.smr_file
+            case_study = self.smr_case
+            ampl_graph = AmplGraph(output_file, ampl_0, case_study)
+            transition_cost = ampl_graph._compute_transition_cost(self.smr_results)
+        
         transition_cost_2050 = transition_cost['2050']
         
         return 1000*transition_cost_2050
-        
-        
-        
         
     @staticmethod
     def unpkl(self,case_study = None):
@@ -555,33 +1621,45 @@ class AmplUQGraph:
         
     def graph_sobol(self,threshold=1):
         self.filter_df_sobol(threshold)
-        fig = px.bar(self.df_sobol_plot,x='Param',y='Sobol',color='Case',
-                      title='Sobol index per case')
+        fig = px.bar(self.df_sobol_plot,x='Sobol',y='Param',color='Case',
+                      title='Sobol index per case',orientation='h')
         fig.update_layout(barmode='group', xaxis_tickangle=45)
         pio.show(fig)
         fig.write_html(self.outdir+"Sobol_raw.html")
         
         title = "<b>Sobol index per case</b><br>[%]"
         temp = self.df_sobol_plot.copy()
-        yvals = [0,max(round(temp['Sobol'],1))]
+        yvals = [0,max(round(temp['Sobol'],100))]
+        yvals = self.df_sobol_plot.Param.unique()
+        param_meaning = self.uncert_param_meaning.copy()
+        for i,p in enumerate(yvals):
+            yvals[i] = param_meaning[p]
+        xvals = [0,max(round(temp['Sobol'],1))]
         
-        self.custom_fig(fig,title,yvals,xvals=self.df_sobol_plot.Param.unique(),type_graph='bar')
+        self.custom_fig(fig,title,yvals,xvals=xvals,type_graph='bar')
         fig.write_image(self.outdir+"Sobol.pdf", width=1200, height=550)
         plt.close()
     
     def graph_pdf(self):
         self.fill_df_pdf()
+        self.df_pdf['x_pdf'] /= 1e6
+        self.df_pdf['y_pdf'] /= max(self.df_pdf['y_pdf'])
         fig = px.line(self.df_pdf,x='x_pdf',y='y_pdf',color='Case',
                       title='PDF per case')
-        pio.show(fig)
         
         fig.write_html(self.outdir+"PDF_raw.html")
         
-        title = "<b>PDF of total transition cost</b><br>[k€]"
+        title = "<b>PDF of total transition cost</b><br>[10<sup>3</sup>b€]"
         temp = self.df_pdf.copy()
         yvals = [0,max(temp['y_pdf'])]
         
-        self.custom_fig(fig,title,yvals)
+        mean_cost = 1160748.416529/1e6
+        
+        nom_cost = 1079.5/1e3
+        SMR_cost = nom_cost-36.9/1e3
+        xvals = sorted([min(round(temp['x_pdf'],2)),round(nom_cost,2),round(SMR_cost,2),round(mean_cost,2),max(round(temp['x_pdf'],2))])
+        
+        self.custom_fig(fig,title,yvals,xvals=xvals,flip=True)
         fig.write_image(self.outdir+"PDF.pdf", width=1200, height=550)
         plt.close()
         
@@ -590,7 +1668,6 @@ class AmplUQGraph:
         self.fill_df_cdf()
         fig = px.line(self.df_cdf,x='x_cdf',y='y_cdf',color='Case',
                       title='CDF per case')
-        pio.show(fig)
         
         fig.write_html(self.outdir+"CDF_raw.html")
         
@@ -669,6 +1746,108 @@ class AmplUQGraph:
             
         return df_to_plot_full
     
+    def graph_electrofuels(self, ampl_uq_collector = None, plot = True):
+        pio.renderers.default = 'browser'
+        
+        if ampl_uq_collector == None:
+            ampl_uq_collector = self.ampl_uq_collector
+        
+        col_plot = ['METHANOL_RE','AMMONIA_RE','GAS_RE','H2_RE']
+        results = ampl_uq_collector['Resources'].copy()
+        results.reset_index(inplace=True)
+        results = results.loc[results['Resources'].isin(col_plot),:]
+        results['Resources'] = results['Resources'].astype("str")
+        results.dropna(how='all',inplace=True)
+        results['Res']/=1000
+        
+        df_to_plot = results.copy()
+        df_to_plot = df_to_plot.set_index(['Years','Resources','Sample'])
+        df_to_plot.dropna(how='all',inplace=True)
+        df_to_plot = self._fill_df_to_plot_w_zeros(df_to_plot)
+        df_to_plot.reset_index(inplace=True)
+        
+        df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
+        
+            
+        if plot:
+            fig = px.box(df_to_plot, x='Years', color='Resources',y='Res',
+                           title='Electrofuels [TWh]',
+                           color_discrete_map=self.color_dict_full,notched=True)
+                
+            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            pio.show(fig)
+            
+            fig.write_html(self.outdir+"/Electrofuels.html")
+        
+            title = "<b>Imported renewable electrofuels</b><br>[TWh]"
+            yvals = [0,round(max(df_to_plot['Res']))]
+            
+            self.custom_fig(fig,title,yvals,type_graph='bar')
+
+            fig.write_image(self.outdir+"Electrofuels.pdf", width=1200, height=550)
+            plt.close()
+    
+    def graph_local_RE(self, ampl_uq_collector = None, plot = True):
+        pio.renderers.default = 'browser'
+        
+        if ampl_uq_collector == None:
+            ampl_uq_collector = self.ampl_uq_collector
+        
+        col_plot = ['PV','WIND_ONSHORE','WIND_OFFSHORE']
+        results = ampl_uq_collector['Assets'].copy()
+        results.reset_index(inplace=True)
+        results = results.loc[results['Technologies'].isin(col_plot),:]
+        results['Technologies'] = results['Technologies'].astype("str")
+        results.dropna(how='all',inplace=True)
+        results['F_year']/=1000
+        
+        df_to_plot = results.copy()
+        df_to_plot = df_to_plot.set_index(['Years','Technologies','Sample'])
+        df_to_plot.dropna(how='all',inplace=True)
+        df_to_plot = self._fill_df_to_plot_w_zeros(df_to_plot)
+        df_to_plot.reset_index(inplace=True)
+        
+        df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
+        
+            
+        if plot:
+            fig = px.box(df_to_plot, x='Years', color='Technologies',y='F',
+                           title='Local renewable capacities [GW]',
+                           color_discrete_map=self.color_dict_full,notched=True)
+                
+            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            pio.show(fig)
+            
+            fig.write_html(self.outdir+"/Local_Ren_Cap.html")
+        
+            title = "<b>Local renewables - Capacities</b><br>[GW]"
+            yvals = [0,round(max(df_to_plot['F']))]
+            
+            self.custom_fig(fig,title,yvals,type_graph='bar')
+
+            fig.write_image(self.outdir+"Local_Ren_Cap.pdf", width=1200, height=550)
+            plt.close()
+            
+            fig = px.box(df_to_plot, x='Years', color='Technologies',y='F_year',
+                           title='Local renewable production [TWh]',
+                           color_discrete_map=self.color_dict_full,notched=True)
+                
+            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            pio.show(fig)
+            
+            fig.write_html(self.outdir+"/Local_Ren_Prod.html")
+        
+            title = "<b>Local renewables - Production</b><br>[TWh]"
+            yvals = [0,round(max(df_to_plot['F_year']))]
+            
+            self.custom_fig(fig,title,yvals,type_graph='bar')
+
+            fig.write_image(self.outdir+"Local_Ren_Prod.pdf", width=1200, height=550)
+            plt.close()
+    
+    
+    
+    
     def graph_layer(self, ampl_uq_collector = None, plot = True):
         pio.renderers.default = 'browser'
         
@@ -706,6 +1885,7 @@ class AmplUQGraph:
             
             df_to_plot_cons.loc[df_to_plot_cons[k]<0,k] = - df_to_plot_cons.loc[df_to_plot_cons[k]<0,k]
             
+            
             df_to_plot_prod['Elements'] = df_to_plot_prod['Elements'].astype("str")
             df_to_plot_prod['Years'] = df_to_plot_prod['Years'].str.replace('YEAR_', '')
             df_to_plot_prod[k] /= 1000
@@ -719,7 +1899,7 @@ class AmplUQGraph:
             if plot:
                 fig_prod = px.box(df_to_plot_prod, x='Years', color='Elements',y=k,
                                title='{} - Production'.format(k),
-                               color_discrete_map=self.color_dict_full)
+                               color_discrete_map=self.color_dict_full,notched=True)
                     
                 fig_prod.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_prod['Years'].unique()))
                 pio.show(fig_prod)
@@ -734,13 +1914,13 @@ class AmplUQGraph:
                 
                 fig_cons = px.box(df_to_plot_cons, x='Years', color='Elements',y=k,
                                title='{} - Consumption'.format(k),
-                               color_discrete_map=self.color_dict_full)
+                               color_discrete_map=self.color_dict_full,notched=True)
                     
                 fig_cons.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_cons['Years'].unique()))
                 pio.show(fig_cons)
                 fig_cons.write_html(self.outdir+"Layers/_Raw/"+k+"_Cons.html")
             
-                title = "<b>{} - Production</b><br>[TWh]".format(k)
+                title = "<b>{} - Supply</b><br>[TWh]".format(k)
                 yvals = [0,round(max(df_to_plot_prod[k]))]
                 
                 self.custom_fig(fig_prod,title,yvals,type_graph='bar')
@@ -766,7 +1946,10 @@ class AmplUQGraph:
         index_names = df_to_plot.index.names
         l_ind = [None] * len(index_names)
         for i,j in enumerate(index_names):
-            l_ind[i] = df_to_plot.index.get_level_values(j).unique()
+            ind = df_to_plot.index.get_level_values(j).unique()
+            if j == 'Years' and not('YEAR_2020' in ind):
+                ind = ind.union(['YEAR_2020'])
+            l_ind[i] = ind
         
         mi_temp = pd.MultiIndex.from_product(l_ind,names=index_names)
         df_temp = pd.DataFrame(0,index=mi_temp,columns=df_to_plot.columns)
@@ -925,10 +2108,10 @@ class AmplUQGraph:
     
     
     def dict_meaning(self):
-        meaning_dict = {'H2_RE':'Renewable hydrogen',
-                        'AMMONIA_RE': 'Renewable ammonia',
-                        'METHANOL_RE': 'Renewable methanol',
-                        'GAS_RE': 'Renewable methane',
+        meaning_dict = {'H2_RE':'E-hydrogen',
+                        'AMMONIA_RE': 'E-ammonia',
+                        'METHANOL_RE': 'E-methanol',
+                        'GAS_RE': 'E-methane',
                         'H2':'Fossil hydrogen',
                         'AMMONIA': 'Fossil ammonia',
                         'METHANOL': 'Fossil methanol',
@@ -939,7 +2122,14 @@ class AmplUQGraph:
                         'METHANE_TO_METHANOL': 'Methane-to-methanol',
                         'NUCLEAR_SMR': 'Nuclear SMR',
                         'BIOMETHANATION': 'Biomethanation',
-                        'BIO_HYDROLYSIS': 'Biohydrolysis'
+                        'BIO_HYDROLYSIS': 'Biohydrolysis',
+                        'Total gwp' : 'Total gwp',
+                        'PV' : 'PV',
+                        'WIND_ONSHORE': 'Onshore wind',
+                        'WIND_OFFSHORE': 'Offshore wind',
+                        'SMR': 'Steam-methane-reforming',
+                        'AMMONIA_TO_H2':'Ammonia-to-H2',
+                        'CAR_FUEL_CELL':'Fuel cell car'
                         }
         
         return meaning_dict
@@ -1110,14 +2300,14 @@ class AmplUQGraph:
                           y0=ymin,y1=ymax,
                           type='line',layer="above",
                           line=dict(color=color,width=2,dash="dot"),opacity=1)
-            else:
-                fig.add_shape(x0=xmin,x1=xmax,
-                          y0=0.5,y1=0.5,
-                          type='line',layer="above",
-                          line=dict(color=color,width=2,dash="dot"),opacity=1)
-                fig.add_shape(x0=xmin,x1=xmax,
-                          y0=ymax-0.5,y1=ymax-0.5,
-                          type='line',layer="above",
-                          line=dict(color=color,width=2,dash="dot"),opacity=1)
+            # else:
+                # fig.add_shape(x0=xmin,x1=xmax,
+                #           y0=0.5,y1=0.5,
+                #           type='line',layer="above",
+                #           line=dict(color=color,width=2,dash="dot"),opacity=1)
+                # fig.add_shape(x0=xmin,x1=xmax,
+                #           y0=ymax-0.5,y1=ymax-0.5,
+                #           type='line',layer="above",
+                #           line=dict(color=color,width=2,dash="dot"),opacity=1)
         
         fig.update_layout(margin_b = 10, margin_r = 30, margin_l = 30)#,margin_pad = 20)
