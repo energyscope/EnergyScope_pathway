@@ -24,6 +24,7 @@ from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 from ampl_graph import AmplGraph
 from ampl_uq_graph import AmplUQGraph
+from ampl_uq import AmplUQ
 
 
 type_of_model = 'TD'
@@ -37,14 +38,15 @@ if gwp_budget:
     
 CO2_neutrality_2050 = False
 
-run_opti = True
-deterministic = False
-graph = False
+run_opti = False
+deterministic = True
+UQ = False
+graph = True
 graph_comp = False
 
 if run_opti:
     if not(deterministic):
-        case_study_uq = 'run_2_gwp_budget_isoRL_moret_smr_2_1.5_MO'
+        case_study_uq = 'run_2_gwp_budget_isoRL_moret_smr_2_1.5_'+type_of_model
 
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
@@ -142,11 +144,19 @@ if __name__ == '__main__':
                 case_study = '{}_{}_{}_gwp_limit_all_the_way_SMR'.format(type_of_model,n_year_opti,n_year_overlap)
                 expl_text = 'GWP limit all the way up to 2050 with SMR from 2040, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
             else:
-                case_study = '{}_{}_{}_gwp_limit_all_the_way_TEST_c_p_t'.format(type_of_model,n_year_opti,n_year_overlap)
+                case_study = '{}_{}_{}_gwp_limit_all_the_way_PAPER_PATHWAY_no_trajectory'.format(type_of_model,n_year_opti,n_year_overlap)
                 expl_text = 'GWP limit all the way up to 2050, to reach carbon neutrality with {} years of time window and {} years of overlap'.format(n_year_opti,n_year_overlap)
         if CO2_neutrality_2050:
             case_study += '_CO2_neutrality_2050'
             expl_text += ', CO2 neutrality by 2050'
+        
+        # case_study += '_no_efuels_2020_SMR'
+        
+        case_study = '{}_{}_{}_PAPER_PATHWAY_no_trajectory'.format(type_of_model,n_year_opti,n_year_overlap)
+        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'
+        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_ROB'
+        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_ROB_2'
+        # case_study = 'TD_30_0_gwp_budget_no_efuels_2020'
         
         output_folder = os.path.join(pth_output_all,case_study)
         output_file = os.path.join(output_folder,'_Results.pkl')
@@ -187,21 +197,32 @@ if __name__ == '__main__':
                     # YEAR_2045 : 6090.469921 23047 22290
                     # YEAR_2050 : 3406.924541 3406.92 3406.92
 
-                    ampl.set_params('gwp_limit',{('YEAR_2020'):121250}) 
-                    ampl.set_params('gwp_limit',{('YEAR_2025'):101610}) 
-                    ampl.set_params('gwp_limit',{('YEAR_2030'):81969})  
-                    ampl.set_params('gwp_limit',{('YEAR_2035'):62328}) 
-                    ampl.set_params('gwp_limit',{('YEAR_2040'):42688}) 
-                    ampl.set_params('gwp_limit',{('YEAR_2045'):23047}) 
-                    ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
+                    ampl.set_params('gwp_limit',{('YEAR_2020'):124000}) 
+                    # ampl.set_params('gwp_limit',{('YEAR_2025'):103901.1533}) 
+                    # ampl.set_params('gwp_limit',{('YEAR_2030'):83802.30667})  
+                    # ampl.set_params('gwp_limit',{('YEAR_2035'):63703.46}) 
+                    # ampl.set_params('gwp_limit',{('YEAR_2040'):43604.61333}) 
+                    # ampl.set_params('gwp_limit',{('YEAR_2045'):23505.76667}) 
+                    # ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
                     
                 if CO2_neutrality_2050:
                     ampl.set_params('gwp_limit',{('YEAR_2050'):3406.92})
                     
-                if deterministic:                
+                if deterministic: 
+                    # ampl.set_params('f_max',{('YEAR_2040','NUCLEAR_SMR'):6})
+                    # ampl.set_params('f_max',{('YEAR_2045','NUCLEAR_SMR'):6})
+                    # ampl.set_params('f_max',{('YEAR_2050','NUCLEAR_SMR'):6})
+                    ampl_uq = AmplUQ(ampl)
+                    uncer_param = {'c_op_syn_fuels':1,'industry_eud':1,'param_i_rate':1,'c_op_hydrocarbons':1,
+                                   'c_maint_var':1,'c_op_biofuels':1}
+                    years_wnd = ['YEAR_2025','YEAR_2030','YEAR_2035','YEAR_2040','YEAR_2045','YEAR_2050']
+                    ampl_uq.transcript_uncertainties(uncer_param,years_wnd)
                     solve_result = ampl.run_ampl()
                     ampl.get_results()
-                else:
+                    
+                if UQ:
+                    case_study_uq += '_no_efuels_2020_full_CO2_neut_2050'
+                    case_study_uq
                     pol_order = 2
                     dict_uq = {'case':'ES_PATHWAY',
                             'n jobs':                1,
@@ -220,39 +241,70 @@ if __name__ == '__main__':
                     elapsed = time.time()-t
                     print('Time to solve the whole problem: ',elapsed)
                     
-                    result_dir = ['run_2_gwp_budget_isoRL_moret_smr_2_1.5_MO_full',
-                                  'run_2_gwp_budget_isoRL_moret_smr_2_1.5_TD']
-                    ref_case = 'TD_30_0_gwp_budget'
-                    ampl_uq_graph = AmplUQGraph(case_study_uq,ampl_0,ref_case,result_dir_comp = result_dir, pol_order=pol_order)
+                    # result_dir = ['run_2_gwp_budget_isoRL_moret_smr_2_1.5_MO_full',
+                    #               'run_2_gwp_budget_isoRL_moret_smr_2_1.5_TD']
+                    result_dir = []
+                    ref_case = 'TD_30_0_gwp_budget_no_efuels_2020'
+                    smr_case = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'
+                    ampl_uq_graph = AmplUQGraph(case_study_uq,ampl_0,ref_case,smr_case,result_dir_comp = result_dir, pol_order=pol_order)
                     # ampl_uq_graph.graph_sobol()
                     # ampl_uq_graph.graph_pdf()
                     # ampl_uq_graph.graph_cdf()
                     # ampl_uq_graph.graph_tech_cap()
                     # ampl_uq_graph.graph_layer()
+                    # ampl_uq_graph.graph_electrofuels()
+                    # ampl_uq_graph.graph_local_RE()
                     
-                    elements = ['H2_ELECTROLYSIS',
-                                'CCGT_AMMONIA',
-                                'SYN_METHANOLATION',
-                                'METHANE_TO_METHANOL',
-                                'NUCLEAR_SMR',
-                                'BIOMETHANATION',
-                                'BIO_HYDROLYSIS']
-                    outputs = ['F'] * len(elements)
+                    # elements = ['H2_ELECTROLYSIS',
+                    #             'CCGT_AMMONIA',
+                    #             'SYN_METHANOLATION',
+                    #             'METHANE_TO_METHANOL',
+                    #             'NUCLEAR_SMR',
+                    #             'BIOMETHANATION',
+                    #             'BIO_HYDROLYSIS']
+                    # outputs = ['F'] * len(elements)
+                    
+                    # elements = 5*['PV',
+                    #             'WIND_ONSHORE',
+                    #             'WIND_OFFSHORE']
+                    # outputs = ['F'] * len(elements)
                     
                     elements_2 = [['AMMONIA_RE','AMMONIA'],
                                 ['GAS_RE','GAS'],
                                 ['H2_RE','H2'],
                                 ['METHANOL_RE','METHANOL']]
-                    elements += elements_2
                     
-                    outputs += ['Ft'] * len(elements_2)
+                    # elements_2 = [['CAR_FUEL_CELL','MOB_PRIVATE']]
                     
+                    # elements_2 = 5*[['PV','ELECTRICITY'],
+                    #             ['WIND_ONSHORE','ELECTRICITY'],
+                    #             ['WIND_OFFSHORE','ELECTRICITY']]
+                    
+                    elements = elements_2
+                    
+                    outputs = ['Ft'] * len(elements)
+                    
+                    elements += ['NUCLEAR_SMR']
+                    
+                    outputs += ['F']
+
+                    
+                    # elements_3 = ['']
+                    # elements += elements_3
+                    
+                    # # elements += elements_3
+                    
+                    # outputs += ['TotalGwp'] * len(elements_3)
                     
                     years = ['YEAR_2050'] * len(elements)
-                    ampl_uq_graph.get_spec_output(dict_uq,outputs,elements,years,focus='High',calc_Sobol=False)
-                    ampl_uq_graph.get_spec_output(dict_uq,outputs,elements,years,focus='Low',calc_Sobol=False)
                     
-                    # ampl_uq_graph.get_spec_sample(224)
+                    # years = ['YEAR_2025']*3
+                    # years += ['YEAR_2030']*3
+                    # years += ['YEAR_2035']*3
+                    # years += ['YEAR_2040']*3
+                    # years += ['YEAR_2045']*3
+                    # ampl_uq_graph.get_spec_output_test(dict_uq,outputs,elements,years,calc_Sobol=False)
+                    ampl_uq_graph.get_spec_output_test_4(dict_uq,outputs,elements,years,calc_Sobol=True)
                     
                     
                     break
@@ -279,28 +331,40 @@ if __name__ == '__main__':
                     ampl_collector.pkl()
                     break
         if graph:
+            # case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'
+            case_study = 'TD_30_0_gwp_budget_no_efuels_2020'
+            case_study = 'CASE_3_80'
+            case_study = 'TD_30_0_gwp_budget_no_efuels_2020_ROB'
+            case_study = 'TD_30_0_gwp_budget_no_efuels_2020_ROB_2'
+            # case_study = 'TD_30_0_gwp_limit_all_the_way'
+            # case_study = 'TD_30_0_gwp_limit_all_the_way_2'
+            # case_study = 'TD_10_5_gwp_limit_all_the_way'
+            output_file = '/Users/xrixhon/Development/GitKraken/EnergyScope_pathway/out/'+case_study+'/_Results.pkl'
             ampl_graph = AmplGraph(output_file, ampl_0, case_study)
             a_website = "https://www.google.com"
             # webbrowser.open_new(a_website)
-            # ampl_graph.graph_resource()
-            # ampl_graph.graph_cost()
-            # ampl_graph.graph_gwp_per_sector()
-            # ampl_graph.graph_cost_inv_phase_tech()
-            # ampl_graph.graph_cost_return()
-            # ampl_graph.graph_cost_op_phase()
+            ampl_graph.graph_resource()
+            ampl_graph.graph_cost()
+            ampl_graph.graph_gwp_per_sector()
+            ampl_graph.graph_cost_inv_phase_tech()
+            ampl_graph.graph_cost_return()
+            ampl_graph.graph_cost_op_phase()
             
             ampl_graph.graph_layer()
-            # ampl_graph.graph_gwp()
+            ampl_graph.graph_gwp()
             ampl_graph.graph_tech_cap()
-            # ampl_graph.graph_total_cost_per_year()
-            # ampl_graph.graph_load_factor()
-            # df_unused = ampl_graph.graph_load_factor_scaled()
-            # ampl_graph.graph_new_old_decom()
+            ampl_graph.graph_total_cost_per_year()
+            ampl_graph.graph_load_factor()
+            df_unused = ampl_graph.graph_load_factor_scaled()
+            ampl_graph.graph_new_old_decom()
             
             # ampl_graph.graph_paper()
             
         if graph_comp:
-            ampl_graph = AmplGraph(output_file, ampl_0,case_study)
+            # case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'
+            # case_study = 'TD_30_0_gwp_limit_all_the_way_2'
+            case_study = 'TD_30_0_gwp_budget_no_efuels_2020_ROB'
+            ampl_graph = AmplGraph(output_file, ampl_0, case_study)
             
             
             # Reference case: TD-Perfect foresight
@@ -317,6 +381,8 @@ if __name__ == '__main__':
                         case_study_1 = '{}_{}_{}_gwp_budget'.format('TD',30,0) 
             else:
                 case_study_1 = '{}_{}_{}_gwp_limit_all_the_way'.format('TD',30,0)
+            
+            case_study_1 = 'TD_30_0_gwp_budget_no_efuels_2020'
 
             output_folder_1 = os.path.join(pth_output_all,case_study_1)
             output_file_1 = os.path.join(output_folder_1,'_Results.pkl')
@@ -333,7 +399,7 @@ if __name__ == '__main__':
             ampl_graph.graph_comparison(output_files,'Cost_return')
             ampl_graph.graph_comparison(output_files,'Total_trans_cost')
             ampl_graph.graph_comparison(output_files,'Tech_cap')
-            ampl_graph.graph_comparison(output_files,'Layer')
+            # ampl_graph.graph_comparison(output_files,'Layer')
             ampl_graph.graph_comparison(output_files,'GWP_per_sector')
             ampl_graph.graph_comparison(output_files,'Load_factor')
             
