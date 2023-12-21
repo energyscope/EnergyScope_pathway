@@ -98,7 +98,7 @@ class AmplGraph:
             for y in results.index.get_level_values(0).unique():
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y,:] 
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y, threshold=0.01)
+                    temp_y = self._remove_low_values(temp_y)#, threshold=0.01)
                     df_to_plot.update(temp_y)
                     if not temp_y.empty:
                         temp_df = df_to_plot.reset_index()
@@ -185,8 +185,11 @@ class AmplGraph:
         df_to_plot.reset_index(inplace=True)
         df_to_plot['Resources'] = df_to_plot['Resources'].astype("str")
         
+        order_entry = [x for x in order_entry if x in df_to_plot['Resources'].unique()]
+        
         df_to_plot['Resources'] = pd.Categorical(
             df_to_plot['Resources'], order_entry)
+
         df_to_plot.sort_values(by=['Resources'], axis=0, 
                                ignore_index=True, inplace=True)
         
@@ -206,7 +209,7 @@ class AmplGraph:
             title = "<b>Primary energy supply</b><br>[TWh]"
             temp = df_to_plot.set_index(['Years','Resources'])
             temp = temp.groupby(by=['Years']).sum()
-            yvals = [0,min(round(temp['Res'],0)),max(round(temp['Res'],0))]
+            yvals = [0,int(min(round(temp.loc['2050']))),int(max(round(temp.loc['2020'])))]
             
             self.custom_fig(fig,title,yvals)
             fig.write_image(self.outdir+"Resources.pdf", width=1200, height=550)
@@ -415,7 +418,8 @@ class AmplGraph:
             title = "<b>Yearly emissions</b><br>[MtCO2/y]"
             temp = gwp_per_layer.set_index(['Years','Layers'])
             temp = temp.groupby(by=['Years']).sum()
-            yvals = [0,max(list(map(int,temp['GWP_EUD'])))]
+            yvals = [0,min(round(temp['GWP_EUD'],1)),max(round(temp['GWP_EUD'],1))]
+            # yvals = [0,min(round(temp['GWP_EUD'],1)),max(list(map(temp['GWP_EUD'])))]
             
             self.custom_fig(fig,title,yvals)
             fig.write_image(self.outdir+"Gwp_per_sector.pdf", width=1200, height=550)
@@ -545,6 +549,7 @@ class AmplGraph:
         
         self.custom_fig(fig,title,yvals)
         fig.write_image(self.outdir+"System_cost.pdf", width=1200, height=550)
+        # fig.write_image(self.outdir+"System_cost.pdf", width=600, height=600)
         plt.close()
     
     def graph_cost_return(self, ampl_collector = None, plot = True):
@@ -1218,9 +1223,9 @@ class AmplGraph:
             pio.show(fig)
             
             if type_of_graph == 'C_op_phase':
-                title = "<b>Cumulative opex difference versus PF</b><br>[b€<sub>2015</sub>]"
+                title = "<b>Cumulative opex difference versus REF</b><br>[b€<sub>2015</sub>]"
             else:
-                title = "<b>Cumulative capex difference versus PF</b><br>[b€<sub>2015</sub>]"
+                title = "<b>Cumulative capex difference versus REF</b><br>[b€<sub>2015</sub>]"
             yvals = [round(min(df_to_plot['cumsum']),1),0,
                      round(max(df_to_plot['cumsum']),1)]
             
@@ -1250,7 +1255,7 @@ class AmplGraph:
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_s['Years'].unique()))
                 pio.show(fig)
                 
-                title = "<b>Installed capacities difference versus PF - {}</b><br>[GW]".format(sector)
+                title = "<b>Installed capacities difference versus REF - {}</b><br>[GW]".format(sector)
                 yvals = [round(min(df_to_plot_s['F']),1),0,
                          round(max(df_to_plot_s['F']),1)]
                 
@@ -1278,7 +1283,7 @@ class AmplGraph:
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(years))
                 pio.show(fig)
                 
-                title = "<b>Layer balance difference versus PF - {}</b><br>[TWh]".format(k)
+                title = "<b>Layer balance difference versus REF - {}</b><br>[TWh]".format(k)
                 yvals = [round(min(df_to_plot_layer[k]),1),0,
                          round(max(df_to_plot_layer[k]),1)]
                 
@@ -1297,7 +1302,7 @@ class AmplGraph:
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
             
-            title = "<b>GWP per sector difference versus PF</b><br>[MtCO2/y]"
+            title = "<b>GWP per sector difference versus REF</b><br>[MtCO2/y]"
             yvals = [round(min(df_to_plot['GWP_EUD']),1),0,
                      round(max(df_to_plot['GWP_EUD']),1)]
             
@@ -1311,7 +1316,7 @@ class AmplGraph:
         elif type_of_graph in ['Load_factor']:
             for sector in df_to_plot.keys():
                 fig = px.bar(df_to_plot[sector], x='Technologies', y = 'val',color='Years',
-                          title=self.case_study + ' - ' + sector+' - Scaled load factor versus PF',
+                          title=self.case_study + ' - ' + sector+' - Scaled load factor versus REF',
                           facet_row='var',
                           color_discrete_map=self.color_dict_full)
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot[sector]['Technologies'].unique()))
@@ -1344,7 +1349,7 @@ class AmplGraph:
                           color_discrete_map=self.color_dict_full,markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
-            title = "<b>Primary energy difference versus PF</b><br>[TWh]"
+            title = "<b>Primary energy difference versus REF</b><br>[TWh]"
             yvals = [round(min(df_to_plot['Res']),1),0,
                      round(max(df_to_plot['Res']),1)]
             
@@ -1370,6 +1375,8 @@ class AmplGraph:
                 
             df_to_plot.loc[df_to_plot['Resources'].
                             isin(['WOOD','RES_WIND','RES_SOLAR','WET_BIOMASS']),'Category'] = 'LOCAL_RE'
+            df_to_plot.loc[df_to_plot['Resources'].
+                            isin(['URANIUM']),'Category'] = 'URANIUM'
             # df_to_plot = df_to_plot.replace({"Category": category})
             
             df_to_plot_category = df_to_plot.groupby(['Category','Years']).sum()
@@ -1379,7 +1386,7 @@ class AmplGraph:
                           color_discrete_map=self.color_dict_full,markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
-            title = "<b>Primary energy difference versus PF</b><br>[TWh]"
+            title = "<b>Primary energy difference versus REF</b><br>[TWh]"
             yvals = [round(min(df_to_plot_category['Res']),1),0,
                      round(max(df_to_plot_category['Res']),1)]
             
@@ -1394,7 +1401,7 @@ class AmplGraph:
                           color_discrete_map=self.color_dict_full,markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
-            title = "<b>Cost return difference versus PF</b><br>[b€<sub>2015</sub>]"
+            title = "<b>Cost return difference versus REF</b><br>[b€<sub>2015</sub>]"
             yvals = [min(round(df_to_plot['Cost_return'],1)),0,
                      max(round(df_to_plot.loc[df_to_plot['Category'] == 'INFRASTRUCTURE']['Cost_return'],1)),
                      max(round(df_to_plot['Cost_return'],1))]
@@ -1407,11 +1414,11 @@ class AmplGraph:
                           title='Comparison - {}'.format(type_of_graph),markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
-            title = "<b>Cumulative total cost difference versus PF</b><br>[b€<sub>2015</sub>]"
+            title = "<b>Cumulative transition total cost difference versus REF</b><br>[b€<sub>2015</sub>]"
             yvals = [min(round(df_to_plot['Tot_trans_cost'],1)),0,
                      max(round(df_to_plot['Tot_trans_cost'],1))]
             self.custom_fig(fig,title,yvals,neg_value=True)
-            fig.write_image(self.outdir+"Cum_total_cost_diff_PF.pdf", width=1200, height=550)
+            fig.write_image(self.outdir+"Cum_total_cost_diff_REF.pdf", width=1200, height=550)
             plt.close()
         
     def graph_paper(self):
@@ -1459,7 +1466,7 @@ class AmplGraph:
         p_start = self.ampl_obj.sets['PHASE_START']
         p_stop = self.ampl_obj.sets['PHASE_STOP']
         lifetime = self.ampl_obj.get_elem('lifetime',type_of_elem = 'Param')
-        phases = ['2015_2020'] + self.ampl_obj.sets['PHASE']
+        phases = self.ampl_obj.sets['PHASE']
         remaining = self.ampl_obj.get_elem('remaining_years',type_of_elem = 'Param')
         technologies = self.ampl_obj.sets['TECHNOLOGIES']
         
