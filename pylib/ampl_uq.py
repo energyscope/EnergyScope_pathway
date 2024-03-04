@@ -38,7 +38,7 @@ class AmplUQ:
 
         self.transcript_uncertainties(uncer_params,years_wnd)
         
-        solve_result = self.ampl_obj.run_ampl()
+        solve_result,_ = self.ampl_obj.run_ampl()
         
         if solve_result == 'solved':
             total_transition_cost = self.ampl_obj.collect_cost('TotalTransitionCost')[0]
