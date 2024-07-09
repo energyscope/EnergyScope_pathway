@@ -16,14 +16,13 @@ from sklearn.metrics.pairwise import cosine_similarity
 from pathlib import Path
 import plotly.figure_factory as ff
 from scipy import stats
-from numpy.linalg import norm
 
 import math
 import pickle as pkl
 import os
 
 
-class AmplPCA:
+class AmplPCADebug:
     
     def __init__(self, ampl_obj,case_study):
         self.ampl_obj = ampl_obj
@@ -41,32 +40,32 @@ class AmplPCA:
         self.resources = self.collector['Resources']
         
         # self._scaling_factor_sector() # Scaling versus EUD
-        self._scaling_factor_sector_2() # Scaling versus commodity production
+        # self._scaling_factor_sector_2() # Scaling versus commodity production
         
         # self._get_import_efuels()
         # self._get_elec_heat()
         
-        self.assets_scaled=self._scale_per_sector()
+        # self.assets_scaled=self._scale_per_sector()
         
         
         # self.assets_scaled_eud=self._scale_per_sector_eud() # Scaling versus EUD
-        self.assets_scaled_eud=self._scale_per_sector_eud_2() # Scaling versus commodity production
+        # self.assets_scaled_eud=self._scale_per_sector_eud_2() # Scaling versus commodity production
         
         # self.layers = self.layer_collector()
         # self.layers_scaled = self._scale_per_layer()
         
-        self.var_share_PC_assets = pd.DataFrame(columns=['Case','Years','PC','Var_share'])
-        self.var_PC_assets = pd.DataFrame(columns=['Case','Years','PC','Var'])
-        self.var_share_PC_prod = pd.DataFrame(columns=['Case','Years','PC','Var_share'])
-        self.var_share_PC_cons = pd.DataFrame(columns=['Case','Years','PC','Var_share'])
+        # self.var_share_PC_assets = pd.DataFrame(columns=['Case','Years','PC','Var_share'])
+        # self.var_PC_assets = pd.DataFrame(columns=['Case','Years','PC','Var'])
+        # self.var_share_PC_prod = pd.DataFrame(columns=['Case','Years','PC','Var_share'])
+        # self.var_share_PC_cons = pd.DataFrame(columns=['Case','Years','PC','Var_share'])
         
         
         # self.df_pca_full_transition = self._pca_assets_transition()
         # self.df_pca_full_assets = self._pca_assets_year(self.assets_scaled)
-        self.df_pca_full_assets_eud = self._pca_assets_year(self.assets_scaled_eud)
+        # self.df_pca_full_assets_eud = self._pca_assets_year(self.assets_scaled_eud)
         
-        self._most_different_PC()
-        self._PC_transition()
+        # self._most_different_PC()
+        # self._PC_transition()
         
         A = 4
         
@@ -84,15 +83,10 @@ class AmplPCA:
             df_pca = self.df_pca_full_cons.loc[self.df_pca_full_cons['PC']=='PC_{}'.format(j)]
         df_to_plot = pd.DataFrame(columns=df_pca.columns)
         
-        A = []
         for y in df_pca.Years.unique():
             temp = df_pca.loc[df_pca['Years']==y]
             temp = temp.nlargest(5, 'Value')
-            a = norm(temp.Value)*100
-            A += [a]
-            print('For year {}, top-5 tech of PC {} capture {}% of total variance'.format(y,j,round(a,2)))
             df_to_plot = df_to_plot.append(temp)
-        print('For PC {}, top-5 tech capture on average {}% of total variance'.format(j,np.mean(A)))
         
         if quantity in ['Assets','Assets_eud']:
             if True_val:
@@ -309,7 +303,7 @@ class AmplPCA:
         if eud is None:    
             eud = self.scaling_factor_sector
         else:
-            eud = eud
+            eud = eud.copy()
         
         if assets is None:
             assets = self.assets.copy()
@@ -317,17 +311,17 @@ class AmplPCA:
             assets = assets.copy()
             
         
-        assets_scaled = assets.loc[:,['F','Sample']]
+        assets_scaled = assets.loc[:,['F','Sample','Delta']].copy()
         assets_scaled = assets_scaled.loc[~assets_scaled.index.get_level_values('Technologies').isin(inf_sto)]
         assets_scaled.reset_index(inplace=True)
         assets_scaled_eud = assets_scaled.set_index(['Years','Technologies','Sample'])
         
-        self._fill_df_to_plot_w_zeros(assets_scaled_eud)
+        # assets_scaled_eud = self._fill_df_to_plot_w_zeros(assets_scaled_eud)
         
         years = assets.index.get_level_values('Years').unique()
         
         for y in years:
-            temp_y = assets.loc[assets.index.get_level_values('Years')==y,['F','Sample']]
+            temp_y = assets.loc[assets.index.get_level_values('Years')==y,['F','Delta','Sample']]
         
             for sector, tech in dict_tech.items():
                 if sector in ['INFRASTRUCTURE','STORAGE']:
@@ -335,9 +329,10 @@ class AmplPCA:
                 else:
                     share_eud = eud.loc[y,sector]['Share_eud']
                 temp_s = temp_y.loc[temp_y.index.get_level_values('Technologies').isin(tech)]
-                if temp_s['F'].empty:
+                if temp_s['Delta'].empty:
                     continue
-                temp_s['F'] /= (1/share_eud)
+                temp_s['Delta'] /= (max(temp_s['F'])/share_eud)
+                # temp_s['Delta'] /= (1/share_eud)
                 temp_s.reset_index(inplace=True)
                 temp_s = temp_s.set_index(['Years','Technologies','Sample'])
                 assets_scaled_eud.update(temp_s)
@@ -553,7 +548,7 @@ class AmplPCA:
         layers_scaled = layers_scaled.set_index(['Years','Elements','Sample'])
 
         
-        return layers_scaled                 
+        return layers_scaled        
             
     def _pca_assets_year(self,assets):
         
@@ -621,7 +616,7 @@ class AmplPCA:
         
         return df_pca_full
     
-    def graph_PC_projection(self,case_studies,output_folder_cs):
+    def graph_PC_projection(self,case_studies,output_folder_cs,output_folder_bc):
         
         file = '/Users/xrixhon/Development/GitKraken/EnergyScope_pathway/out/CASE_PCA/PCA_ref.pkl'
         file_name = open(file,"rb")
@@ -634,6 +629,7 @@ class AmplPCA:
         years = ['YEAR_2025','YEAR_2030','YEAR_2035','YEAR_2040','YEAR_2045','YEAR_2050']
         
         for PC in PC_transition.PC_tran.unique():
+        # for PC in ['PC_5']:#PC_transition.PC_tran.unique():
             PC_temp = PC_transition.loc[PC_transition['PC_tran'] == PC]
             
             df_to_plot = pd.DataFrame(columns=['Case',PC])
@@ -650,17 +646,32 @@ class AmplPCA:
                 ampl_uncert_collector = pkl.load(file_name)
                 file_name.close()
                 
+                output_bc = output_folder_bc[i]
+                file = os.path.join(output_bc,'_Results.pkl')
+                file_name = open(file,"rb")
+                ampl_uncert_collector_bc = pkl.load(file_name)
+                file_name.close()
+                
+                
+                
                 assets = ampl_uncert_collector['Assets'].copy()
-                # assets = assets.loc[assets.index.get_level_values('Years').isin(years)]
+                assets = assets.loc[assets.index.get_level_values('Years').isin(years)]
+                assets.reset_index(inplace=True)
+                assets = assets.set_index(['Years','Technologies','Sample'])
+                assets_bc = ampl_uncert_collector_bc['Assets'].copy()
+                assets_bc = assets_bc.loc[assets_bc.index.get_level_values('Years').isin(years)]
                 
-                assets_scaled = self._scale_per_sector_eud_2(eud = scaling_factor, assets = assets)
-                
-                assets_scaled = self._fill_df_to_plot_w_zeros(assets_scaled)
+                assets['Delta'] = assets['F'].sub(assets_bc['F'],fill_value=0.0)
+                assets.reset_index(inplace=True)
+                assets = assets.set_index(['Years','Technologies'])
+
+                assets_scaled = self._scale_per_sector_eud_3(eud = scaling_factor, assets = assets)
                 assets_scaled = assets_scaled.loc[assets_scaled.index.get_level_values('Years').isin(years)]
                 
                 
                 assets_scaled.reset_index(inplace=True)
                 assets_scaled = assets_scaled.pivot(columns='Technologies',index=['Sample','Years'],values='F')
+                # assets_scaled = assets_scaled.pivot(columns='Technologies',index=['Sample','Years'],values='Delta')
                 assets_scaled = assets_scaled.fillna(0)
                 assets_scaled.reset_index(inplace=True)
                 assets_scaled.drop(columns=['Sample','Years'],inplace=True)
@@ -675,6 +686,23 @@ class AmplPCA:
                 temp = assets_scaled.values * PC_temp_2.values[:, None]
                 temp = temp[0,:,:]
                 temp = pd.DataFrame(temp.sum(axis=1)).rename(columns={0:PC})
+                
+                if False:
+                
+                    PC_temp_2 = PC_temp_2.values[:, None]
+                    PC_temp_2 = PC_temp_2[0][0]
+                    
+                    assets_scaled = assets_scaled.values
+                    
+                    # Compute the projection matrix
+                    projection_matrix = np.outer(PC_temp_2, PC_temp_2) / np.dot(PC_temp_2, PC_temp_2)
+                    
+                    # Project the matrix onto the vector
+                    projected_matrix = np.dot(projection_matrix, assets_scaled.T).T
+                    
+                    # temp = self._project_matrix_onto_vector(assets_scaled,PC_temp_2)
+                    # temp = temp[0,:,:]
+                    temp = pd.DataFrame(projected_matrix.sum(axis=1)).rename(columns={0:PC})
                 temp['Case'] = cs
                 
                 hist_data += [np.array(temp[PC])]
@@ -693,7 +721,25 @@ class AmplPCA:
             fig_test.update_layout(title_text=PC,titlefont=dict(family="Raleway",size=28))
             pio.show(fig_test)
                     
-                                
+    def _project_matrix_onto_vector(matrix, vector):
+        """
+        Project a 2D matrix onto a 2D vector.
+        
+        Args:
+        - matrix: numpy array representing the 2D matrix
+        - vector: numpy array representing the 2D vector
+        
+        Returns:
+        - numpy array representing the projected 2D matrix
+        """
+        # Compute the projection matrix
+        projection_matrix = np.outer(vector, vector) / np.dot(vector, vector)
+        
+        # Project the matrix onto the vector
+        projected_matrix = np.dot(projection_matrix, matrix.T).T
+        
+        return projected_matrix
+                          
     def _confidence_interval(self,data,confidence_level,cs,PC):
         mean = np.mean(data)
         sem = stats.sem(data)
@@ -750,7 +796,7 @@ class AmplPCA:
             layers_prod_y = layers_prod_y.pivot(columns='Elements',index='Sample',values='Value')
             layers_prod_y = layers_prod_y.fillna(0)
             
-            # layers_prod_y = self._remove_outliers(layers_prod_y)
+            layers_prod_y = self._remove_outliers(layers_prod_y)
             
             pca = PCA(n_components=n_components)
         
@@ -877,7 +923,7 @@ class AmplPCA:
         
         counter = 0
         
-        threshold_counter = 0.9#0.8
+        threshold_counter = 0.8
         
         threshold_similarity = 0.74
         

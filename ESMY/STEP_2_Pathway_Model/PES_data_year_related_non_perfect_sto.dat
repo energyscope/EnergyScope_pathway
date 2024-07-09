@@ -349,11 +349,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2020",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -376,11 +376,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2025",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -403,11 +403,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2030",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -430,11 +430,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2035",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -484,11 +484,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2045",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -511,11 +511,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2050",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -538,11 +538,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.9	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.99	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 ;																																																																																																																	
 param storage_eff_out :=																																																																																																																	
@@ -566,11 +566,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2020",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -593,11 +593,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2025",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -620,11 +620,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2030",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -647,11 +647,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2035",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -674,11 +674,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2040",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -701,11 +701,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2045",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -728,11 +728,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 																																																																																																																	
 ["YEAR_2050",*,*]: 	ELECTRICITY	GASOLINE	DIESEL	LFO	GAS	WOOD	WET_BIOMASS	COAL	URANIUM	WASTE	H2	AMMONIA	METHANOL	HVC	HEAT_HIGH_T	HEAT_LOW_T_DHN	HEAT_LOW_T_DECEN	MOB_PUBLIC	MOB_PRIVATE	MOB_FREIGHT_RAIL	MOB_FREIGHT_ROAD	MOB_FREIGHT_BOAT	RES_WIND	RES_SOLAR	RES_HYDRO	RES_GEO 	CO2_ATM 	CO2_INDUSTRY	CO2_CAPTURED	:=																																																																																			
@@ -755,11 +755,11 @@ TS_DHN_SEASONAL	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0
 TS_HIGH_TEMP	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 GAS_STORAGE	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 H2_STORAGE	0	0	0	0	0	0	0	0	0	0	0.98	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-DIESEL_STORAGE	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-GASOLINE_STORAGE	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-LFO_STORAGE	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
-METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	1	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+DIESEL_STORAGE	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+GASOLINE_STORAGE	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+LFO_STORAGE	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+AMMONIA_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
+METHANOL_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0.995	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0																																																																																				
 CO2_STORAGE	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	0	1																																																																																				
 ;																																																																																																																	
 																																																																																																																	

@@ -59,6 +59,8 @@ import rl_esmy_graphs_v9
 import rl_esmy_graphs_v10
 import rl_esmy_graphs_v10_ses
 import rl_esmy_graphs_v11
+import rl_esmy_graphs_v12
+import rl_esmy_graphs_v14
 from stable_baselines3.sac.policies import SACPolicy
 from stable_baselines3.common.vec_env import DummyVecEnv
 from stable_baselines3.sac import SAC
@@ -68,9 +70,9 @@ from stable_baselines3.sac import SAC
 
 # #--------- Recovering passed arguments ---------#
 
-v = '11'
+v = '14'
 policy = 'MlpPolicy'
-type_of_model = 'MO'
+
 gamma = 1
 act_fun = torch.nn.modules.activation.ReLU
 # layers = [16,16]
@@ -78,16 +80,27 @@ layers = [128,128,128]
 
 # #-------- Defining learning variables --------#
 
-total_timesteps = 20000
+total_timesteps = 500
 batch_timesteps = 500
 
-rundir = '2023_11_20-12_41_33'
-out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
+# rundir = '2024_03_12-15_45_05'
+
+type_of_model = 'MO'
+rundir = '2024_04_10-15_15_54'
+
+# V14
+type_of_model = 'MO'
+rundir = '2024_05_01-19_52_38'
+
+# type_of_model = 'TD'
+# rundir = '2024_03_25-17_04_35'
+out_dir = '../out/learn_v{}/{}_{}/'.format(v,rundir,type_of_model)
 
 learning_from_scratch = False
 keep_on_learning = False
-fill_df = False
+fill_df = True
 plot = True
+gater_results_ES = False
 
 if learning_from_scratch:
     nb_done = 0
@@ -99,7 +112,7 @@ if learning_from_scratch:
     # ##  
     # ##  #------- Defining output directories --------#
     # ##   
-    out_dir = '../out/learn_v{}/{}/'.format(v,rundir)
+    out_dir = '../out/learn_v{}/{}_{}/'.format(v,rundir,type_of_model)
     
     if not os.path.isdir(out_dir):
         print('Creating out_dir {}'.format(out_dir))
@@ -157,7 +170,7 @@ if learning_from_scratch:
         
         model.set_env(env)
     
-        model.learn(batch_timesteps, log_interval=10, reset_num_timesteps = True)
+        model.learn(batch_timesteps, log_interval=10, reset_num_timesteps = True, tb_log_name='SAC_v{}_{}'.format(v,rundir))
         
         mymodel = out_dir_batch+"test{}".format(i)
         model.save(mymodel)
@@ -205,9 +218,10 @@ if keep_on_learning:
     
     # env = gym.make('esmymo-v{}'.format(v),out_dir=out_dir, v=v, new_step_api=False)
     env = gym.make('esmy-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model,nb_done=nb_done,out_dir_batch=out_dir_batch,new_step_api=False)
-    env     = DummyVecEnv([lambda:env])
+    # env     = DummyVecEnv([lambda:env])
     model   = SAC(policy, env,gamma = gamma, verbose=1, tensorboard_log = '../log', policy_kwargs=dict(activation_fn=act_fun, net_arch=dict(pi=layers, qf=layers)), learning_starts=100)
-    model.set_parameters(mymodel)
+    # model = SAC.load(mymodel, env=env)
+    model.load(mymodel, env=env)
     
     txt_files = []
     while remain_steps > 0:
@@ -259,13 +273,13 @@ if keep_on_learning:
 
 if fill_df:
     env = gym.make('esmy-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model, new_step_api=False)
-    lst_files = os.listdir(out_dir)
-    txt_files = [x for x in lst_files if x.endswith('.txt')]
-    txt_files.remove('set_up.txt')
-    if 'READ_ME.txt' in txt_files:
-        txt_files.remove('READ_ME.txt')
-    for f in txt_files:
-        system('rm {}{}'.format(out_dir,f))
+    # lst_files = os.listdir(out_dir)
+    # txt_files = [x for x in lst_files if x.endswith('.txt')]
+    # txt_files.remove('set_up.txt')
+    # if 'READ_ME.txt' in txt_files:
+    #     txt_files.remove('READ_ME.txt')
+    # for f in txt_files:
+    #     system('rm {}{}'.format(out_dir,f))
     nb_act = env.action_space.shape[0]
     lst_act = ['act_{}'.format(i) for i in range(1,nb_act+1)]
     lst_binding = ['binding_{}'.format(i) for i in range(1,nb_act+1)]
@@ -288,13 +302,13 @@ if fill_df:
 
 if plot:
     env = gym.make('esmy-v{}'.format(v),out_dir=out_dir, v=v,type_of_model=type_of_model,new_step_api=False)
-    lst_files = os.listdir(out_dir)
-    txt_files = [x for x in lst_files if x.endswith('.txt')]
-    txt_files.remove('set_up.txt')
-    if 'READ_ME.txt' in txt_files:
-        txt_files.remove('READ_ME.txt')
-    for f in txt_files:
-        system('rm {}{}'.format(out_dir,f))
+    # lst_files = os.listdir(out_dir)
+    # txt_files = [x for x in lst_files if x.endswith('.txt')]
+    # txt_files.remove('set_up.txt')
+    # if 'READ_ME.txt' in txt_files:
+    #     txt_files.remove('READ_ME.txt')
+    # for f in txt_files:
+    #     system('rm {}{}'.format(out_dir,f))
     
     df_learning = open(out_dir+'df_learning_pkl','rb')
     df_learning = pkl.load(df_learning)
@@ -316,7 +330,9 @@ if plot:
                 '9':rl_esmy_graphs_v9,
                 '10':rl_esmy_graphs_v10,
                 '10_ses':rl_esmy_graphs_v10_ses,
-                '11':rl_esmy_graphs_v11}
+                '11':rl_esmy_graphs_v11,
+                '12':rl_esmy_graphs_v12,
+                '14':rl_esmy_graphs_v14}
     v = '11'
     grph_mth = switcher.get(str(v))
     
@@ -330,10 +346,10 @@ if plot:
     # grph_mth.reward_plus_plus(df_learning,out_dir,env,type_graph='cost_gwp')
     # grph_mth.gif(out_dir, type_graph='pdf_rew_cost_gwp') 
     
-    # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act')
+    grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act')
     # grph_mth.gif(out_dir, type_graph='pdf_act')
     
-    # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act_binding')
+    grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act_binding')
     # grph_mth.gif(out_dir, type_graph='pdf_act_binding')
     
     # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='act_plus')
@@ -345,12 +361,15 @@ if plot:
     # grph_mth.pdf_generator(df_learning,out_dir, env, type_graph='cum_cost')
     # grph_mth.gif(out_dir,'pdf_cum_cost')
     
-    # grph_mth.pdf_generator(df_learning,out_dir,env, type_graph='obs')
+    grph_mth.pdf_generator(df_learning,out_dir,env, type_graph='obs')
     # grph_mth.gif(out_dir,'pdf_obs')
     
-    grph_mth.reward_fig_plus(df_learning,out_dir)
+    grph_mth.pdf_generator(df_learning,out_dir,env, type_graph='cost_gwp')
+    # grph_mth.gif(out_dir,'pdf_cost_gwp')
     
-    grph_mth.reward_fig(df_learning,out_dir)
+    # grph_mth.reward_fig_plus(df_learning,out_dir)
+    
+    # grph_mth.reward_fig(df_learning,out_dir)
     
     # rl_esmy_graphs.sp_generator(df_learning, out_dir)
     # rl_esmy_graphs.gif(out_dir,'sp')
@@ -369,5 +388,9 @@ if plot:
 
 # out_dir_batch = out_dir + 'batch0/'    
 # system('rm -r {}'.format(out_dir_batch))
+
+if gater_results_ES:
+    rl_esmy_stats.gather_results_ES(out_dir)
+    
 
 

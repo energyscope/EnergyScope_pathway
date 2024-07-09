@@ -29,11 +29,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class EsmyV11(gym.Env):
+class EsmyV12(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):
-        print("Initializing the EsmyV10", flush=True)
+        print("Initializing the EsmyV11", flush=True)
 
         out_dir = kwargs['out_dir']
         self.v = kwargs['v']
@@ -45,9 +45,9 @@ class EsmyV11(gym.Env):
         self.solve_result = "?"
         self.status_2050 = ''
         self.it = 0
-        self.cum_gwp_init = 1e3
+        self.cum_gwp_init = 0.0
         self.cum_gwp = self.cum_gwp_init
-        self.cum_cost_init = 3e5
+        self.cum_cost_init = 0.0
         self.cum_cost = self.cum_cost_init
         self.RE_in_mix_init = 0.0
         self.RE_installed = self.RE_in_mix_init
@@ -63,6 +63,8 @@ class EsmyV11(gym.Env):
         self.carbon_budget = 1224935.4 #Infered from CO2_eq-emissions of Belgium in 2020 (~95Mt), of world in 2020 (34.81Gt, from ourworldindata) and world carbon budget (420Gt, from climate analytics)
 
         self.cost_budget = 1.1e6
+
+        self.gwp_cost_max = 200 #€/ton_CO2_eq
 
         self.skip = 123454 # For sample generation
 
@@ -116,7 +118,7 @@ class EsmyV11(gym.Env):
                         'crossover=0',
                         'prepasses = 3',
                         'barconvtol=1e-6',
-                        'feastol=1e-6',
+                        'dualreductions=0',
                         'presolve=-1'] # Not a good idea to put it to 0 if the model is too big
 
         self.gurobi_options_str = ' '.join(self.gurobi_options)
@@ -124,8 +126,8 @@ class EsmyV11(gym.Env):
         self.ampl_options = {'show_stats': 1,
                         'log_file': os.path.join(self.pth_model,'log.txt'),
                         'presolve': 10,
-                        'presolve_eps': 1e-6,
-                        'presolve_fixeps': 1e-6,
+                        'presolve_eps': 1e-4,
+                        'presolve_fixeps': 1e-4,
                         'show_boundtol': 0,
                         'gurobi_options': self.gurobi_options_str,
                         '_log_input_only': False}
@@ -190,8 +192,11 @@ class EsmyV11(gym.Env):
         self.max_fossil = 3*[1.0]
         self.min_fossil = 3*[0.0]
 
-        actlow = np.array(self.min_gwp_limit+self.min_fossil)
-        acthigh = np.array(self.max_gwp_limit+self.max_fossil)
+        self.min_gwp_cost = [0.0]
+        self.max_gwp_cost = [1.0]
+
+        actlow = np.array(self.min_gwp_limit+self.min_fossil+self.min_gwp_cost)
+        acthigh = np.array(self.max_gwp_limit+self.max_fossil+self.max_gwp_cost)
 
         self.actlow = actlow
         self.acthigh  = acthigh
@@ -293,9 +298,10 @@ class EsmyV11(gym.Env):
         if self.status_2050 == 'Success':
             self.ampl_collector.clean_collector()
             self.ampl_collector.pkl()
-
+            
         self.it += 1
         self.ampl_obj.set_init_sol()
+
 
         print('\n--------------------------------------------------------------------')
         print('---------------------- DONE WITH THIS ITERATION  --------------------')
@@ -323,13 +329,12 @@ class EsmyV11(gym.Env):
         years = self.ampl_obj_0.sets['YEARS']
         self.gwp_per_year = dict.fromkeys(years,0.0)
         self.cost_per_year = dict.fromkeys(years,0.0)
-        self.RE_in_mix_per_year = dict.fromkeys(years,0.0)
-        self.Energy_efficiency_per_year = dict.fromkeys(years,0.0)
-
         self.ampl_obj = AmplObject(self.mod_1_path, self.mod_2_path, self.dat_path, self.ampl_options, type_model = self.type_of_model)
         self.ampl_pre = AmplPreProcessor(self.ampl_obj, self.n_year_opti, self.n_year_overlap)
         output_file_run = os.path.join(self.out_dir_batch,'Run{}'.format(self.i_epoch))
         self.ampl_collector = AmplCollector(self.ampl_pre, output_file_run)
+
+        
 
         return self._scale_obs(np.array([self.cum_gwp, self.cum_cost,self.RE_in_mix,
             self.Energy_efficiency], dtype=np.float32))
@@ -484,7 +489,10 @@ class EsmyV11(gym.Env):
         gas_limit =  action[1]
         lfo_limit =  action[2]
         coal_limit =  action[3]
+        gwp_tax_wnd = action[-1]
+        gwp_tax_wnd = dict.fromkeys(years_wnd,gwp_tax_wnd*self.gwp_cost_max/1000)
         
+        self.ampl_obj.set_params('gwp_cost',gwp_tax_wnd)
         # self.ampl_obj.set_params('gwp_limit',{(years_wnd[0]):gwp_limit_0})
         self.ampl_obj.set_params('gwp_limit',{(years_wnd[1]):gwp_limit_1})
 

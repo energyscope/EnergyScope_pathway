@@ -12,6 +12,8 @@ import numpy as np
 import os,sys
 from os import system
 import pandas as pd
+import pickle as pkl
+from pathlib import Path
 
 pylibPath = os.path.abspath("../pylib")    # WARNING ! pwd is where the MAIN file was launched !!!
 
@@ -139,3 +141,37 @@ def updated_status_2050_testing(df_testing):
     df_testing = df_testing.reset_index()
         
     return df_testing
+
+def gather_results_ES(output_dir):
+    batchs_dir = output_dir+"_batchs"
+    
+    uq_collector = {}
+    
+    # uq_path_runs = uq_path + "/Runs/"
+    
+    dirs_batch = sorted(os.listdir(batchs_dir))
+    
+    if not(Path(os.path.join(output_dir,'_RL_collector.p')).is_file()):
+        for d in dirs_batch:
+            if (d != '_Recap.csv') and (d != 'batch0') and ('batch' in d):
+                print(d)
+                dir_batch = sorted(os.listdir(batchs_dir+'/'+d))
+                id_batch = d[5:]
+                for i, file in enumerate(dir_batch):
+                    if "Run" in file:
+                        run = int(file[3:])
+                        open_file = open(batchs_dir+'/'+d+'/'+file,"rb")
+                        loaded_results = pkl.load(open_file)
+                        if not(uq_collector):
+                            for key in loaded_results:
+                                loaded_results[key]['Run'] = run
+                                loaded_results[key]['Batch'] = id_batch
+                            uq_collector = loaded_results
+                        else:
+                            for key in uq_collector:
+                                loaded_results[key]['Run'] = run
+                                loaded_results[key]['Batch'] = id_batch
+                                uq_collector[key] = uq_collector[key].append(loaded_results[key])
+        open_file = open(output_dir+'_RL_collector.p',"wb")
+        pkl.dump(uq_collector, open_file)
+        open_file.close()

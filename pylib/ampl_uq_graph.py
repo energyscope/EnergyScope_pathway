@@ -12,6 +12,7 @@ import os, sys
 from pathlib import Path
 import pickle as pkl
 import hashlib
+from scipy import stats
 
 pylibPath = os.path.abspath("../pylib")
 if pylibPath not in sys.path:
@@ -1653,7 +1654,9 @@ class AmplUQGraph:
         temp = self.df_pdf.copy()
         yvals = [0,max(temp['y_pdf'])]
         
-        mean_cost = 1160748.416529/1e6
+        mean_cost = 1178724.605/1e6
+        
+        median_cost = 1163526.983122/1e6
         
         nom_cost = 1079.5/1e3
         SMR_cost = nom_cost-36.9/1e3
@@ -1697,7 +1700,8 @@ class AmplUQGraph:
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y]
                 temp_y.dropna(how='all',inplace=True)
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y,threshold=0.05)
+                    # temp_y = self._remove_low_values(temp_y,threshold=0.05)
+                    temp_y = self._remove_low_values(temp_y,threshold=0.0)
                     df_to_plot.update(temp_y)
             df_to_plot.dropna(how='all',inplace=True)
             
@@ -1707,16 +1711,19 @@ class AmplUQGraph:
             df_to_plot['Technologies'] = df_to_plot['Technologies'].astype("str")
             df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
             
+            if sector == 'INFRASTRUCTURE':
+                A=4
+            
             if plot:
                 # if len(df_to_plot.index.get_level_values(0).unique()) <= 1:
                 #     fig = px.bar(df_to_plot, x='Years', y = 'F',color='Technologies',
                 #                  title=self.case_study + ' - ' + sector+' - Installed capacity',
                 #                  color_discrete_map=self.color_dict_full)
                 # else:
-                    
+                
                 fig = px.box(df_to_plot, x='Years', y = 'F',color='Technologies',
                          title= sector+' - Installed capacity',
-                         color_discrete_map=self.color_dict_full)
+                         color_discrete_map=self.color_dict_full,notched=True)
                 # fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
                 # fig.update_traces(mode='none')
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
@@ -1752,7 +1759,7 @@ class AmplUQGraph:
         if ampl_uq_collector == None:
             ampl_uq_collector = self.ampl_uq_collector
         
-        col_plot = ['METHANOL_RE','AMMONIA_RE','GAS_RE','H2_RE']
+        col_plot = ['GAS_RE','H2_RE','AMMONIA_RE','METHANOL_RE']
         results = ampl_uq_collector['Resources'].copy()
         results.reset_index(inplace=True)
         results = results.loc[results['Resources'].isin(col_plot),:]
@@ -1768,23 +1775,35 @@ class AmplUQGraph:
         
         df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
         
+        for i, res in enumerate(col_plot):
+            for j, y in enumerate(sorted(df_to_plot['Years'].unique())):
+                temp = df_to_plot.loc[(df_to_plot['Resources']==res) & (df_to_plot['Years']==y)]
+                if j > 0:
+                    temp = temp[np.abs(stats.zscore(temp['Res'])) < 3]
+                
+                if (i == 0) and (j==0):
+                    df_to_plot_plot = temp
+                else:
+                    df_to_plot_plot = df_to_plot_plot.append(temp)
+        
             
         if plot:
-            fig = px.box(df_to_plot, x='Years', color='Resources',y='Res',
+            fig = px.box(df_to_plot_plot, x='Years', color='Resources',y='Res',
                            title='Electrofuels [TWh]',
-                           color_discrete_map=self.color_dict_full,notched=True)
+                           color_discrete_map=self.color_dict_full,notched=True,
+                           points = False)
                 
-            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_plot['Years'].unique()))
             pio.show(fig)
             
             fig.write_html(self.outdir+"/Electrofuels.html")
         
             title = "<b>Imported renewable electrofuels</b><br>[TWh]"
-            yvals = [0,round(max(df_to_plot['Res']))]
+            yvals = [0,round(max(df_to_plot_plot['Res']))]
             
             self.custom_fig(fig,title,yvals,type_graph='bar')
 
-            fig.write_image(self.outdir+"Electrofuels.pdf", width=1200, height=550)
+            fig.write_image(self.outdir+"Electrofuels_no_outlier.pdf", width=1200, height=550)
             plt.close()
     
     def graph_local_RE(self, ampl_uq_collector = None, plot = True):
@@ -1854,8 +1873,8 @@ class AmplUQGraph:
         if ampl_uq_collector == None:
             ampl_uq_collector = self.ampl_uq_collector
         
-        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
-                'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
+        col_plot = ['LFO','METHANOL','AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
+                'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC',
                 'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
                 'MOB_PUBLIC','Sample']
         results = ampl_uq_collector['Year_balance'].copy()

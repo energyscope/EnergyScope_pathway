@@ -259,6 +259,27 @@ class AmplObject:
         self.set_params('f_min',assets)
         self.set_params('solar_area',solar_area)
     
+    def set_f_max(self,years):
+        f_min = self.get_elem('f_min',type_of_elem='Param').copy()
+        f_min.reset_index(inplace=True)
+        f_min = f_min.astype({'Years':str,'Technologies':str})
+        f_min = f_min.set_index(['Years','Technologies'])
+        
+        temp = f_min.loc[f_min.index.get_level_values('Years').isin(years)]
+        temp['f_min'] = temp['f_min']+0.05
+        temp.loc[temp.index.get_level_values('Technologies') == 'DEC_SOLAR',:] = 1e5
+        temp.loc[temp.index.get_level_values('Technologies') == 'DHN_SOLAR',:] = 1e5
+        temp.rename(columns={'f_min':'f_max'},inplace=True)
+        
+        f_max = self.get_elem('f_max',type_of_elem='Param').copy()
+        f_max.reset_index(inplace=True)
+        f_max = f_max.astype({'Years':str,'Technologies':str})
+        f_max = f_max.set_index(['Years','Technologies'])
+        
+        f_max.update(temp)
+        
+        self.set_params('f_max',f_max)
+    
     #############################
     #       STATIC METHODS      #
     #############################
@@ -731,7 +752,7 @@ class AmplObject:
                                     ['Years', 'Technologies', 'F', 'f_min', 'f_max', 'Losses', 'Year_energy_flux',
                                     'Storage_in_max', 'Storage_out_max']
                                     containing the following information:
-                                    [region name,
+                                    [year,
                                     technology name,
                                     installed capacity [GWh],
                                     lower bound on the instaled capacity [GWh],

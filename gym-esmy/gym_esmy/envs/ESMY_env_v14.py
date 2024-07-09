@@ -29,11 +29,11 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-class EsmyV11(gym.Env):
+class EsmyV14(gym.Env):
     metadata = {'render.modes': ['human']}
 
     def __init__(self,**kwargs):
-        print("Initializing the EsmyV10", flush=True)
+        print("Initializing the EsmyV14", flush=True)
 
         out_dir = kwargs['out_dir']
         self.v = kwargs['v']
@@ -64,8 +64,6 @@ class EsmyV11(gym.Env):
 
         self.cost_budget = 1.1e6
 
-        self.skip = 123454 # For sample generation
-
         if 'type_of_model' in kwargs:
             self.type_of_model = kwargs['type_of_model']
         else:
@@ -75,6 +73,8 @@ class EsmyV11(gym.Env):
             self.nb_done = kwargs['nb_done']
         else:
             self.nb_done = 0
+        
+        self.skip = 123454 + self.nb_done*100 # For sample generation
         
         if 'out_dir_batch' in kwargs:
             self.out_dir_batch = kwargs['out_dir_batch']
@@ -211,6 +211,7 @@ class EsmyV11(gym.Env):
         self.file_action = open('{}/action.txt'.format(out_dir),'w')
         self.file_cost = open('{}/cost.txt'.format(out_dir),'w')
         self.file_binding = open('{}/binding.txt'.format(out_dir),'w')
+        self.file_sample = open('{}/sample.txt'.format(out_dir),'w')
 
 
 #------------------------------------------------------------------------------#
@@ -307,13 +308,31 @@ class EsmyV11(gym.Env):
     def reset(self):
         print("RESET THE PROBLEM")
         self.it = 0
-        self.skip += self.i_epoch+self.nb_done*100
+        self.i_epoch += 1
+        self.skip += 1
 
         ampl_uq = AmplUQ(self.ampl_obj_0)
 
         self.sample = ampl_uq.generate_one_sample(uq_exp = self.uq_experiment, skip=self.skip)
 
-        self.i_epoch += 1
+        sample_to_print = '{} {} '.format(self.i_epoch, self.skip)
+
+        # for i in range(len(action)):
+        #     sample_to_print += ' {:.2f}'.format(action[i])
+        
+        temp_sample = self.sample.values()
+        temp_sample = str(temp_sample)
+        temp_sample = temp_sample.replace('dict_values([', '')
+        temp_sample = temp_sample.replace('])', '')
+        temp_sample = temp_sample.replace(',', '')
+        
+        sample_to_print += temp_sample
+        
+        sample_to_print += '\n'
+
+        self.file_sample.write(sample_to_print)
+        self.file_sample.flush()
+
         self.cum_gwp = self.cum_gwp_init
         self.cum_cost = self.cum_cost_init
         self.RE_in_mix = self.RE_in_mix_init
@@ -422,17 +441,17 @@ class EsmyV11(gym.Env):
                 if self.carbon_budget < self.cum_gwp:
                     self.status_2050 = 'Failure'
                     # reward = 200/(self.it+1) * (self.carbon_budget-self.cum_gwp)/self.carbon_budget
-                    reward = 200 * (self.carbon_budget-self.cum_gwp)/self.carbon_budget
+                    reward = 200/(self.it+1) * (self.carbon_budget-self.cum_gwp)/self.carbon_budget
                     done = 1
                 else:
                     reward = 0
                     done = 0
             else :
-                reward = 200 * min((self.carbon_budget-self.cum_gwp)/self.carbon_budget,0) + 100 * (self.cost_budget-self.cum_cost)/(self.cost_budget)
+                reward = 200/(self.it+1) * min((self.carbon_budget-self.cum_gwp)/self.carbon_budget,0) + 100/(self.it+1) * (self.cost_budget-self.cum_cost)/(self.cost_budget)
                 if self.carbon_budget < self.cum_gwp:
                     self.status_2050 = 'Failure'
                 else:
-                    # reward += 30
+                    reward += 10
                     self.status_2050 = 'Success'
                 done = 1
 

@@ -98,7 +98,7 @@ class AmplGraph:
             for y in results.index.get_level_values(0).unique():
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y,:] 
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y)#, threshold=0.01)
+                    temp_y = self._remove_low_values(temp_y)#, threshold=0.0)
                     df_to_plot.update(temp_y)
                     if not temp_y.empty:
                         temp_df = df_to_plot.reset_index()
@@ -936,18 +936,29 @@ class AmplGraph:
         
         return df_to_plot
     
-    def graph_total_cost_per_year(self):
+    def graph_total_cost_per_year(self, ampl_collector = None, plot = True):        
+        
         pio.renderers.default = 'browser'
         
-        results = self.ampl_collector['TotalCost'].copy()
+        if ampl_collector == None:
+            ampl_collector = self.ampl_collector
+        
+        results = ampl_collector['TotalCost'].copy()
 
         df_to_plot = results.reset_index()
         df_to_plot['index'] = df_to_plot['index'].str.replace('YEAR_', '')
-        fig = px.line(df_to_plot, x='index', y = 'TotalCost',
-                     title=self.case_study + ' - Total cost per year')
-        pio.show(fig)
+        df_to_plot.rename(columns={'index':'Years'},inplace=True)
+        df_to_plot['Years'] = df_to_plot['Years'].astype("str")
+        df_to_plot['TotalCost'] /= 1000
+        fig = px.line(df_to_plot, x='Years', y = 'TotalCost',
+                     title=self.case_study + ' - Total cost per year [b€]')
+        if plot:
+            pio.show(fig)
         fig.write_image(self.outdir+"Cost_total_per_year.pdf", width=1200, height=550)
         plt.close()
+        
+        df_to_plot = df_to_plot.set_index('Years')
+        return df_to_plot
     
     def graph_tech_cap(self, ampl_collector = None, plot = True):
         pio.renderers.default = 'browser'
@@ -966,7 +977,7 @@ class AmplGraph:
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y]
                 temp_y.dropna(how='all',inplace=True)
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y,threshold=0)
+                    temp_y = self._remove_low_values(temp_y,threshold=0.01)
                     df_to_plot.update(temp_y)
             df_to_plot.dropna(how='all',inplace=True)
             df_to_plot.reset_index(inplace=True)
@@ -1165,7 +1176,8 @@ class AmplGraph:
                     'Resources':self.graph_resource,
                     'Layer':self.graph_layer,
                     'Load_factor':self.graph_load_factor_scaled,
-                    'GWP_per_sector':self.graph_gwp_per_sector}
+                    'GWP_per_sector':self.graph_gwp_per_sector,
+                    'Total_system_cost':self.graph_total_cost_per_year}
         
         if type_of_graph not in ['Total_trans_cost']: 
             grph_mth = switcher.get(str(type_of_graph))
@@ -1176,9 +1188,9 @@ class AmplGraph:
                 result_0 = grph_mth(ampl_collector = result_0,plot = False)
                 result_1 = grph_mth(ampl_collector = result_1,plot = False)
             
-        else:
+        else :
             result_0 = self._compute_transition_cost(ampl_collector = result_0)
-            result_1 = self._compute_transition_cost(ampl_collector = result_1)
+            result_1 = self._compute_transition_cost(ampl_collector = result_1)    
         
         
         if type_of_graph in ['C_op_phase','C_inv_phase_tech','Cost_return']:
@@ -1193,6 +1205,9 @@ class AmplGraph:
         elif type_of_graph in ['Total_trans_cost']:
             result_0 = pd.DataFrame(result_0,columns=['Tot_trans_cost'])
             result_1 = pd.DataFrame(result_1,columns=['Tot_trans_cost'])
+        elif type_of_graph in ['Total_system_cost']:
+            result_0 = pd.DataFrame(result_0,columns=['TotalCost'])
+            result_1 = pd.DataFrame(result_1,columns=['TotalCost'])
         elif type_of_graph in ['GWP_per_sector']:
             result_0 = result_0.set_index(['Years','Layers'])
             result_1 = result_1.set_index(['Years','Layers'])
@@ -1419,6 +1434,19 @@ class AmplGraph:
                      max(round(df_to_plot['Tot_trans_cost'],1))]
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"Cum_total_cost_diff_REF.pdf", width=1200, height=550)
+            plt.close()
+        
+        elif type_of_graph in ['Total_system_cost']:
+            fig = px.line(df_to_plot,x='Years',y='TotalCost',
+                          title='Comparison - {}'.format(type_of_graph),markers=True)
+            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            pio.show(fig)
+            title = "<b>Annual system cost difference versus REF</b><br>[b€]"
+            yvals = sorted([min(round(df_to_plot['TotalCost'],1)),0,
+                            round(df_to_plot['TotalCost'].iloc[-1],1),
+                     max(round(df_to_plot['TotalCost'],1))])
+            self.custom_fig(fig,title,yvals,neg_value=True)
+            fig.write_image(self.outdir+"Cum_system_cost_diff_REF.pdf", width=1200, height=550)
             plt.close()
         
     def graph_paper(self):

@@ -432,7 +432,7 @@ class EsmyV10(gym.Env):
 
         self._get_action_to_ampl(action)
         
-        self.solve_result = self.ampl_obj.run_ampl()
+        self.solve_result,_ = self.ampl_obj.run_ampl()
 
         act_to_print = '{} {}'.format(self.i_epoch,self.it)
 

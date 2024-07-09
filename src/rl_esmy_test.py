@@ -27,9 +27,13 @@ if pylibPath not in sys.path:
 
 import gym
 import gym_esmy
+from gym import spaces
 from stable_baselines3.sac import SAC
+from stable_baselines3.common.vec_env import DummyVecEnv
 import rl_esmy_stats
 import seaborn as sns
+
+
 
 
 
@@ -37,26 +41,28 @@ import seaborn as sns
 #-------- Defining learning and testing variables --------#
 
 
-v = '10'
-type_of_model = 'MO'
-rundir = '2023_09_06-11_54_49'
-out_dir_test  = '../out/test_v{}/{}/{}/'.format(v,rundir,type_of_model)
+v = '11'
+type_of_model_test = 'MO'
+rundir = '2024_03_12-15_45_05'
+# rundir = '2023_04_26-11_25_47'
+out_dir_test  = '../out/test_v{}/{}/{}/'.format(v,rundir,type_of_model_test)
 
 
 if not os.path.isdir(out_dir_test):
     os.makedirs(out_dir_test)
 
-learn_dir = '../out/learn_v{}/{}/_batchs/'.format(v,rundir)
+type_of_model_learn = 'MO'
+learn_dir = '../out/learn_v{}/{}_{}/_batchs/'.format(v,rundir,type_of_model_learn)
+# learn_dir = '../out/learn_v{}/{}/_batchs/'.format(v,rundir)
 
-
-bf = len(next(os.walk(learn_dir))[1])-1
+bf = len(next(os.walk(learn_dir))[1])
 # bf = 2
 nb_done = 0
-b0 = nb_done + 1 
+b0 = next(os.walk(learn_dir))[1][0]
 print('There are {} batches to test, starting at batch {}'.format(bf,b0))
 
 nit    = 1
-ntests = 10
+ntests = 100
 
 lst_files = os.listdir(out_dir_test)
 txt_files = [x for x in lst_files if x.endswith('.txt')]
@@ -67,21 +73,21 @@ if 'READ_ME.txt' in txt_files:
 for f in txt_files:
     system('rm {}{}'.format(out_dir_test,f))
 
-test = False
-fill_df = True
-graph = True
+test = True
+fill_df = False
+graph = False
 
 #------------------ // testing -----------------------#
 
 
 if test:
 
-    for batch in range(b0,bf+1):
-        out_dir_batch = learn_dir + 'batch{}/'.format(batch)    
+    for batch in ['batch67','batch77']:#next(os.walk(learn_dir))[1]:
+        out_dir_batch = learn_dir + '{}/'.format(batch)    
         for j in range(ntests):
             t = time.time()
     
-            out_dir_test_batch = out_dir_test + 'batch{}/test{}/'.format(batch,j+1)    
+            out_dir_test_batch = out_dir_test + '{}/test{}/'.format(batch,j+1)    
             
             print('out_dir_test_batch = {}'.format(out_dir_test_batch))
         
@@ -92,10 +98,29 @@ if test:
             sys.stdout = open(out_dir_test_batch+'stdout','w')
         
             #---------- Loading model        
-            system('cp {}test{}.zip {}'.format(out_dir_batch,batch,out_dir_test_batch))
+            system('cp {}test{}.zip {}'.format(out_dir_batch,batch[5:],out_dir_test_batch))
             
-            env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test_batch, v=v,type_of_model=type_of_model, nb_done=j, new_step_api=False)
-            model = SAC.load("{}test{}".format(out_dir_test_batch,batch))
+            # env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test_batch, v=v,type_of_model=type_of_model, nb_done=j, new_step_api=False)
+            
+            env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test_batch, v=v, type_of_model=type_of_model_test,nb_done=j,out_dir_batch=out_dir_batch, new_step_api=False)
+            
+            env     = DummyVecEnv([lambda:env])
+            
+            model = SAC.load("{}test{}".format(out_dir_test_batch,batch[5:]))#,env=env)
+            
+            max_gwp_limit = [1.0] #123000 ktCO2 --> Status 2020
+            min_gwp_limit = [0.0] #3406 ktCO2 --> Objectif 2050
+
+            max_fossil = 3*[1.0]
+            min_fossil = 3*[0.0]
+
+            actlow = np.array(min_gwp_limit+min_fossil)
+            acthigh = np.array(max_gwp_limit+max_fossil)
+            
+            model.action_space = spaces.Box(low=actlow, high=acthigh, dtype=np.float32)
+            
+            model.set_env(env)
+            
         
             #--------- Testing model
             obs = env.reset()
@@ -104,7 +129,7 @@ if test:
             i = 1
             while not episode_over:
                 t_i = time.time()-t
-                action, _states = model.predict(obs, deterministic=True)
+                action, _ = model.predict(obs, deterministic=True)
                 obs,reward,episode_over,_ = env.step(action)
                 elapsed_i = time.time()-t_i
                 print('Time to test the {}th steps: '.format(i),elapsed_i)
@@ -118,7 +143,7 @@ if test:
     system('rm -R {}batch*'.format(out_dir_test))
 
 if fill_df:
-    env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test, v=v,type_of_model=type_of_model, new_step_api=False)
+    env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test, v=v,type_of_model=type_of_model_test, new_step_api=False)
     lst_files = os.listdir(out_dir_test)
     txt_files = [x for x in lst_files if x.endswith('.txt')]
     for f in txt_files:
@@ -148,7 +173,7 @@ if fill_df:
     open_file.close()
 
 if graph:
-    env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test, v=v,type_of_model=type_of_model, new_step_api=False)
+    env = gym.make('esmy-v{}'.format(v),out_dir=out_dir_test, v=v,type_of_model=type_of_model_test, new_step_api=False)
     lst_files = os.listdir(out_dir_test)
     txt_files = [x for x in lst_files if x.endswith('.txt')]
     for f in txt_files:

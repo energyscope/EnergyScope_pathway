@@ -27,19 +27,21 @@ from ampl_graph import AmplGraph
 from ampl_uncert_graph import AmplUncertGraph
 from ampl_uq import AmplUQ
 from ampl_pca import AmplPCA
-from ampl_pca_debug import AmplPCADebug
 from rheia.CASES.determine_stoch_des_space import StochasticDesignSpace
 import rheia.UQ.pce as uq
 
 
 type_of_model = 'TD'
 nbr_tds = 12
-case_to_study = ['CASE_PCA']
+case_to_study = [#'CASE_REF',
+                  'CASE_2_no_SMR']#,
+                    # 'CASE_ROB'] #,
+                    # 'CASE_PCA']
+                  # 'CASE_3_50',
+                  # 'CASE_3_80',
+                  # 'CASE_4_50',
+                  # 'CASE_4_80']
 
-# case_to_study = ['CASE_REF','CASE_2','CASE_ROB_2']
-# case_to_study = ['CASE_2']
-# case_to_study = ['CASE_REF','CASE_ROB_2']
-# case_to_study = ['CASE_PCA_REF','CASE_PCA_SMR','CASE_PCA_ROB']
 
 SMR = False
 gwp_budget = False
@@ -48,11 +50,10 @@ if gwp_budget:
     
 CO2_neutrality_2050 = False
 
-run_opti = False
+run_opti = True
 check_status = False
 graph = False
-gather_results = False
-run_pca = True
+run_pca = False
 graph_comp = False
 
 pth_esmy = os.path.join(curr_dir.parent,'ESMY')
@@ -62,12 +63,10 @@ pth_output_all = os.path.join(curr_dir.parent,'out')
 
 base_case_dict={'CASE_REF':'TD_30_0_gwp_budget_no_efuels_2020',
                 'CASE_2':'TD_30_0_gwp_budget_no_efuels_2020_SMR',
+                'CASE_2_no_SMR':'TD_30_0_gwp_budget_no_efuels_2020_SMR',
                 'CASE_ROB': 'TD_30_0_gwp_budget_no_efuels_2020_ROB',
                 'CASE_ROB_2': 'TD_30_0_gwp_budget_no_efuels_2020_ROB_2',
-                'CASE_PCA_REF': 'TD_30_0_gwp_budget_no_efuels_2020',
-                'CASE_PCA_SMR':'TD_30_0_gwp_budget_no_efuels_2020_SMR',
-                'CASE_PCA_ROB': 'TD_30_0_gwp_budget_no_efuels_2020_ROB_2',
-                'CASE_PCA': 'TD_30_0_gwp_budget_no_efuels_2020',
+                'CASE_PCA': 'CASE_4_80',
                 'CASE_PCA_MO': 'CASE_3_80',
                 'CASE_3_50':'CASE_3_50',
                 'CASE_3_80':'CASE_3_80',
@@ -152,14 +151,14 @@ if __name__ == '__main__':
     # TO DO ONCE AT INITIALISATION OF THE ENVIRONMENT
     
     
-    n_year_opti = 10
-    n_year_overlap = 5
+    n_year_opti = 30
+    n_year_overlap = 0
     
     
     
     for cs in case_to_study:
         skip = 123454
-        n_test = 50
+        n_test = 1
     
         case_study = cs
         output_folder_cs = os.path.join(pth_output_all,case_study,type_of_model)
@@ -191,8 +190,8 @@ if __name__ == '__main__':
                 ampl_0.clean_history()
                 
                 
-                ampl_uq = AmplUQ(ampl_0)
-                sample = ampl_uq.generate_one_sample(uq_exp = uq_experiment, skip=skip)
+                # ampl_uq = AmplUQ(ampl_0)
+                # sample = ampl_uq.generate_one_sample(uq_exp = uq_experiment, skip=skip)
                 ampl_collector = AmplCollector(ampl_pre, output_file_run)
                 
                 t = time.time()
@@ -211,17 +210,22 @@ if __name__ == '__main__':
                     ampl_uq = AmplUQ(ampl)
                     
                     years_wnd=['YEAR_2025','YEAR_2030','YEAR_2035','YEAR_2040','YEAR_2045','YEAR_2050']
-                    ampl_uq.transcript_uncertainties(sample,years_wnd)
+                    # ampl_uq.transcript_uncertainties(sample,years_wnd)
+                    
+                    ampl.set_params('f_max',{('YEAR_2040','NUCLEAR_SMR'):0})
+                    ampl.set_params('f_max',{('YEAR_2045','NUCLEAR_SMR'):0})
+                    ampl.set_params('f_max',{('YEAR_2050','NUCLEAR_SMR'):0})
                     
                     ampl.set_f_min(assets_bc)
+                    ampl.set_f_max(years=['YEAR_2020','YEAR_2025','YEAR_2030','YEAR_2035'])                    
                     
                     solve_result, solve_result_num = ampl.run_ampl()
                     
-                    new_row = {'Case':cs,'Test':j,'Step':i,'solve_result':solve_result,'solve_result_num':solve_result_num}  
-                    status_df = status_df.append(new_row,ignore_index=True)
+                    # new_row = {'Case':cs,'Test':j,'Step':i,'solve_result':solve_result,'solve_result_num':solve_result_num}  
+                    # status_df = status_df.append(new_row,ignore_index=True)
                     
-                    if (solve_result != 'solved') and (solve_result != 'solved?'):
-                        break
+                    # if (solve_result != 'solved') and (solve_result != 'solved?'):
+                    #     break
                     
                     ampl.get_results()
                     
@@ -246,63 +250,31 @@ if __name__ == '__main__':
                         ampl_collector.clean_collector()
                         ampl_collector.pkl()
                         break
-                skip += 1
+                # skip += 1
         
 
-            status_file_pkl = open(status_file,"wb")
-            pkl.dump(status_df,status_file_pkl)
-            status_file_pkl.close()
+            # status_file_pkl = open(status_file,"wb")
+            # pkl.dump(status_df,status_file_pkl)
+            # status_file_pkl.close()
         
-        if check_status:
-            status_file_upkl = open(status_file,"rb")
-            loaded_results = pkl.load(status_file_upkl)
-            A = loaded_results.loc[loaded_results['solve_result'].isin(['unbounded','infeasible'])]
-            B = 4
-            
-        if gather_results:
-            
-            uq_path = os.path.join(pth_output_all,case_study,type_of_model)
-            uq_path_runs = os.path.join(output_folder_cs,'Runs/')
-            
-            if not(Path(os.path.join(uq_path,'_uncert_collector.p')).is_file()):
-                uq_collector = {}
-                dir = sorted(os.listdir(uq_path_runs))
-                for i, file in enumerate(dir):
-                    if "Run" in file:
-                        sample = int(file[3:])
-                        open_file = open(uq_path_runs+file,"rb")
-                        loaded_results = pkl.load(open_file)
-                        if not(uq_collector):
-                            for key in loaded_results:
-                                loaded_results[key]['Sample'] = sample
-                            uq_collector = loaded_results
-                        else:
-                            for key in uq_collector:
-                                loaded_results[key]['Sample'] = sample
-                                uq_collector[key] = uq_collector[key].append(loaded_results[key])
-                
-                open_file = open(uq_path+'/_uncert_collector.p',"wb")
-                pkl.dump(uq_collector, open_file)
-                open_file.close()
+        # if check_status:
+        #     status_file_upkl = open(status_file,"rb")
+        #     loaded_results = pkl.load(status_file_upkl)
+        #     A = loaded_results.loc[loaded_results['solve_result'].isin(['unbounded','infeasible'])]
+        #     B = 4
         
         if run_pca :
-            # ampl_pca_debug = AmplPCADebug(ampl_0,cs)
             ampl_pca = AmplPCA(ampl_0,cs)
-            # ampl_pca.graph_PC_over_the_years()
-            # ampl_pca.graph_PC_transition()
+            ampl_pca.graph_PC_transition()
             # ampl_pca.pkl_PCA()
             
-            # output_folder_cs = []
-            # output_folder_bc = []
-            # for cs in case_to_study:
-            #     output_folder_cs += [os.path.join(pth_output_all,cs,type_of_model)]
-            #     base_case = base_case_dict[cs]
-            #     output_folder_bc += [os.path.join(pth_output_all,base_case)]
+            output_folder_cs = []
+            for cs in case_to_study:
+                output_folder_cs += [os.path.join(pth_output_all,cs,type_of_model)]
                 
-            # ampl_pca_debug.graph_PC_projection(case_to_study,output_folder_cs,output_folder_bc)
-            # ampl_pca.graph_PC_projection(case_to_study,output_folder_cs,output_folder_bc)
+            ampl_pca.graph_PC_projection(case_to_study,output_folder_cs)
             
-            # break
+            break
             
             # ampl_pca.graph_score_plot()
             # A = 4
@@ -310,9 +282,9 @@ if __name__ == '__main__':
             # ampl_pca.graph_PC_j(1,'Assets_eud')
             # ampl_pca.graph_PC_j(2,'Assets_eud')
             # ampl_pca.graph_PC_j(3,'Assets_eud')
-            ampl_pca.graph_PC_j(1,'Assets_eud',True_val = True)
-            ampl_pca.graph_PC_j(2,'Assets_eud',True_val = True)
-            ampl_pca.graph_PC_j(3,'Assets_eud',True_val = True)
+            # ampl_pca.graph_PC_j(1,'Assets_eud',True_val = True)
+            # ampl_pca.graph_PC_j(2,'Assets_eud',True_val = True)
+            # ampl_pca.graph_PC_j(3,'Assets_eud',True_val = True)
             # ampl_pca.graph_PC_j(4,'Assets_eud',True_val = True)
             # ampl_pca.graph_PC_j(1,'Prod')
             # ampl_pca.graph_PC_j(1,'Cons')
@@ -326,11 +298,11 @@ if __name__ == '__main__':
         if graph:
             ampl_uncert_graph = AmplUncertGraph(case_study,base_case,ampl_0,output_folder_cs)
             
-            # output_folder_cs = []
-            # output_folder_bc = []
-            # for cs in case_to_study:
-            #     output_folder_cs += [os.path.join(pth_output_all,cs,type_of_model)]
-            #     output_folder_bc += [os.path.join(pth_output_all,base_case_dict[cs])]
+            output_folder_cs = []
+            output_folder_bc = []
+            for cs in case_to_study:
+                output_folder_cs += [os.path.join(pth_output_all,cs,type_of_model)]
+                output_folder_bc += [os.path.join(pth_output_all,base_case_dict[cs])]
                 
             
             
@@ -341,9 +313,7 @@ if __name__ == '__main__':
             # ampl_uncert_graph.graph_transition_cost(case_to_study,output_folder_cs,output_folder_bc)
             # ampl_uncert_graph.graph_tot_capex_cost(case_to_study,output_folder_cs,output_folder_bc)
             # ampl_uncert_graph.graph_tot_opex_cost(case_to_study,output_folder_cs,output_folder_bc)
-            # ampl_uncert_graph.graph_tech_cap_diff_bc()
-            # ampl_uncert_graph.graph_tech_cap()
-            ampl_uncert_graph.graph_layer()
+            ampl_uncert_graph.graph_tech_cap()
             
             # break
            

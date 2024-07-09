@@ -13,6 +13,7 @@ import os, sys
 from pathlib import Path
 import pickle as pkl
 import hashlib
+from scipy import stats
 
 pylibPath = os.path.abspath("../pylib")
 if pylibPath not in sys.path:
@@ -39,7 +40,7 @@ class AmplUncertGraph:
 
     """
 
-    def __init__(self, case_study,base_case,ampl_obj,output_folder_cs):
+    def __init__(self, case_study,base_case,ampl_obj,output_folder_cs,):
         project_path = Path(__file__).parents[1]
         
         self.case_study = case_study
@@ -254,6 +255,98 @@ class AmplUncertGraph:
         
         if ampl_uncert_collector == None:
             ampl_uncert_collector = self.ampl_uncert_collector
+
+        # pkl_file = '/Users/xrixhon/Development/GitKraken/EnergyScope_pathway/out/learn_v11/2024_03_25-17_04_35_TD/_RL_collector.p'
+        
+        # self.outdir = '/Users/xrixhon/Development/GitKraken/EnergyScope_pathway/out/learn_v11/2024_03_25-17_04_35_TD/_graphs/'
+        
+        # open_file = open(pkl_file,"rb")
+        # ampl_uncert_collector = pkl.load(open_file)
+        # open_file.close()
+        
+        
+        results = ampl_uncert_collector['Assets'].copy()
+        results.reset_index(inplace=True)
+        results = results.set_index(['Years','Technologies','Sample'])
+        # results = results.set_index(['Years','Technologies','Run','Batch'])
+        
+        results_bc = self.bc_results['Assets'].copy()
+        
+        
+        dict_tech = self._group_tech_per_eud()
+        df_to_plot_full = pd.DataFrame()
+        for sector, tech in dict_tech.items():
+
+            temp = results.loc[results.index.get_level_values('Technologies').isin(tech),'F']
+            temp_bc = results_bc.loc[results_bc.index.get_level_values('Technologies').isin(tech),'F']
+            df_to_plot = pd.DataFrame(index=temp.index,columns=['F'])
+            df_to_plot_bc = pd.DataFrame(index=temp_bc.index,columns=['F'])
+            for y in temp.index.get_level_values(0).unique():
+                temp_y = temp.loc[temp.index.get_level_values('Years') == y]
+                temp_y_bc = temp_bc.loc[temp_bc.index.get_level_values('Years') == y]
+                # temp_y.dropna(how='all',inplace=True)
+                # temp_y_bc.dropna(how='all',inplace=True)
+                if not temp_y.empty:
+                    temp_y = self._remove_low_values(temp_y,threshold=0.0)
+                    df_to_plot.update(temp_y)
+                if not temp_y_bc.empty:
+                    temp_y_bc = self._remove_low_values(temp_y_bc,threshold=0.0)
+                    df_to_plot_bc.update(temp_y_bc)
+            df_to_plot.dropna(how='all',inplace=True)
+            df_to_plot_bc.dropna(how='all',inplace=True)
+            
+            # df_to_plot = self._fill_df_to_plot_w_zeros(df_to_plot)
+            # df_to_plot_bc = self._fill_df_to_plot_w_zeros(df_to_plot_bc)
+            
+            df_to_plot['Delta'] = df_to_plot['F'].sub(df_to_plot_bc['F'],fill_value=0.0)
+            
+            df_to_plot.reset_index(inplace=True)
+            df_to_plot['Technologies'] = df_to_plot['Technologies'].astype("str")
+            df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
+            
+            df_to_plot_bc.reset_index(inplace=True)
+            df_to_plot_bc['Technologies'] = df_to_plot_bc['Technologies'].astype("str")
+            df_to_plot_bc['Years'] = df_to_plot_bc['Years'].str.replace('YEAR_', '')
+            
+            
+            
+            if plot:
+                fig = px.box(df_to_plot, x='Years', y = 'F',color='Technologies',
+                         title= sector+' - Installed capacity',
+                         color_discrete_map=self.color_dict_full)
+
+                fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+                        
+                if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
+                    pio.show(fig)
+                    if not os.path.exists(Path(self.outdir+"Tech_Cap/")):
+                        Path(self.outdir+"Tech_Cap").mkdir(parents=True,exist_ok=True)
+                    if not os.path.exists(Path(self.outdir+"Tech_Cap/_Raw/")):
+                        Path(self.outdir+"Tech_Cap/_Raw").mkdir(parents=True,exist_ok=True)
+                    
+                    fig.write_html(self.outdir+"Tech_Cap/_Raw/"+sector+"_raw.html")
+                    title = "<b>{} - Installed capacities</b><br>[GW]".format(sector)
+                    temp = df_to_plot.copy()
+                    yvals = sorted([0,round(min(temp['F']),1),round(max(temp['F']),1)])
+                    
+                    self.custom_fig(fig,title,yvals,xvals=sorted(df_to_plot['Years'].unique()),type_graph='bar',neg_value=True)
+                        
+                    
+                    fig.write_image(self.outdir+"Tech_Cap/"+sector+".pdf", width=1200, height=550)
+                plt.close()
+            
+            if len(df_to_plot_full) == 0:
+                df_to_plot_full = df_to_plot
+            else:
+                df_to_plot_full = df_to_plot_full.append(df_to_plot)
+            
+        return df_to_plot_full
+    
+    
+    def graph_tech_cap_diff_bc(self, ampl_uncert_collector = None, plot = True):
+        
+        if ampl_uncert_collector == None:
+            ampl_uncert_collector = self.ampl_uncert_collector
         
         results = ampl_uncert_collector['Assets'].copy()
         results.reset_index(inplace=True)
@@ -308,12 +401,12 @@ class AmplUncertGraph:
                         
                 if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                     pio.show(fig)
-                    if not os.path.exists(Path(self.outdir+"Tech_Cap/")):
+                    if not os.path.exists(Path(self.outdir+"Tech_Cap_Diff_bc/")):
                         Path(self.outdir+"Tech_Cap").mkdir(parents=True,exist_ok=True)
-                    if not os.path.exists(Path(self.outdir+"Tech_Cap/_Raw/")):
+                    if not os.path.exists(Path(self.outdir+"Tech_Cap_Diff_bc/_Raw/")):
                         Path(self.outdir+"Tech_Cap/_Raw").mkdir(parents=True,exist_ok=True)
                     
-                    fig.write_html(self.outdir+"Tech_Cap/_Raw/"+sector+"_raw.html")
+                    fig.write_html(self.outdir+"Tech_Cap_Diff_bc/_Raw/"+sector+"_raw.html")
                     title = "<b>{} - Installed capacities</b><br>[GW]".format(sector)
                     temp = df_to_plot.copy()
                     yvals = sorted([0,round(min(temp['Delta']),1),round(max(temp['Delta']),1)])
@@ -321,7 +414,7 @@ class AmplUncertGraph:
                     self.custom_fig(fig,title,yvals,xvals=sorted(df_to_plot['Years'].unique()),type_graph='bar',neg_value=True)
                         
                     
-                    fig.write_image(self.outdir+"Tech_Cap/"+sector+".pdf", width=1200, height=550)
+                    fig.write_image(self.outdir+"Tech_Cap_Diff_bc/"+sector+".pdf", width=1200, height=550)
                 plt.close()
             
             if len(df_to_plot_full) == 0:
@@ -919,15 +1012,28 @@ class AmplUncertGraph:
         
         if ampl_uncert_collector == None:
             ampl_uncert_collector = self.ampl_uncert_collector
+            
+        # pkl_file = '/Users/xrixhon/Development/GitKraken/EnergyScope_pathway/out/learn_v11/2024_04_10-15_15_54_MO/_RL_collector.p'
+        
+        # self.outdir = '/Users/xrixhon/Development/GitKraken/EnergyScope_pathway/out/learn_v11/22024_04_10-15_15_54_MO/_graphs/'
+        
+        # open_file = open(pkl_file,"rb")
+        # ampl_uncert_collector = pkl.load(open_file)
+        # open_file.close()
         
         col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
                 'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
                 'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
                 'MOB_PUBLIC','Sample']
+        # col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
+        #         'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
+        #         'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
+        #         'MOB_PUBLIC','Run','Batch']
         results = ampl_uncert_collector['Year_balance'].copy()
         results = results[col_plot]
         results.reset_index(inplace=True)
         results = results.set_index(['Years','Elements','Sample'])
+        # results = results.set_index(['Years','Elements','Run','Batch'])
         df_to_plot_full = dict.fromkeys(col_plot)
         for k in results.columns:
             df_to_plot = pd.DataFrame(index=results.index,columns=[k])
@@ -941,7 +1047,9 @@ class AmplUncertGraph:
             
             
             df_to_plot_prod = df_to_plot.loc[df_to_plot[k]>0]
+            # df_to_plot_prod = df_to_plot_prod[np.abs(stats.zscore(df_to_plot_prod[k])) < 3]
             df_to_plot_cons = df_to_plot.loc[df_to_plot[k]<0]
+            # df_to_plot_cons = df_to_plot_cons[np.abs(stats.zscore(df_to_plot_cons[k])) < 3]
             
             df_to_plot_prod = self._fill_df_to_plot_w_zeros(df_to_plot_prod)
             df_to_plot_cons = self._fill_df_to_plot_w_zeros(df_to_plot_cons)
