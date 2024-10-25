@@ -41,7 +41,10 @@ class AmplGraph:
     def __init__(self, pkl_file, ampl_obj,case_study):
         self.pkl_file = pkl_file
         self.x_axis = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
-        # In 2020, 37.41% of electricity in EU-27 was produced from renewables (https://ec.europa.eu/eurostat/databrowser/view/NRG_IND_REN__custom_4442440/default/table?lang=en)
+        
+        # In 2020, 37.41% of electricity in EU-27 was produced from renewables 
+        # (https://ec.europa.eu/eurostat/databrowser/view/NRG_IND_REN__custom_
+        # 4442440/default/table?lang=en)
         self.re_share_elec = np.linspace(0.3741,1,len(self.x_axis))
         self.ampl_collector = self.unpkl(self)
         self.ampl_obj = ampl_obj
@@ -53,6 +56,9 @@ class AmplGraph:
 
         self.threshold = 0.03
         self.category = self._group_sets()
+        
+        self.dict_tech_cap_unit = self._dict_tech_cap_unit()
+        self.dict_layer_unit = self._dict_layer_unit()
 
     @staticmethod
     def unpkl(self,pkl_file = None):
@@ -98,7 +104,7 @@ class AmplGraph:
             for y in results.index.get_level_values(0).unique():
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y,:] 
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y)#, threshold=0.0)
+                    temp_y = self._remove_low_values(temp_y, threshold=0.0)
                     df_to_plot.update(temp_y)
                     if not temp_y.empty:
                         temp_df = df_to_plot.reset_index()
@@ -133,7 +139,7 @@ class AmplGraph:
                 fig.update_traces(mode='none')
                 pio.show(fig)
             
-                title = "<b>{} - Layer balance</b><br>[TWh]".format(k)
+                title = "<b>{} - Layer balance</b><br>[{}]".format(k,self.dict_layer_unit[k])
                 if k in ['GAS','H2','WOOD','WET_BIOMASS']:
                     EUD_2020 = 0
                     EUD_2050 = 0
@@ -162,10 +168,26 @@ class AmplGraph:
             df_to_plot_full[k] = df_to_plot
             
         return df_to_plot_full
-        
+    
+    
+    '''
+    Graph_resource to plot the primary energy mix along the transition
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    df_to_plot: Dataframe with the primary energy mix along the transition
+    
+    '''    
     def graph_resource(self, ampl_collector = None, plot = True):
         
+        # Selection of the actual energy carriers with the resources
         order_entry = ['ELECTRICITY','GASOLINE','DIESEL','LFO','COAL',
+                       'AMMONIA','METHANOL','H2',
                        'GAS','URANIUM','WOOD','WET_BIOMASS','WASTE',
                        'RES_SOLAR','RES_WIND',
                        'AMMONIA_RE','METHANOL_RE','H2_RE','GAS_RE',
@@ -177,7 +199,9 @@ class AmplGraph:
         results = ampl_collector['Resources'].copy()
         df_to_plot = pd.DataFrame(index=results.index,columns=results.columns)
         for y in results.index.get_level_values(0).unique():
-            temp = results.loc[results.index.get_level_values('Years') == y,'Res']  
+            temp = results.loc[results.index.get_level_values('Years') == y,
+                               'Res']
+            # Remove too low values
             temp = self._remove_low_values(temp,threshold = 0)
             df_to_plot.update(temp)
         df_to_plot.dropna(how='all',inplace=True)
@@ -185,34 +209,44 @@ class AmplGraph:
         df_to_plot.reset_index(inplace=True)
         df_to_plot['Resources'] = df_to_plot['Resources'].astype("str")
         
-        order_entry = [x for x in order_entry if x in df_to_plot['Resources'].unique()]
+        order_entry = [x for x in order_entry if x in 
+                       df_to_plot['Resources'].unique()]
         
-        df_to_plot['Resources'] = pd.Categorical(
-            df_to_plot['Resources'], order_entry)
+        df_to_plot['Resources'] = pd.Categorical(df_to_plot['Resources'],
+                                                 order_entry)
 
         df_to_plot.sort_values(by=['Resources'], axis=0, 
                                ignore_index=True, inplace=True)
         
         df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
-        df_to_plot = df_to_plot.loc[df_to_plot['Resources'] != 'CO2_EMISSIONS']
-        df_to_plot.dropna(inplace=True)
-        df_to_plot['Res'] = df_to_plot['Res']/1000
+        df_to_plot.dropna(inplace=True) # To remove empty rows
+        df_to_plot['Res'] = df_to_plot['Res']/1000 # To get TWh
         if plot:
             fig = px.area(df_to_plot, x='Years', y = 'Res',color='Resources',
-                          title=self.case_study + ' - Resources',text='Resources',
-                          color_discrete_map=self.dict_color('Resources'))
-            fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
+                          title=self.case_study + ' - Primary mix [TWh]',
+                          text='Resources',color_discrete_map=
+                          self.dict_color('Resources'))
+            fig.for_each_trace(lambda trace: trace.update(fillcolor =
+                                                          trace.line.color))
             fig.update_traces(mode='none')
-            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            fig.update_xaxes(categoryorder='array', categoryarray =
+                             sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
             
+            # Save html figure
+            if not os.path.exists(Path(self.outdir+"_Raw/")):
+                Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+            fig.write_html(self.outdir+"_Raw/Resources_raw.html")
+            
+            # Improve and save pdf figure
             title = "<b>Primary energy supply</b><br>[TWh]"
             temp = df_to_plot.set_index(['Years','Resources'])
             temp = temp.groupby(by=['Years']).sum()
-            yvals = [0,int(min(round(temp.loc['2050']))),int(max(round(temp.loc['2020'])))]
-            
+            yvals = sorted([0,int(min(round(temp.loc['2050']))),
+                            int(max(round(temp.loc['2020'])))])
             self.custom_fig(fig,title,yvals)
             fig.write_image(self.outdir+"Resources.pdf", width=1200, height=550)
+
             plt.close()
         
         return df_to_plot
@@ -242,21 +276,34 @@ class AmplGraph:
         fig.write_image(self.outdir+"Gwp_breakdown.pdf", width=1200, height=550)
         plt.close()
     
+    
+    '''
+    Graph_gwp_per_sector to plot the GWP attributed to the different sectors
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    gwp_per_layer: Dataframe with the gwp per sector along the transition
+    
+    '''   
+    
     def graph_gwp_per_sector(self, ampl_collector = None, plot = True):
-        pio.renderers.default = 'browser'
-        
-        """Get the gwp breakdown [ktCO2e/y] of the different sectors"""
         layers = ['GAS','H2','AMMONIA','METHANOL','ELECTRICITY','HEAT_HIGH_T',
                 'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC',
-                'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
-                'MOB_PUBLIC']
-        mob_freight_layers = ['MOB_FREIGHT_BOAT','MOB_FREIGHT_ROAD','MOB_FREIGHT_RAIL']
+                'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD',
+                'MOB_PRIVATE','MOB_PUBLIC']
+        mob_freight_layers = ['MOB_FREIGHT_BOAT','MOB_FREIGHT_ROAD',
+                              'MOB_FREIGHT_RAIL']
         
         CO2_layers = ['CO2_ATM','CO2_CAPTURED','CO2_INDUSTRY']
         
-        order_entry = ['MOB_PRIVATE','MOB_PUBLIC','MOBILITY_FREIGHT','ELECTRICITY',
-                       'HEAT_HIGH_T','HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN',
-                       'HVC','METHANOL','AMMONIA']
+        order_entry = ['MOB_PRIVATE','MOB_PUBLIC','MOBILITY_FREIGHT',
+                       'ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T_DHN',
+                       'HEAT_LOW_T_DECEN','HVC','METHANOL','AMMONIA']
         
         resources = self.ampl_obj.sets['RESOURCES']
         technologies = self.ampl_obj.sets['TECHNOLOGIES']
@@ -270,60 +317,80 @@ class AmplGraph:
         year_balance_full = ampl_collector['Year_balance'].copy()
         year_balance_full.dropna(how='all',inplace=True)
         year_balance_full.drop(columns=CO2_layers,inplace=True)
-        year_balance = year_balance_full.loc[~year_balance_full.index.get_level_values('Elements').isin(storage_tech)]
+        year_balance = year_balance_full.loc[~year_balance_full.
+                                             index.get_level_values('Elements').
+                                             isin(storage_tech)]
         
-        year_balance_sto = year_balance_full.loc[year_balance_full.index.get_level_values('Elements').isin(storage_tech)]
+        year_balance_sto = year_balance_full.loc[year_balance_full.index.
+                                                 get_level_values('Elements').
+                                                 isin(storage_tech)]
+        
         year_balance_sto.dropna(how='all',inplace=True)
         year_balance_sto.dropna(how='all',inplace=True,axis=1)
         year_balance_sto.reset_index(inplace=True)
         year_balance_sto.drop(columns=['Elements'],inplace=True)
-        year_balance_sto = pd.melt(year_balance_sto, id_vars=['Years'], var_name=['Elements'], value_name='Cons')
+        year_balance_sto = pd.melt(year_balance_sto, id_vars=['Years'], 
+                                   var_name=['Elements'], value_name='Cons')
         year_balance_sto = year_balance_sto.set_index(['Years','Elements'])
         year_balance_sto = year_balance_sto.groupby(level=[0,1]).sum()
         
-        gwp_op.index.set_names(year_balance.index.names, inplace=True)  # set proper name to index
+        # set proper name to index
+        gwp_op.index.set_names(year_balance.index.names, inplace=True)  
         gwp_op = gwp_op.rename_axis(index={'Resources':'Elements'},axis=1)
         
         total_prod = year_balance[year_balance>0].groupby(['Years']).sum()
         total_prod = total_prod[layers]
         total_prod.reset_index(inplace=True)
-        total_prod = pd.melt(total_prod, id_vars=['Years'], var_name=['Layers'], value_name='total_prod')
+        total_prod = pd.melt(total_prod, id_vars=['Years'], var_name=['Layers'],
+                             value_name='total_prod')
         total_prod = total_prod.set_index(['Years','Layers'])
         
-        end_uses = -year_balance.loc[year_balance.index.get_level_values('Elements')=='END_USES',:]
+        end_uses = -year_balance.loc[year_balance.index.
+                                     get_level_values('Elements')=='END_USES',:]
         end_uses.dropna(axis=1,inplace=True)
         end_uses.reset_index(inplace=True)
         end_uses.drop(columns=['Elements'],inplace=True)
-        end_uses = pd.melt(end_uses, id_vars=['Years'], var_name=['Layers'], value_name='end_uses')
+        end_uses = pd.melt(end_uses, id_vars=['Years'], var_name=['Layers'],
+                           value_name='end_uses')
         end_uses = end_uses.set_index(['Years','Layers'])
         
 
-        layers_in_out = self.ampl_obj.to_pd(self.ampl_obj.params['layers_in_out'].getValues())
+        layers_in_out = self.ampl_obj.to_pd(self.ampl_obj.
+                                            params['layers_in_out'].getValues())
         layers_in_out.reset_index(inplace=True)
-        layers_in_out=layers_in_out.pivot(index=['index0','index1'],columns='index2',values='Value')
+        layers_in_out=layers_in_out.pivot(index=['index0','index1'],
+                                          columns='index2',values='Value')
         layers_in_out.index.set_names(['Years','Elements'], inplace=True)
         layers_in_out = layers_in_out.mask(layers_in_out==0)
         layers_in_out.drop(columns=CO2_layers,inplace=True)
         layers_in_out.dropna(how='all',inplace=True)
         
         
-        gwp_per_layer = pd.DataFrame(index=end_uses.index,columns=['gwp_op','GWP_EUD','GWP_TOTAL'])
+        gwp_per_layer = pd.DataFrame(index=end_uses.index,
+                                     columns=['gwp_op','GWP_EUD','GWP_TOTAL'])
         
-        update_gwp_res = ['GAS','H2','AMMONIA','ELECTRICITY','DIESEL','GASOLINE','METHANOL','LFO']
+        update_gwp_res = ['GAS','H2','AMMONIA','ELECTRICITY','DIESEL',
+                          'GASOLINE','METHANOL','LFO']
         
         for res in update_gwp_res:
             temp = year_balance_full.loc[year_balance_full[res] > 0].copy()
             temp['gwp_op'] = 0
             
-            temp_res = gwp_op.mul(temp.loc[temp.index.get_level_values('Elements').isin(resources)][res],axis=0)
-            temp_tech = temp.loc[temp.index.get_level_values('Elements').isin(technologies)]
+            temp_res = gwp_op.mul(temp.loc[temp.index.
+                                           get_level_values('Elements').
+                                           isin(resources)][res],axis=0)
+            temp_tech = temp.loc[temp.index.get_level_values('Elements').
+                                 isin(technologies)]
             temp_res.dropna(inplace=True)
             temp.update(temp_res['gwp_op'])
             gwp_op_2 = gwp_op.reset_index()
-            gwp_op_2=gwp_op_2.pivot(index=['Years'],columns=['Elements'],values='gwp_op')
+            gwp_op_2=gwp_op_2.pivot(index=['Years'],columns=['Elements'],
+                                    values='gwp_op')
             temp_gwp = temp_tech.mul(-gwp_op_2, axis=0)
             temp_tech.loc[:,'gwp_tot'] = temp_gwp[temp_gwp>0].sum(axis='columns').copy()
-            temp_tech.loc[:,'gwp_op'] = temp_tech[res]/(temp_tech[temp_tech>0].sum(axis='columns').copy()-temp_tech['gwp_tot']-temp_tech['gwp_op'])*temp_tech['gwp_tot']
+            temp_tech.loc[:,'gwp_op'] = temp_tech[res]/ \
+                (temp_tech[temp_tech>0].sum(axis='columns').copy()- \
+                 temp_tech['gwp_tot']-temp_tech['gwp_op'])*temp_tech['gwp_tot']
             temp.update(temp_tech['gwp_op'])
             gwp_res = temp[[res,'gwp_op']].groupby(['Years']).sum()
             gwp_res['gwp_op'] = gwp_res['gwp_op']/gwp_res[res]
@@ -336,20 +403,28 @@ class AmplGraph:
         gwp_per_layer['GWP_EUD'] = gwp_per_layer['gwp_op'].mul(end_uses['end_uses'])
         gwp_per_layer['GWP_TOTAL'] = gwp_per_layer['gwp_op'].mul(total_prod['total_prod'])
         
-        update_gwp_remaining = [eud for eud in end_uses.index.get_level_values('Layers').unique() if eud not in update_gwp_res]
+        update_gwp_remaining = [eud for eud in end_uses.index.
+                                get_level_values('Layers').unique() 
+                                if eud not in update_gwp_res]
         
         for eud in update_gwp_remaining:
             temp = year_balance_full.loc[year_balance_full[eud] > 0].copy()
             temp['gwp_op'] = 0
-            temp_res = gwp_op.mul(temp.loc[temp.index.get_level_values('Elements').isin(resources)][eud],axis=0)
-            temp_tech = temp.loc[temp.index.get_level_values('Elements').isin(technologies)]
+            temp_res = gwp_op.mul(temp.loc[temp.index.
+                                           get_level_values('Elements').
+                                           isin(resources)][eud],axis=0)
+            temp_tech = temp.loc[temp.index.get_level_values('Elements').
+                                 isin(technologies)]
             temp_res.dropna(inplace=True)
             temp.update(temp_res['gwp_op'])
             gwp_op_2 = gwp_op.reset_index()
-            gwp_op_2=gwp_op_2.pivot(index=['Years'],columns=['Elements'],values='gwp_op')
+            gwp_op_2=gwp_op_2.pivot(index=['Years'],columns=['Elements'],
+                                    values='gwp_op')
             temp_gwp = temp_tech.mul(-gwp_op_2)
             temp_tech['gwp_tot'] = temp_gwp[temp_gwp>0].sum(axis='columns')
-            temp_tech['gwp_op'] = temp_tech[eud]/(temp_tech[temp_tech>0].sum(axis='columns')-temp_tech['gwp_tot']-temp_tech['gwp_op'])*temp_tech['gwp_tot']
+            temp_tech['gwp_op'] = temp_tech[eud]/ \
+                (temp_tech[temp_tech>0].sum(axis='columns')- \
+                 temp_tech['gwp_tot']-temp_tech['gwp_op'])*temp_tech['gwp_tot']
             temp.update(temp_tech['gwp_op'])
             temp = temp.groupby(['Years']).sum()
             temp = temp[[eud,'gwp_op']]
@@ -367,12 +442,16 @@ class AmplGraph:
             gwp_op_3.index.names = ['Years','Elements']
             gwp_op = gwp_op.append(gwp_op_3)
         
-        mob_freight = gwp_per_layer.loc[gwp_per_layer.index.get_level_values('Layers').isin(mob_freight_layers)].copy()
+        mob_freight = gwp_per_layer.loc[gwp_per_layer.index.
+                                        get_level_values('Layers').
+                                        isin(mob_freight_layers)].copy()
         mob_freight = mob_freight.groupby(['Years']).sum()
         mob_freight.reset_index(inplace=True)
         mob_freight['Layers'] = 'MOBILITY_FREIGHT'
         mob_freight.set_index(['Years','Layers'],inplace=True)
-        others = gwp_per_layer.loc[~gwp_per_layer.index.get_level_values('Layers').isin(mob_freight_layers)]
+        others = gwp_per_layer.loc[~gwp_per_layer.index.
+                                   get_level_values('Layers').
+                                   isin(mob_freight_layers)]
         gwp_per_layer = others.append(mob_freight)
         
         
@@ -412,21 +491,35 @@ class AmplGraph:
                           color_discrete_map=self.color_dict_full)
             fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
             fig.update_traces(mode='none')
-            fig.update_xaxes(categoryorder='array', categoryarray= sorted(gwp_per_layer['Years'].unique()))
+            fig.update_xaxes(categoryorder='array', categoryarray=
+                             sorted(gwp_per_layer['Years'].unique()))
+            pio.renderers.default = 'browser'
             pio.show(fig)
+            
+            # Save html figure
+            if not os.path.exists(Path(self.outdir+"_Raw/")):
+                Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+            fig.write_html(self.outdir+"_Raw/Gwp_per_sector_raw.html")
             
             title = "<b>Yearly emissions</b><br>[MtCO2/y]"
             temp = gwp_per_layer.set_index(['Years','Layers'])
             temp = temp.groupby(by=['Years']).sum()
-            yvals = [0,min(round(temp['GWP_EUD'],1)),max(round(temp['GWP_EUD'],1))]
-            # yvals = [0,min(round(temp['GWP_EUD'],1)),max(list(map(temp['GWP_EUD'])))]
+            yvals = sorted([0,min(round(temp['GWP_EUD'],1)),
+                            max(round(temp['GWP_EUD'],1))])
             
+            # Improve and save PDF figure
             self.custom_fig(fig,title,yvals)
-            fig.write_image(self.outdir+"Gwp_per_sector.pdf", width=1200, height=550)
+            fig.write_image(self.outdir+"Gwp_per_sector.pdf", width=1200,
+                            height=550)
             plt.close()
         
         return gwp_per_layer
     
+    
+    '''
+    Graph_cost to plot the total annual system cost along the transition
+    
+    '''
     def graph_cost(self):
         pio.renderers.default = 'browser'
         
@@ -444,15 +537,19 @@ class AmplGraph:
         
         df_to_plot_inv = pd.DataFrame(index=c_inv.index,columns=c_inv.columns)
         df_to_plot_op = pd.DataFrame(index=c_op.index,columns=c_op.columns)
-        df_to_plot_maint = pd.DataFrame(index=c_maint.index,columns=c_maint.columns)
+        df_to_plot_maint = pd.DataFrame(index=c_maint.index,
+                                        columns=c_maint.columns)
         for y in c_inv.index.get_level_values(0).unique():
-            temp_inv = c_inv.loc[c_inv.index.get_level_values('Years') == y,'C_inv']  
+            temp_inv = c_inv.loc[c_inv.index.get_level_values('Years') ==
+                                 y,'C_inv']  
             temp_inv = self._remove_low_values(temp_inv,threshold=0)
             df_to_plot_inv.update(temp_inv)
-            temp_op = c_op.loc[c_op.index.get_level_values('Years') == y,'C_op']  
+            temp_op = c_op.loc[c_op.index.get_level_values('Years') ==
+                               y,'C_op']  
             temp_op = self._remove_low_values(temp_op,threshold=0)
             df_to_plot_op.update(temp_op)
-            temp_maint = c_maint.loc[c_maint.index.get_level_values('Years') == y,'C_maint']  
+            temp_maint = c_maint.loc[c_maint.index.get_level_values('Years') ==
+                                     y,'C_maint']  
             temp_maint = self._remove_low_values(temp_maint,threshold=0)
             df_to_plot_maint.update(temp_maint)
         df_to_plot_inv.dropna(how='all',inplace=True)
@@ -476,24 +573,18 @@ class AmplGraph:
         df_to_plot_maint['Category'] = df_to_plot_maint['Elements']
         df_to_plot_maint = df_to_plot_maint.replace({"Category": category})
         
-        df_to_plot = pd.concat([df_to_plot_inv, df_to_plot_op, df_to_plot_maint], axis=0)
+        df_to_plot = pd.concat([df_to_plot_inv, df_to_plot_op,
+                                df_to_plot_maint], axis=0)
         df_to_plot['Elements'] = df_to_plot['Elements'].astype("str")
         df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
-        fig = px.bar(df_to_plot, x='Years', y = 'Cost',color='Elements',facet_row='Type',
-                     title=self.case_study + ' - Cost',
-                     color_discrete_map=self.color_dict_full)
-        fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
-        pio.show(fig)
-        
-        fig.write_image(self.outdir+"Cost_breakdown_per_year.pdf", width=1200, height=550)
-        plt.close()
         
         re_share_elec = self.re_share_elec
         
         cost_elec_re = pd.DataFrame(columns=df_to_plot.columns)
         cost_elec_nre = pd.DataFrame(columns=df_to_plot.columns)
         for i,j in enumerate(['2020','2025','2030','2035','2040','2045','2050']):
-            total_elec_cost = df_to_plot.loc[(df_to_plot['Years'] == j) & (df_to_plot['Elements'] == 'ELECTRICITY')]['Cost']
+            total_elec_cost = df_to_plot.loc[(df_to_plot['Years'] == j) &
+                            (df_to_plot['Elements'] == 'ELECTRICITY')]['Cost']
             if len(total_elec_cost) > 0:
                 temp_re = pd.DataFrame({
                     'Years': j,
@@ -522,13 +613,15 @@ class AmplGraph:
         df_to_plot = df_to_plot.groupby(['Years','Category']).sum()
         df_to_plot.reset_index(inplace=True)
         
-        df_to_plot['Cost'] = df_to_plot['Cost']/1000
+        df_to_plot['Cost'] = df_to_plot['Cost']/1000 # To get [b€]
         
-        order_entry = ['INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC','MOBILITY_FREIGHT',
-                       'ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN',
-                       'HVC','METHANOL','AMMONIA','RE_FUELS','NRE_FUELS']
+        order_entry = ['INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC',
+                       'MOBILITY_FREIGHT','ELECTRICITY','HEAT_HIGH_T',
+                       'HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN','HVC','METHANOL',
+                       'AMMONIA','RE_FUELS','NRE_FUELS']
         
-        order_entry  = [x for x in order_entry if x in list(df_to_plot['Category'])]
+        order_entry  = [x for x in order_entry if x in
+                        list(df_to_plot['Category'])]
         
         df_to_plot['Category'] = pd.Categorical(
             df_to_plot['Category'], order_entry)
@@ -536,20 +629,30 @@ class AmplGraph:
                                ignore_index=True, inplace=True)
         
         fig = px.area(df_to_plot, x='Years', y = 'Cost',color='Category',
-                      title=self.case_study + ' - Cost',text='Category',
-                      color_discrete_map=self.color_dict_full)
-        fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
+                      title=self.case_study +
+                      ' - System annual cost [b€<sub>2015</sub>/y]',
+                      text='Category',color_discrete_map=self.color_dict_full)
+        fig.for_each_trace(lambda trace: trace.update(fillcolor =
+                                                      trace.line.color))
         fig.update_traces(mode='none')
-        fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+        fig.update_xaxes(categoryorder='array', categoryarray =
+                         sorted(df_to_plot['Years'].unique()))
         pio.show(fig)
         
-        title = "<b>System cost</b><br>[b€<sub>2015</sub>/y]"
+        # Save html figure
+        if not os.path.exists(Path(self.outdir+"_Raw/")):
+            Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+        fig.write_html(self.outdir+"_Raw/System_cost_raw.html")
+        
+        
+        title = "<b>Annual system cost</b><br>[b€<sub>2015</sub>/y]"
         temp = df_to_plot.groupby(['Years']).sum()
-        yvals = [0,min(round(temp['Cost'],1)),round(temp.loc['2020']['Cost'],1),max(round(temp['Cost'],1))]
+        yvals = sorted([0,min(round(temp['Cost'],1)),
+                        round(temp.loc['2020']['Cost'],1),
+                        max(round(temp['Cost'],1))])
         
         self.custom_fig(fig,title,yvals)
         fig.write_image(self.outdir+"System_cost.pdf", width=1200, height=550)
-        # fig.write_image(self.outdir+"System_cost.pdf", width=600, height=600)
         plt.close()
     
     def graph_cost_return(self, ampl_collector = None, plot = True):
@@ -727,6 +830,19 @@ class AmplGraph:
             
         return df_to_plot_eff_full
         
+    '''
+    Graph_cost_inv_phase_tech to plot the cumulative CAPEX over the transition
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    df_to_plot_full: Dataframe with the cumulative CAPEX along the transition
+    
+    ''' 
     
     def graph_cost_inv_phase_tech(self, ampl_collector = None, plot=True):
         pio.renderers.default = 'browser'
@@ -771,18 +887,21 @@ class AmplGraph:
         df_to_plot_full.sort_values(by=['Years'],inplace=True)
         
         for g_name, g_df in df_to_plot_full.groupby(['Category']):
-            df_to_plot_full.loc[g_df.index,'cumsum'] = df_to_plot_full.loc[g_df.index,'C_inv_phase_tech'].cumsum()
+            df_to_plot_full.loc[g_df.index,'cumsum'] = df_to_plot_full.loc[
+                g_df.index,'C_inv_phase_tech'].cumsum()
         
         df_to_plot_full.reset_index(inplace=True)
         df_to_plot_full['cumsum'] = df_to_plot_full['cumsum']/1000
         df_to_plot_full['C_inv_phase_tech'] = df_to_plot_full['C_inv_phase_tech']/1000
         
         
-        order_entry = ['INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC','MOBILITY_FREIGHT',
-                       'ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN',
-                       'HVC','METHANOL','AMMONIA']
+        order_entry = ['INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC',
+                       'MOBILITY_FREIGHT','ELECTRICITY','HEAT_HIGH_T',
+                       'HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN','HVC','METHANOL',
+                       'AMMONIA']
         
-        order_entry  = [x for x in order_entry if x in list(df_to_plot_full['Category'])]
+        order_entry  = [x for x in order_entry if x in
+                        list(df_to_plot_full['Category'])]
         
         
         df_to_plot_full['Category'] = pd.Categorical(
@@ -794,12 +913,20 @@ class AmplGraph:
         
         if plot:
             fig = px.area(df_to_plot_full, x='Years', y = 'cumsum',color='Category',
-                          title=self.case_study + ' - C_inv_phase_tech',
+                          title=self.case_study + 
+                          ' - C_inv_phase_tech [b€<sub>2015</sub>]',
                           color_discrete_map=self.color_dict_full)
-            fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
+            fig.for_each_trace(lambda trace: trace.update(fillcolor =
+                                                          trace.line.color))
             fig.update_traces(mode='none')
-            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_full['Years'].unique()))
+            fig.update_xaxes(categoryorder='array', categoryarray=
+                             sorted(df_to_plot_full['Years'].unique()))
             pio.show(fig)
+            
+            # Save html figure
+            if not os.path.exists(Path(self.outdir+"_Raw/")):
+                Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+            fig.write_html(self.outdir+"_Raw/C_inv_phase.html")
             
             title = "<b>Investments over transition</b><br>[b€<sub>2015</sub>]"
             temp = df_to_plot_full.groupby(['Years']).sum()
@@ -977,7 +1104,7 @@ class AmplGraph:
                 temp_y = temp.loc[temp.index.get_level_values('Years') == y]
                 temp_y.dropna(how='all',inplace=True)
                 if not temp_y.empty:
-                    temp_y = self._remove_low_values(temp_y,threshold=0.01)
+                    temp_y = self._remove_low_values(temp_y,threshold=0.00)
                     df_to_plot.update(temp_y)
             df_to_plot.dropna(how='all',inplace=True)
             df_to_plot.reset_index(inplace=True)
@@ -1003,7 +1130,8 @@ class AmplGraph:
                     if not os.path.exists(Path(self.outdir+"Tech_Cap/")):
                         Path(self.outdir+"Tech_Cap").mkdir(parents=True,exist_ok=True)
                         
-                    title = "<b>{} - Installed capacities</b><br>[GW]".format(sector)
+                    title = "<b>{} - Installed capacities</b><br>[{}]".format(sector,
+                                                                              self.dict_tech_cap_unit[sector])
                     temp = df_to_plot.groupby(['Years']).sum()
                     yvals = [0,round(min(temp['F']),1),round(max(temp['F']),1)]
                     
@@ -1118,7 +1246,7 @@ class AmplGraph:
             c_p_t = self.ampl_obj.from_agg_to_year(ts=c_p_t)
         else:
             c_p_t = self.ampl_obj.from_agg_to_year(ts=c_p_t.reset_index().set_index(['Typical_days', 'Hours']))
-        c_p_inter = c_p_t.groupby(['Technologies']).sum()/8760
+        c_p_inter = c_p_t.groupby(['Years','Technologies']).sum()/8760
         
         df_unused = pd.DataFrame()
         
@@ -1270,7 +1398,8 @@ class AmplGraph:
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_s['Years'].unique()))
                 pio.show(fig)
                 
-                title = "<b>Installed capacities difference versus REF - {}</b><br>[GW]".format(sector)
+                title = "<b>Installed capacities difference versus REF - {}</b><br>[{}]".format(sector,
+                                                                                                self.dict_tech_cap_unit[sector])
                 yvals = [round(min(df_to_plot_s['F']),1),0,
                          round(max(df_to_plot_s['F']),1)]
                 
@@ -1298,7 +1427,7 @@ class AmplGraph:
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(years))
                 pio.show(fig)
                 
-                title = "<b>Layer balance difference versus REF - {}</b><br>[TWh]".format(k)
+                title = "<b>Layer balance difference versus REF - {}</b><br>[{}]".format(k,self.dict_layer_unit[k])
                 yvals = [round(min(df_to_plot_layer[k]),1),0,
                          round(max(df_to_plot_layer[k]),1)]
                 
@@ -1449,30 +1578,6 @@ class AmplGraph:
             fig.write_image(self.outdir+"Cum_system_cost_diff_REF.pdf", width=1200, height=550)
             plt.close()
         
-    def graph_paper(self):
-        y_TD = [22,43,48,52,61,61,59]
-        y_MO = [22,46,57,67,71,66,66]
-        x = ['2020','2025','2030','2035','2040','2045','2050']
-        type_of_mod = ['TD','MO']
-        mi_temp = pd.MultiIndex.from_product([type_of_mod,x],names=['Type_of_mod','Years'])
-        df_temp = pd.DataFrame(0,index=mi_temp,columns=['Share_VRES'])
-        df_temp.loc['TD',:] = y_TD
-        df_temp.loc['MO',:] = y_MO
-        df_temp.reset_index(inplace=True)
-        
-        fig = px.line(df_temp,x='Years',y='Share_VRES',color='Type_of_mod',
-                      title='Share of VRES in primary electricity mix',markers=True)
-        fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_temp['Years'].unique()))
-        # pio.show(fig)
-        title = "<b>Share of VRES in primary electricity mix</b><br>[%]"
-        yvals = [min(round(df_temp['Share_VRES'],1)),
-                 round(df_temp.loc[(df_temp['Type_of_mod']=='TD') & (df_temp['Years']=='2050')]['Share_VRES'].values[0],1),
-                 round(df_temp.loc[(df_temp['Type_of_mod']=='MO') & (df_temp['Years']=='2050')]['Share_VRES'].values[0],1),                
-                 max(round(df_temp['Share_VRES'],1))]
-        self.custom_fig(fig,title,yvals,neg_value=True)
-        fig.write_image(self.outdir+"Share_VRES_in_elec_mix.pdf", width=1200, height=550)
-        plt.close()
-        
 
     def _get_cost_return_for_each_year(self, ampl_collector = None):
         
@@ -1568,6 +1673,9 @@ class AmplGraph:
                                                                 
         return Trans_cost
     
+    
+    # Remove values that are smaller than the threshold mutliplied by the
+    # maximum value of df_temp
     def _remove_low_values(self,df_temp, threshold = None):
         if threshold == None:
             threshold = self.threshold
@@ -1631,6 +1739,42 @@ class AmplGraph:
         color_dict_full['END_USES'] = 'lightsteelblue'
         
         return color_dict_full
+    
+    def _dict_tech_cap_unit(self):
+        dict_tech = self._group_tech_per_eud()
+
+        dict_tech_cap_unit = dict.fromkeys(dict_tech.keys())
+        for sector in dict_tech.keys():
+            if sector == 'MOBILITY_PASSENGER':
+                dict_tech_cap_unit[sector] = 'Mpass.-km/h'
+            elif sector == 'MOBILITY_FREIGHT':
+                dict_tech_cap_unit[sector] = 'Mt.-km/h'
+            elif sector == 'STORAGE':
+                dict_tech_cap_unit[sector] = 'GWh'
+            elif sector == 'INFRASTRUCTURE':
+                dict_tech_cap_unit[sector] = '-'
+            else:
+                dict_tech_cap_unit[sector] = 'GW'
+        
+        return dict_tech_cap_unit
+    
+    def _dict_layer_unit(self):
+        layers = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
+                    'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
+                    'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
+                    'MOB_PUBLIC']
+
+        dict_layer_unit =  dict.fromkeys(layers)
+        for sector in layers:
+            if sector in ['MOB_PRIVATE','MOB_PUBLIC']:
+                dict_layer_unit[sector] = 'Gpass.-km'
+            elif sector in ['MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD']:
+                dict_layer_unit[sector] = 'Gt.-km'
+            else:
+                dict_layer_unit[sector] = 'TWh'  
+        
+        return dict_layer_unit
+            
     
     @staticmethod
     def dict_color(category):

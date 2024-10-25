@@ -1076,7 +1076,7 @@ class AmplObject:
 
         Parameters
         ----------
-        ts_mo: pandas.DataFrame
+        ts: pandas.DataFrame
         Multiindex dataframe of hourly data for each hour of each TD or each month.
         The index should be of the form (TD_number, hour_of_the_day) or (period)
     
