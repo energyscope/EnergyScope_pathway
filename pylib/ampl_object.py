@@ -45,7 +45,8 @@ class AmplObject:
 
     """
 
-    def __init__(self, mod_1_path, mod_2_path, data_path, options, type_model = 'MO',ampl_path=None):
+    def __init__(self, mod_1_path, mod_2_path, data_path, options, 
+                 type_model = 'MO',ampl_path=None):
 
         print("\n\n#-----------------------------------------#")
         print("\nInitializing ampl problem...")
@@ -57,7 +58,8 @@ class AmplObject:
         self.data_path = data_path
         self.ampl_path = ampl_path
         self.options = options
-        self.ampl = self.set_ampl(mod_1_path, mod_2_path, data_path, options, ampl_path)
+        self.ampl = self.set_ampl(mod_1_path, mod_2_path, data_path, options, 
+                                  ampl_path)
         self.vars = self.ampl.getVariables()
         self.params = self.ampl.getParameters()
         self.sets = dict()
@@ -66,19 +68,20 @@ class AmplObject:
         self.type_model = type_model
 
         # create empty dictionary to be filled with main results
-        self.results = dict.fromkeys(['TotalCost', 'C_inv_phase', 'C_inv_phase_tech',
-                                      'C_op_phase_tech','C_op_phase_res',
-                                      'Cost_breakdown', 'Cost_return', 
-                                      'TotalGwp','Gwp_breakdown', 'Resources',
-                                      'Assets', 'New_old_decom',
-                                      'F_decom','Sto_assets', 'Year_balance',
-                                      'Transition_cost','C_tot_capex','C_tot_opex'])
+        self.results = dict.fromkeys([
+            'TotalCost', 'C_inv_phase', 'C_inv_phase_tech',
+            'C_op_phase_tech','C_op_phase_res',
+            'Cost_breakdown', 'Cost_return', 
+            'TotalGwp','Gwp_breakdown', 'Resources',
+            'Assets', 'New_old_decom',
+            'F_decom','Sto_assets', 'Year_balance',
+            'Transition_cost','C_tot_capex','C_tot_opex'])
 
-        # Store names of sets
+        # Store names of sets and the elements of these sets
         self.get_sets()
 
 
-    """"
+    """
 
     Run the LP optimization with AMPL and saves the running time in self.t
 
@@ -102,9 +105,10 @@ class AmplObject:
         solve_result_num  = self.ampl.getData('solve_result_num;').toList()[0]
         return solve_result, solve_result_num;
         # return self.ampl.getData('solve_result;').toList()[0]
+    
     """
 
-    Function to of the LP optimization problem
+    Function to store names of sets and the elements of these sets
 
     """
     def get_sets(self):
@@ -119,20 +123,25 @@ class AmplObject:
                 self.sets[name] = self.get_subset(obj)
         
         
-
+    """Function to extract the mentioned variable or parameter
+    and store it into self.outputs
+    
+    Parameters
+    ----------
+    elem_name: str
+    Name of the element to extract from the optimisation problem. 
+    type_of_elem: 'Var' or 'Param' depending if the element is a variable or
+    a parameter 
+    
+    Returns
+    -------
+    elem: pd.DataFrame()
+    DataFrame containing the values of the different elements of the element.
+    The n first columns give the n sets on which it is indexed
+    and the last column give the value obtained from the optimization.
+    """
     def get_elem(self, elem_name:str,type_of_elem = 'Var'):
-        """Function to extract the mentioned variable and store it into self.outputs
-        Parameters
-        ----------
-        var_name: str
-        Name of the variable to extract from the optimisation problem results. Should be written as in the .mod file
-        Returns
-        -------
-        elem: pd.DataFrame()
-        DataFrame containing the values of the different elements of the variable.
-        The n first columns give the n sets on which it is indexed
-        and the last column give the value obtained from the optimization.
-        """
+        
         if type_of_elem == 'Var':
             ampl_elem = self.ampl.getVariable(elem_name)
         elif type_of_elem == 'Param':
@@ -142,19 +151,22 @@ class AmplObject:
         # Getting the data of the variable into a pandas dataframe
         amplpy_df = ampl_elem.getValues()
         elem = amplpy_df.toPandas()
-        # getting the number of indices. If elem has more then 1 index, we set it as a MultiIndex
+        # getting the number of indices. If elem has more then 1 index, we set 
+        # it as a MultiIndex
         n_indices = amplpy_df.getNumIndices()
         if n_indices>1:
-            elem.index = pd.MultiIndex.from_tuples(elem.index, names=indexing_sets)
+            elem.index = pd.MultiIndex.from_tuples(elem.index,
+                                                   names=indexing_sets)
         elif n_indices == 0:
             elem = elem
         else:
             elem.index = pd.Index(elem.index, name=indexing_sets[0])
-        # getting rid of '.val' (4 trailing characters of the string) into columns names such that the name of the columns correspond to the variable
+        # getting rid of '.val' (4 trailing characters of the string) into 
+        # columns names such that the name of the columns correspond to the 
+        # variable
         if type_of_elem == 'Var':
             elem.rename(columns=lambda x: x[:-4], inplace=True)
             self.outputs[elem_name] = elem
-        #self.to_pd(ampl_elem.getValues()).rename(columns={(var_name+'.val'):var_name})
 
         return elem
     """"
@@ -167,22 +179,35 @@ class AmplObject:
     Name of the parameter to change the value
 
     value : dict(tuple: float)
-    Dictionary of which the key is a tuple specifying which element of the parameter must be changed
-    and the value to set is a float
+    Dictionary of which the key is a tuple specifying which element of 
+    the parameter must be changed and the value to set is a float
 
     """
     def set_params(self, name, value):
         if len(self.ampl.get_parameter(name).instances()) == 1:
-            self.ampl.get_parameter(name).set(1.0*value) # 1.0* aims to convert potential float32 into float64 that is compatible with ampl object
+            # 1.0* aims to convert potential float32 into float64 
+            # that is compatible with ampl object
+            self.ampl.get_parameter(name).set(1.0*value) 
         else:
             self.ampl.get_parameter(name).set_values(value)
     
 
+    """"
+
+    Remove the files generated during the optimisation of a transition pathway
+
+    """
+    
     def clean_history(self):
         open(os.path.join(self.dir,'fix.mod'), 'w').close()
         open(os.path.join(self.dir,'PESTD_data_remaining_wnd.dat'), 'w').close()
         open(os.path.join(self.dir,'PES_seq_opti.dat'), 'w').close()
 
+    """"
+
+    Set initial conditions for the start of the next time window
+
+    """
 
     def set_init_sol(self):
     
@@ -203,6 +228,17 @@ class AmplObject:
                 fout.write(line)
         
         os.remove(fix_0)
+       
+    """"
+
+    Collect the total GWP per year
+    
+    Returns
+    -------
+    gwp_dict: dict(str: float)
+    Dictionary collecting for each year of the transition its total GWP
+
+    """
     
     def collect_gwp(self, years):
         gwp_dict = dict.fromkeys(years)
@@ -212,6 +248,19 @@ class AmplObject:
             gwp_dict[y] = TotalGWP[y].value()
         
         return gwp_dict
+    
+    """"
+
+    Collect the total cost per year
+    
+    Returns
+    -------
+    objective: float
+    Value of the objective function, the total transition cost
+    cost_dict: dict(str: float)
+    Dictionary collecting for each year of the transition its total cost
+
+    """
     
     def collect_cost(self,objective_name, years=None):
         objective = self.ampl.get_objective(objective_name)
@@ -225,7 +274,6 @@ class AmplObject:
                 cost_dict[y] = TotalCost[y].value()
         else:
             cost_dict = []
-                    
         
         return [objective, cost_dict]
     
@@ -954,11 +1002,6 @@ class AmplObject:
         """Get the year energy balance of each layer"""
         logging.info('Getting Year_balance')
         sto_tech_daily = self.sets['STORAGE_DAILY'].copy()
-        # Layer of which we have limited interest
-        # col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','HEAT_HIGH_T',
-        #         'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
-        #         'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
-        #         'MOB_PUBLIC']
 
         # EXTRACT RESULTS FROM OPTIMISATION MODEL
         if self.type_model == 'MO':

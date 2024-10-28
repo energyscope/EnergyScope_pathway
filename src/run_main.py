@@ -244,18 +244,15 @@ if __name__ == '__main__':
         # ampl_graph.graph_resource() # Primary energy mix
         # ampl_graph.graph_cost() # Total annual system cost 
         # ampl_graph.graph_gwp_per_sector() # GWP per energy sector
-        ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
+        # ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
         # ampl_graph.graph_cost_op_phase() # Cumulative operational costs
-        # ampl_graph.graph_cost_return()
+        # ampl_graph.graph_cost_return() # Salvage value
 
         
-        # ampl_graph.graph_layer()
-        # ampl_graph.graph_gwp()
-        # ampl_graph.graph_tech_cap()
-        # ampl_graph.graph_total_cost_per_year()
-        # ampl_graph.graph_load_factor()
-        # df_unused,_ = ampl_graph.graph_load_factor_scaled()
-        # ampl_graph.graph_new_old_decom()
+        # ampl_graph.graph_layer() # Prod-Cons graph per layer
+        # ampl_graph.graph_tech_cap() # Installed capapcities per sector
+        # ampl_graph.graph_load_factor() # Load factor per sector
+        # df_unused,_ = ampl_graph.graph_load_factor_scaled() # Scaled load factor
         
     #%% Plot graphs to compare two different deterministic runs:
       # case_study: the studied case study
@@ -286,6 +283,7 @@ if __name__ == '__main__':
         # ampl_graph.graph_comparison(output_files,'GWP_per_sector')
         # ampl_graph.graph_comparison(output_files,'Load_factor')
     
+    #%% Plot graphs related to UQ analysis
     if graph_UQ :
         result_dir = [case_study_uq]
         

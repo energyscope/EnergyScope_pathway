@@ -28,8 +28,9 @@ class AmplGraph:
 
     """
 
-    The AmplGraph class allows to plot the relevant outputs (e.g. installed capacitites, used resources, costs)
-    of an optimisation problem.
+    The AmplGraph class allows to plot the relevant outputs 
+    (e.g. installed capacitites, used resources, costs) of an 
+    optimisation problem.
 
     Parameters
     ----------
@@ -69,32 +70,33 @@ class AmplGraph:
         open_file.close()
 
         return loaded_results
+
+    #%% Prod-Cons per layer
+    '''
+    Graph_layer to plot the prod-cons balance per layer over the transition
     
-    @staticmethod
-    def is_number(s): 
-
-        """
-        Return True if s is a number, False otherwise.
-
-        """
-        try:
-            float(s)
-            return True
-        except ValueError:
-            pass
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
     
-        return False
-
+    Outputs
+    -------
+    df_to_plot_full: Dataframe with the prod-cons balance per layer 
+    along the transition
+    
+    ''' 
+    
     def graph_layer(self, ampl_collector = None, plot = True):
         pio.renderers.default = 'browser'
         
         if ampl_collector == None:
             ampl_collector = self.ampl_collector
         
-        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
-                'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
-                'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
-                'MOB_PUBLIC']
+        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS',
+                    'HEAT_HIGH_T','HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC',
+                    'METHANOL','MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL',
+                    'MOB_FREIGHT_ROAD','MOB_PRIVATE','MOB_PUBLIC']
         results = ampl_collector['Year_balance'].copy()
         results = results[col_plot]
         df_to_plot_full = dict.fromkeys(col_plot)
@@ -130,38 +132,51 @@ class AmplGraph:
             
             if plot:
                 fig = px.area(df_to_plot, x='Years', color='Elements',y=k,
-                               title=self.case_study + ' - {}'.format(k),
+                               title=self.case_study + ' - {} [{}]'.format(k,
+                                                       self.dict_layer_unit[k]),
                                color_discrete_map=self.color_dict_full)
                     
-                fig.for_each_trace(lambda tr: tr.update(stackgroup=2 if tr.name in neg_vars else 1))
-                fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
-                fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
+                fig.for_each_trace(lambda tr: tr.update
+                                   (stackgroup=2 if tr.name in neg_vars else 1))
+                fig.update_xaxes(categoryorder='array', categoryarray= 
+                                 sorted(df_to_plot['Years'].unique()))
+                fig.for_each_trace(lambda trace: trace.update(fillcolor =
+                                                              trace.line.color))
                 fig.update_traces(mode='none')
                 pio.show(fig)
+                
+                if not os.path.exists(Path(self.outdir+"_Raw/Layers/")):
+                    Path(self.outdir+"_Raw/Layers").mkdir(parents=True,exist_ok=True)
+                fig.write_html(self.outdir+"_Raw/Layers/"+k+".html")
+                plt.close()
+                
+                
             
-                title = "<b>{} - Layer balance</b><br>[{}]".format(k,self.dict_layer_unit[k])
+                title = "<b>{} - Layer balance</b><br>[{}]".format(k,
+                                                       self.dict_layer_unit[k])
                 if k in ['GAS','H2','WOOD','WET_BIOMASS']:
                     EUD_2020 = 0
                     EUD_2050 = 0
                 else:
-                    EUD_2020 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') & (df_to_plot['Years']=='2020')][k].values[0]
-                    if k in ['METHANOL']:
-                        EUD_2050 = EUD_2020
-                    else:
-                        EUD_2050 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') & (df_to_plot['Years']=='2050')][k].values[0]
+                    EUD_2020 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') &
+                                              (df_to_plot['Years']=='2020')][k].values[0]
+                    EUD_2050 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') &
+                                              (df_to_plot['Years']=='2050')][k].values[0]
                     
                 temp_pos = df_to_plot[df_to_plot[k]>0]
                 temp_pos = temp_pos.groupby(['Years']).sum()
                 temp_neg = df_to_plot[df_to_plot[k]<0]
                 temp_neg = temp_neg.groupby(['Years']).sum()
-                yvals = sorted([round(min(temp_neg[k]),1),round(EUD_2020,1),round(EUD_2050,1),0,round(max(temp_pos[k]),1)])
+                yvals = sorted([round(min(temp_neg[k]),1),round(EUD_2020,1),
+                                round(EUD_2050,1),0,round(max(temp_pos[k]),1)])
                 
                 self.custom_fig(fig,title,yvals,neg_value=True)
                 
                 
                 if not os.path.exists(Path(self.outdir+"Layers/")):
                     Path(self.outdir+"Layers").mkdir(parents=True,exist_ok=True)
-                fig.write_image(self.outdir+"Layers/"+k+".pdf", width=1200, height=550)
+                fig.write_image(self.outdir+"Layers/"+k+".pdf", width=1200,
+                                height=550)
                 plt.close()
                 
 
@@ -169,7 +184,7 @@ class AmplGraph:
             
         return df_to_plot_full
     
-    
+    #%% Primary energy mix
     '''
     Graph_resource to plot the primary energy mix along the transition
     
@@ -236,7 +251,7 @@ class AmplGraph:
             # Save html figure
             if not os.path.exists(Path(self.outdir+"_Raw/")):
                 Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
-            fig.write_html(self.outdir+"_Raw/Resources_raw.html")
+            fig.write_html(self.outdir+"_Raw/Resources.html")
             
             # Improve and save pdf figure
             title = "<b>Primary energy supply</b><br>[TWh]"
@@ -251,31 +266,8 @@ class AmplGraph:
         
         return df_to_plot
     
-    def graph_gwp(self):
-        pio.renderers.default = 'browser'
-        
-        results = self.ampl_collector['Gwp_breakdown'].copy()
-        results = results.drop(columns=['GWP_constr'])
-        results.dropna(how='all',inplace=True)
-        df_to_plot = pd.DataFrame(index=results.index,columns=results.columns)
-        for y in results.index.get_level_values(0).unique():
-            temp = results.loc[results.index.get_level_values('Years') == y,'GWP_op']  
-            temp = self._remove_low_values(temp)
-            df_to_plot.update(temp)
-        df_to_plot.dropna(how='all',inplace=True)
-        df_to_plot.reset_index(inplace=True)
-        df_to_plot['Elements'] = df_to_plot['Elements'].astype("str")
-        df_to_plot['Years'] = df_to_plot['Years'].str.replace('YEAR_', '')
-        fig = px.area(df_to_plot, x='Years', y = 'GWP_op',color='Elements',
-                     title=self.case_study + ' - GWP',
-                     color_discrete_map=self.color_dict_full)
-        fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
-        fig.update_traces(mode='none')
-        fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
-        pio.show(fig)
-        fig.write_image(self.outdir+"Gwp_breakdown.pdf", width=1200, height=550)
-        plt.close()
     
+    #%% GWP per different sectors
     
     '''
     Graph_gwp_per_sector to plot the GWP attributed to the different sectors
@@ -499,7 +491,7 @@ class AmplGraph:
             # Save html figure
             if not os.path.exists(Path(self.outdir+"_Raw/")):
                 Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
-            fig.write_html(self.outdir+"_Raw/Gwp_per_sector_raw.html")
+            fig.write_html(self.outdir+"_Raw/Gwp_per_sector.html")
             
             title = "<b>Yearly emissions</b><br>[MtCO2/y]"
             temp = gwp_per_layer.set_index(['Years','Layers'])
@@ -515,7 +507,7 @@ class AmplGraph:
         
         return gwp_per_layer
     
-    
+    #%% Total annual system cost
     '''
     Graph_cost to plot the total annual system cost along the transition
     
@@ -642,7 +634,7 @@ class AmplGraph:
         # Save html figure
         if not os.path.exists(Path(self.outdir+"_Raw/")):
             Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
-        fig.write_html(self.outdir+"_Raw/System_cost_raw.html")
+        fig.write_html(self.outdir+"_Raw/System_cost.html")
         
         
         title = "<b>Annual system cost</b><br>[b€<sub>2015</sub>/y]"
@@ -655,6 +647,22 @@ class AmplGraph:
         fig.write_image(self.outdir+"System_cost.pdf", width=1200, height=550)
         plt.close()
     
+    #%% Salvage value per sector
+    
+    '''
+    Graph_cost_return to plot the salvage value per sector
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    df_to_plot_eff_full: Dataframe with the salvage value per sector
+    
+    ''' 
+    
     def graph_cost_return(self, ampl_collector = None, plot = True):
         pio.renderers.default = 'browser'
         category = self.category
@@ -665,7 +673,8 @@ class AmplGraph:
         results = ampl_collector['Cost_return'].copy()
         df_to_plot = pd.DataFrame(index=results.index,columns=results.columns)
         for y in results.index.get_level_values(0).unique():
-            temp = results.loc[results.index.get_level_values('Years') == y,'C_inv_return']  
+            temp = results.loc[results.index.get_level_values('Years') == y,
+                               'C_inv_return']  
             temp = self._remove_low_values(temp,threshold=0)
             df_to_plot.update(temp)
         df_to_plot.update(results['cumsum'])
@@ -684,9 +693,10 @@ class AmplGraph:
         df_to_plot['C_inv_return'] = df_to_plot['C_inv_return']/1000
         df_to_plot['cumsum'] = df_to_plot['cumsum']/1000
         
-        order_entry = ['INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC','MOBILITY_FREIGHT',
-                       'ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN',
-                       'HVC','METHANOL','AMMONIA']
+        order_entry = ['INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC',
+                       'MOBILITY_FREIGHT','ELECTRICITY','HEAT_HIGH_T',
+                       'HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN','HVC','METHANOL',
+                       'AMMONIA']
         
         df_to_plot.reset_index(inplace=True)
         
@@ -712,11 +722,11 @@ class AmplGraph:
         c_inv_cum = self.graph_cost_inv_phase_tech(plot=False)
         c_inv_cum = c_inv_cum.set_index(['Years','Category'])
         
-        df_to_plot_eff = c_inv_cum.merge(cost_return_eff,left_index=True, right_index=True, how='outer')
+        df_to_plot_eff = c_inv_cum.merge(cost_return_eff,left_index=True, 
+                                         right_index=True, how='outer')
         df_to_plot_eff[df_to_plot_eff < 0] = 0
         
         df_to_plot_eff.reset_index(inplace=True)
-        
         
         df_to_plot_eff['Category'] = pd.Categorical(
             df_to_plot_eff['Category'], order_entry)
@@ -728,7 +738,8 @@ class AmplGraph:
         df_to_plot_eff['Share_return'] = 100*df_to_plot_eff['Cost_return'].div(df_to_plot_eff['cumsum'])
         df_to_plot_eff.reset_index(inplace=True)
         df_to_plot_eff_full = df_to_plot_eff.copy()
-        df_to_plot_eff = df_to_plot_eff[~df_to_plot_eff['Years'].isin(['2020','2025'])]
+        df_to_plot_eff = df_to_plot_eff[~df_to_plot_eff['Years'].
+                                        isin(['2020','2025'])]
         
         if plot:
         
@@ -739,36 +750,26 @@ class AmplGraph:
                              color_discrete_map=self.color_dict_full)
                 pio.show(fig)
                 
-                title = "<b>Respective share of salvage value</b><br>[%]"
+                # Save html figure
+                if not os.path.exists(Path(self.outdir+"_Raw/")):
+                    Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+                fig.write_html(self.outdir+"_Raw/Cost_return.html")
+                
+                title = "<b>Respective share of salvage value, by 2050</b><br>[%]"
                 temp = df_to_plot.copy()
-                yvals = [0,round(float(temp.loc[temp['Category'] == 'MOB_PRIVATE']['Share_return']),1),max(round(temp['Share_return'],1))]
-                self.custom_fig(fig,title,yvals,xvals=df_to_plot['Category'].unique(),type_graph = 'bar')
+                yvals = [0,round(float(temp.loc[temp['Category'] == 'MOB_PRIVATE']
+                                       ['Share_return']),1),
+                         max(round(temp['Share_return'],1))]
+                self.custom_fig(fig,title,yvals,xvals=df_to_plot['Category'].
+                                unique(),type_graph = 'bar')
                 fig.update_xaxes(showticklabels=False,visible=False)
-                fig.write_image(self.outdir+"Cost_return_2.pdf", width=1200, height=550)
+                fig.write_image(self.outdir+"Cost_return.pdf", width=1200,
+                                height=550)
                 plt.close()
             
             order_entry_new = df_to_plot_eff.loc[df_to_plot_eff['Years'] == '2030']
             order_entry_new.sort_values(by=['Cost_return'],inplace=True,ascending=False)
             order_entry_new = order_entry_new['Category']
-            fig = px.scatter(df_to_plot_eff, x='Category', y = 'Cost_return',color='Category',
-                         symbol="Years",
-                         title=self.case_study + ' - Salvage value [b€<sub>2015</sub>]',
-                         color_discrete_map=self.color_dict_full,
-                         category_orders = {'Category': list(order_entry_new)})
-            fig.update_traces(marker=dict(size=15,
-                              line=dict(width=2,
-                                        color='DarkSlateGrey')),
-                  selector=dict(mode='markers'))
-            
-            pio.show(fig)
-            title = "<b>Respective salvage values, at the end year of each time window</b><br>[b€<sub>2015</sub>]"
-            ELEC_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
-            yvals = [0,round(ELEC_2030,1),round(max(df_to_plot_eff['Share_return']),1)]
-            self.custom_fig(fig,title,yvals, xvals=df_to_plot['Category'].unique(),type_graph='scatter')
-            fig.write_image(self.outdir+"Return_eff.pdf", width=1200, height=550)
-            plt.close()
-            
-            
             
             fig = px.line(df_to_plot_eff, x='Years', y = 'Cost_return',color='Category',
                          title=self.case_study + ' - Salvage value [b€<sub>2015</sub>]',
@@ -780,11 +781,17 @@ class AmplGraph:
                   selector=dict(mode='markers'))
             
             pio.show(fig)
+            # Save html figure
+            if not os.path.exists(Path(self.outdir+"_Raw/")):
+                Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+            fig.write_html(self.outdir+"_Raw/Return_eff_line.html")
+            
+            
             title = "<b>Respective salvage values, at the end year of each time window</b><br>[b€<sub>2015</sub>]"
             ELEC_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
             INF_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
             yvals = [0,round(ELEC_2030,1),round(ELEC_2030,1)]
-            self.custom_fig(fig,title,yvals, xvals=df_to_plot['Years'].unique())
+            self.custom_fig(fig,title,yvals, xvals=df_to_plot_eff['Years'].unique())
             fig.write_image(self.outdir+"Return_eff_line.pdf", width=1200, height=550)
             plt.close()
             
@@ -795,8 +802,12 @@ class AmplGraph:
                          category_orders = {'Category': list(order_entry_new)})
             fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
             fig.update_traces(mode='none')
-            
             pio.show(fig)
+            # Save html figure
+            if not os.path.exists(Path(self.outdir+"_Raw/")):
+                Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+            fig.write_html(self.outdir+"_Raw/Return_eff_area.html")
+            
             title = "<b>Sum of respective salvage values, at the end year of each time window</b><br>[b€<sub>2015</sub>]"
             ELEC_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
             INF_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
@@ -805,31 +816,11 @@ class AmplGraph:
             self.custom_fig(fig,title,yvals, xvals=df_to_plot_eff['Years'].unique())
             fig.write_image(self.outdir+"Return_eff_area.pdf", width=1200, height=550)
             plt.close()
-            
-            order_entry_new = df_to_plot_eff.loc[df_to_plot_eff['Years'] == '2030']
-            order_entry_new.sort_values(by=['Share_return'],inplace=True,ascending=False)
-            order_entry_new = order_entry_new['Category']
-            fig = px.scatter(df_to_plot_eff, x='Category', y = 'Share_return',color='Category',
-                         symbol="Years",
-                         title=self.case_study + ' - Share salvage value [% of cum_inv]',
-                         color_discrete_map=self.color_dict_full,
-                         category_orders = {'Category': list(order_entry_new)})
-            fig.update_traces(marker=dict(size=15,
-                              line=dict(width=2,
-                                        color='DarkSlateGrey')),
-                  selector=dict(mode='markers'))
-            
-            pio.show(fig)
-            
-            title = "<b>Respective shares of salvage value, at the end year of each time window</b><br>[%]"
-            yvals = [0,round(max(df_to_plot_eff['Share_return']),1)]
-            self.custom_fig(fig,title,yvals, xvals=df_to_plot_eff['Category'].unique(),type_graph='scatter')
-            fig.write_image(self.outdir+"Share_return_eff.pdf", width=1200, height=550)
-            plt.close()
 
             
         return df_to_plot_eff_full
-        
+    
+    #%% Cumulative CAPEX over the transition    
     '''
     Graph_cost_inv_phase_tech to plot the cumulative CAPEX over the transition
     
@@ -854,7 +845,8 @@ class AmplGraph:
         results = ampl_collector['C_inv_phase_tech'].copy()
         df_to_plot = pd.DataFrame(index=results.index,columns=results.columns)
         for p in results.index.get_level_values(0).unique():
-            temp = results.loc[results.index.get_level_values('Phases') == p,'C_inv_phase_tech']  
+            temp = results.loc[results.index.get_level_values('Phases') == p,
+                               'C_inv_phase_tech']  
             temp = self._remove_low_values(temp, threshold=0)
             df_to_plot.update(temp)
         df_to_plot.dropna(how='all',inplace=True)
@@ -876,13 +868,15 @@ class AmplGraph:
         years = df_to_plot_full['Years'].unique()
         categories = df_to_plot_full['Category'].unique()
         
-        mi_temp = pd.MultiIndex.from_product([years,categories],names=['Years','Category'])
+        mi_temp = pd.MultiIndex.from_product([years,categories],
+                                             names=['Years','Category'])
         temp = pd.DataFrame(0,index=mi_temp,columns=['C_inv_phase_tech'])
         temp.reset_index(inplace=True)
         
         df_to_plot_full = pd.concat([temp,df_to_plot_full])
         df_to_plot_full = df_to_plot_full.set_index(['Years','Category'])
-        df_to_plot_full = df_to_plot_full.loc[~df_to_plot_full.index.duplicated(keep='last')]
+        df_to_plot_full = df_to_plot_full.loc[~df_to_plot_full.
+                                              index.duplicated(keep='last')]
         
         df_to_plot_full.sort_values(by=['Years'],inplace=True)
         
@@ -938,6 +932,22 @@ class AmplGraph:
         
         return df_to_plot_full
     
+    #%% Cumulative OPEX over the transition    
+    '''
+    Graph_cost_op_phase to plot the cumulative OPEX over the transition
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    df_to_plot: Dataframe with the cumulative CAPEX along the transition
+    
+    ''' 
+    
+    
     def graph_cost_op_phase(self, ampl_collector = None, plot=True):
         pio.renderers.default = 'browser'
         category = self.category
@@ -947,25 +957,30 @@ class AmplGraph:
         
         results_tech = ampl_collector['C_op_phase_tech'].copy()
         results_tech.reset_index(inplace=True)
-        results_tech.rename(columns={'C_op_phase_tech':'C_op','Technologies' :'Elements'},inplace=True)
+        results_tech.rename(columns={'C_op_phase_tech':'C_op',
+                                     'Technologies' :'Elements'},inplace=True)
         results_tech['Phases'] = results_tech['Phases'].map(lambda x: x[-4:])
         results_tech.rename(columns={'Phases':'Years'},inplace=True)
 
         results_res = ampl_collector['C_op_phase_res'].copy()
         results_res.reset_index(inplace=True)
-        results_res.rename(columns={'C_op_phase_res':'C_op','Resources':'Elements'},inplace=True)
+        results_res.rename(columns={'C_op_phase_res':'C_op',
+                                    'Resources':'Elements'},inplace=True)
         results_res['Phases'] = results_res['Phases'].map(lambda x: x[-4:])
         results_res.rename(columns={'Phases':'Years'},inplace=True)
         
         results_2020 = ampl_collector['Cost_breakdown'].copy()
-        results_2020 = results_2020.loc[results_2020.index.get_level_values('Years') == 'YEAR_2020',:]
+        results_2020 = results_2020.loc[results_2020.
+                                        index.get_level_values
+                                        ('Years') == 'YEAR_2020',:]
         results_2020.fillna(0,inplace=True)
         results_2020['C_op'] = results_2020['C_op']+results_2020['C_maint']
         results_2020.drop(columns=['C_inv','C_maint'],inplace=True)
         results_2020.reset_index(inplace=True)
         results_2020['Years'] = results_2020['Years'].map(lambda x: x[-4:])
         
-        df_to_plot = pd.concat([results_2020,results_tech,results_res],axis=0,ignore_index=True)
+        df_to_plot = pd.concat([results_2020,results_tech,results_res],
+                               axis=0,ignore_index=True)
         
         
         df_to_plot['Category'] = df_to_plot['Elements']
@@ -977,7 +992,9 @@ class AmplGraph:
         cost_elec_re = pd.DataFrame(columns=df_to_plot.columns)
         cost_elec_nre = pd.DataFrame(columns=df_to_plot.columns)
         for i,j in enumerate(['2020','2025','2030','2035','2040','2045','2050']):
-            total_elec_cost = df_to_plot.loc[(df_to_plot['Years'] == j) & (df_to_plot['Elements'] == 'ELECTRICITY')]['C_op']
+            total_elec_cost = df_to_plot.loc[(df_to_plot['Years'] == j) &
+                                             (df_to_plot['Elements'] == 
+                                              'ELECTRICITY')]['C_op']
             if len(total_elec_cost) > 0:
                 temp_re = pd.DataFrame({
                     'Years': j,
@@ -1008,7 +1025,8 @@ class AmplGraph:
         years = df_to_plot['Years'].unique()
         categories = df_to_plot['Category'].unique()
         
-        mi_temp = pd.MultiIndex.from_product([years,categories],names=['Years','Category'])
+        mi_temp = pd.MultiIndex.from_product([years,categories],
+                                             names=['Years','Category'])
         temp = pd.DataFrame(0,index=mi_temp,columns=['C_op'])
         temp.reset_index(inplace=True)
         
@@ -1019,16 +1037,17 @@ class AmplGraph:
         df_to_plot.sort_values(by=['Years'],inplace=True)
         
         for g_name, g_df in df_to_plot.groupby(['Category']):
-            df_to_plot.loc[g_df.index,'cumsum'] = df_to_plot.loc[g_df.index,'C_op'].cumsum()
+            df_to_plot.loc[g_df.index,'cumsum'] = df_to_plot.loc[g_df.index,
+                                                                 'C_op'].cumsum()
         
         df_to_plot.reset_index(inplace=True)
         df_to_plot['cumsum'] = df_to_plot['cumsum']/1000
         
-        
         order_entry = ['NRE_FUELS','RE_FUELS',
-                       'INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC','MOBILITY_FREIGHT',
-                       'ELECTRICITY','HEAT_HIGH_T','HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN',
-                       'HVC','METHANOL','AMMONIA']
+                       'INFRASTRUCTURE','STORAGE','MOB_PRIVATE','MOB_PUBLIC',
+                       'MOBILITY_FREIGHT','ELECTRICITY','HEAT_HIGH_T',
+                       'HEAT_LOW_T_DHN','HEAT_LOW_T_DECEN','HVC','METHANOL',
+                       'AMMONIA']
         
         order_entry  = [x for x in order_entry if x in list(df_to_plot['Category'])]
         
@@ -1045,13 +1064,23 @@ class AmplGraph:
                           color_discrete_map=self.color_dict_full)
             fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
             fig.update_traces(mode='none')
-            fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            fig.update_xaxes(categoryorder='array', categoryarray = 
+                             sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
+            
+            # Save html figure
+            if not os.path.exists(Path(self.outdir+"_Raw/")):
+                Path(self.outdir+"_Raw").mkdir(parents=True,exist_ok=True)
+            fig.write_html(self.outdir+"_Raw/C_op_phase.html")
             
             title = "<b>Operation over transition</b><br>[b€<sub>2015</sub>]"
             temp = df_to_plot.groupby(['Years']).sum()
-            NRE_2050 = float(df_to_plot.loc[(df_to_plot['Years'] == '2050') & (df_to_plot['Category'] == 'NRE_FUELS')]['cumsum'])
-            RE_2050 = float(df_to_plot.loc[(df_to_plot['Years'] == '2050') & (df_to_plot['Category'] == 'RE_FUELS')]['cumsum'])
+            NRE_2050 = float(df_to_plot.loc
+                             [(df_to_plot['Years'] == '2050') & 
+                              (df_to_plot['Category'] == 'NRE_FUELS')]['cumsum'])
+            RE_2050 = float(df_to_plot.loc
+                            [(df_to_plot['Years'] == '2050') &
+                             (df_to_plot['Category'] == 'RE_FUELS')]['cumsum'])
             yvals = [0,min(round(temp['cumsum'],1)),
                      round(NRE_2050,1),
                      round(NRE_2050+RE_2050,1),
@@ -1087,6 +1116,21 @@ class AmplGraph:
         df_to_plot = df_to_plot.set_index('Years')
         return df_to_plot
     
+    #%% Installed capacities per sector
+    '''
+    Graph_tech_cap to plot the installed capacities per sector
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    df_to_plot_full: Dataframe with the installed capacities along the transition
+    
+    ''' 
+    
     def graph_tech_cap(self, ampl_collector = None, plot = True):
         pio.renderers.default = 'browser'
         
@@ -1119,7 +1163,8 @@ class AmplGraph:
                 else:
                     
                     fig = px.area(df_to_plot, x='Years', y = 'F',color='Technologies',
-                             title=self.case_study + ' - ' + sector+' - Installed capacity',
+                             title=self.case_study + ' - ' + sector+
+                             ' - Installed capacity [{}]'.format(self.dict_tech_cap_unit[sector]),
                              color_discrete_map=self.color_dict_full)
                     fig.for_each_trace(lambda trace: trace.update(fillcolor = trace.line.color))
                     fig.update_traces(mode='none')
@@ -1127,6 +1172,13 @@ class AmplGraph:
                         
                 if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                     pio.show(fig)
+                    
+                    if not os.path.exists(Path(self.outdir+"_Raw/Tech_Cap/")):
+                        Path(self.outdir+"_Raw/Tech_Cap").mkdir(parents=True,exist_ok=True)
+                    fig.write_html(self.outdir+"_Raw/Tech_Cap/"+sector+".html")
+                    plt.close()
+                    
+                    
                     if not os.path.exists(Path(self.outdir+"Tech_Cap/")):
                         Path(self.outdir+"Tech_Cap").mkdir(parents=True,exist_ok=True)
                         
@@ -1148,53 +1200,12 @@ class AmplGraph:
             
         return df_to_plot_full
     
-    def graph_new_old_decom(self):
-        pio.renderers.default = 'browser'
-        
-        results = self.ampl_collector['New_old_decom'].copy()
-        sto_tech = self.ampl_obj.sets['STORAGE_TECH']
-        results = results.loc[~results.index.get_level_values('Technologies').isin(sto_tech),:]
-        F_new = results.drop(columns=['F_old','F_decom'])
-        F_new.dropna(how='all',inplace=True)
-        F_old = results.drop(columns=['F_new','F_decom'])
-        F_old.dropna(how='all',inplace=True)
-        F_decom = results.drop(columns=['F_new','F_old'])
-        F_decom.dropna(how='all',inplace=True)
-        df_to_plot_new = pd.DataFrame(index=F_new.index,columns=F_new.columns)
-        df_to_plot_old = pd.DataFrame(index=F_old.index,columns=F_old.columns)
-        df_to_plot_decom = pd.DataFrame(index=F_decom.index,columns=F_decom.columns)
-        for p in F_old.index.get_level_values(0).unique():
-            temp_new = F_new.loc[F_new.index.get_level_values('Phases') == p,'F_new']  
-            temp_new = self._remove_low_values(temp_new,threshold=0.00)
-            df_to_plot_new.update(temp_new)
-            temp_old = F_old.loc[F_old.index.get_level_values('Phases') == p,'F_old']  
-            temp_old = self._remove_low_values(temp_old,threshold=0.001)
-            df_to_plot_old.update(temp_old)
-            temp_decom = F_decom.loc[F_decom.index.get_level_values('Phases') == p,'F_decom']  
-            temp_decom = self._remove_low_values(temp_decom,threshold=0.001)
-            df_to_plot_decom.update(temp_decom)
-        df_to_plot_new.dropna(how='all',inplace=True)
-        df_to_plot_new.reset_index(inplace=True)
-        df_to_plot_new['Type'] = 'F_new'
-        df_to_plot_new.rename(columns={"F_new": "Tech_Cap"},inplace=True)
-        df_to_plot_old.dropna(how='all',inplace=True)
-        df_to_plot_old.reset_index(inplace=True)
-        df_to_plot_old['Type'] = 'F_old'
-        df_to_plot_old.rename(columns={"F_old": "Tech_Cap"},inplace=True)
-        df_to_plot_decom.dropna(how='all',inplace=True)
-        df_to_plot_decom.reset_index(inplace=True)
-        df_to_plot_decom['Type'] = 'F_decom'
-        df_to_plot_decom.rename(columns={"F_decom": "Tech_Cap"},inplace=True)
-        df_to_plot = pd.concat([df_to_plot_new,df_to_plot_old, df_to_plot_decom], axis=0)
-        df_to_plot['Technologies'] = df_to_plot['Technologies'].astype("str")
-        fig = px.bar(df_to_plot, x='Phases', y = 'Tech_Cap',color='Technologies',facet_row='Type',
-                     title=self.case_study + ' - New & Old & Decom',
-                     color_discrete_map=self.color_dict_full)
-        fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Phases'].unique()))
-        pio.show(fig)
-        fig.write_image(self.outdir+"New_Old_Decom.pdf", width=1200, height=550)
-        plt.close()
-        
+    
+    #%% Load factor per sector
+    '''
+    Graph_load_factor to plot the load factor of assets per sector
+    
+    '''
     
     def graph_load_factor(self):
         pio.renderers.default = 'browser'
@@ -1223,10 +1234,32 @@ class AmplGraph:
             fig.update_layout(barmode='group', xaxis_tickangle=-45)
             if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                 pio.show(fig)
-                if not os.path.exists(Path(self.outdir+"Load_factor/")):
-                    Path(self.outdir+"Load_factor").mkdir(parents=True,exist_ok=True)
-                fig.write_image(self.outdir+"Load_factor/"+sector+".pdf", width=1200, height=550)
+                
+                # Save html figure
+                if not os.path.exists(Path(self.outdir+"_Raw/Load_factor/")):
+                    Path(self.outdir+"_Raw/Load_factor").mkdir(parents=True,exist_ok=True)
+                fig.write_html(self.outdir+"_Raw/Load_factor/"+sector+".html")
+                
             plt.close()
+    
+    #%% Load factor per sector, scaled to account for c_p and c_p_t different
+    # from 1. This is displayed in parallel with the installed capacities and
+    # the production of every of these assets.
+    '''
+    Graph_load_factor_scaled to plot the load factor of assets per sector
+    
+    Parameters
+    ----------
+    ampl_collector: Dictionary where relevant outputs have been stored
+    plot: True if you want the plot to be generated and displayed
+    
+    Outputs
+    -------
+    df_unused: Dataframe whith unused installed capacities
+    df_to_plot_full: Dataframe with the installed capacities, the production and
+    the sclaed load factor per sector along the transition
+    
+    '''
     
     def graph_load_factor_scaled(self, ampl_collector = None, plot = True):
         pio.renderers.default = 'browser'
@@ -1245,7 +1278,9 @@ class AmplGraph:
         if self.ampl_obj.type_model == 'MO':
             c_p_t = self.ampl_obj.from_agg_to_year(ts=c_p_t)
         else:
-            c_p_t = self.ampl_obj.from_agg_to_year(ts=c_p_t.reset_index().set_index(['Typical_days', 'Hours']))
+            c_p_t = self.ampl_obj.from_agg_to_year(ts=c_p_t.reset_index().
+                                                   set_index(['Typical_days',
+                                                              'Hours']))
         c_p_inter = c_p_t.groupby(['Years','Technologies']).sum()/8760
         
         df_unused = pd.DataFrame()
@@ -1254,11 +1289,13 @@ class AmplGraph:
             c_p.loc[(slice(None), tech),'c_p'] = c_p_inter.loc[tech].values[0]
 
         for sector, tech in dict_tech.items():
-            temp = results.loc[results.index.get_level_values('Technologies').isin(tech),['F','F_year']]
+            temp = results.loc[results.index.get_level_values('Technologies').
+                               isin(tech),['F','F_year']]
             temp.dropna(how='all',inplace=True)
             temp['Load_factor_scaled'] = temp['F_year']/(8760*temp['F'])
             
-            df_to_plot = pd.DataFrame(index=temp.index,columns=['F','F_year','Load_factor_scaled'])
+            df_to_plot = pd.DataFrame(index=temp.index,
+                                      columns=['F','F_year','Load_factor_scaled'])
             df_to_plot.update(temp)
             df_to_plot['Load_factor_scaled'] = df_to_plot['Load_factor_scaled'].fillna(0)
             df_to_plot['Load_factor_scaled'] = df_to_plot['Load_factor_scaled'].div(c_p['c_p'], axis = 0)
@@ -1283,13 +1320,16 @@ class AmplGraph:
                 fig.update_yaxes(matches=None)
                 if len(df_to_plot.index.get_level_values(0).unique()) >= 1:
                     pio.show(fig)
-                    if not os.path.exists(Path(self.outdir+"Load_factor_scaled/")):
-                        Path(self.outdir+"Load_factor_scaled").mkdir(parents=True,exist_ok=True)
-                    fig.write_image(self.outdir+"Load_factor_scaled/"+sector+".pdf", width=1200, height=550)
+                    # Save html figure
+                    if not os.path.exists(Path(self.outdir+"_Raw/Load_factor_scaled/")):
+                        Path(self.outdir+"_Raw/Load_factor_scaled").mkdir(parents=True,exist_ok=True)
+                    fig.write_html(self.outdir+"_Raw/Load_factor_scaled/"+sector+".html")
+                    
                 plt.close()
         df_unused = df_unused.loc[~df_unused['F'].isna()]
         return df_unused, df_to_plot_full
     
+    #%% Method to plot comparative graphs between 2 deterministic cases
     def graph_comparison(self,output_files,type_of_graph):
         
         category = self.category
@@ -1577,8 +1617,8 @@ class AmplGraph:
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"Cum_system_cost_diff_REF.pdf", width=1200, height=550)
             plt.close()
-        
-
+            
+     #%% Compute  equivalent salvage value along the transition
     def _get_cost_return_for_each_year(self, ampl_collector = None):
         
         if ampl_collector == None:
@@ -1654,7 +1694,7 @@ class AmplGraph:
         return cost_return
         
         
-    
+    #%% Recompute total transition cost
     def _compute_transition_cost(self,ampl_collector):
         
         Tot_capex = self.graph_cost_inv_phase_tech(ampl_collector,plot = False)
@@ -1664,7 +1704,6 @@ class AmplGraph:
         Tot_opex = Tot_opex.set_index(['Years'])
         Tot_opex = Tot_opex.groupby(['Years']).sum()
         Tot_return = self.graph_cost_return(ampl_collector,plot = False)
-        # Tot_return = Tot_return[~Tot_return['Years'].isin(['2020'])]
         Tot_return = Tot_return.set_index(['Years'])
         Tot_return = Tot_return.groupby(['Years']).sum()
         
@@ -1674,7 +1713,7 @@ class AmplGraph:
         return Trans_cost
     
     
-    # Remove values that are smaller than the threshold mutliplied by the
+    #%% Remove values that are smaller than the threshold mutliplied by the
     # maximum value of df_temp
     def _remove_low_values(self,df_temp, threshold = None):
         if threshold == None:
@@ -1685,6 +1724,7 @@ class AmplGraph:
                               (df_temp <= threshold*min_temp))]
         return df_temp
     
+    #%% Group technologies per eud
     def _group_tech_per_eud(self):
         tech_of_end_uses_category = self.ampl_obj.sets['TECHNOLOGIES_OF_END_USES_CATEGORY'].copy()
         del tech_of_end_uses_category["NON_ENERGY"]
@@ -1725,21 +1765,7 @@ class AmplGraph:
         
         return categories_2
     
-    
-    def _dict_color_full(self):
-        year_balance = self.ampl_collector['Year_balance']
-        elements = year_balance.index.get_level_values(1).unique()
-        color_dict_full = dict.fromkeys(elements)
-        categories = ['Sectors','Electricity','Heat_low_T','Heat_high_T','Mobility','Freight','Ammonia',
-                   'Methanol','HVC','Conversion','Storage','Storage','Storage_daily','Resources',
-                   'Infrastructure','Years_1','Years_2','Phases']
-        for c in categories:
-            color_dict_full.update(self.dict_color(c))
-        
-        color_dict_full['END_USES'] = 'lightsteelblue'
-        
-        return color_dict_full
-    
+    #%% Dictionary with unit correspondance with installed capacities
     def _dict_tech_cap_unit(self):
         dict_tech = self._group_tech_per_eud()
 
@@ -1758,6 +1784,7 @@ class AmplGraph:
         
         return dict_tech_cap_unit
     
+    #%% Dictionary with unit correspondance with layers
     def _dict_layer_unit(self):
         layers = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
                     'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
@@ -1774,8 +1801,24 @@ class AmplGraph:
                 dict_layer_unit[sector] = 'TWh'  
         
         return dict_layer_unit
-            
     
+    
+    #%% Full dictionary with color correspondance
+    def _dict_color_full(self):
+        year_balance = self.ampl_collector['Year_balance']
+        elements = year_balance.index.get_level_values(1).unique()
+        color_dict_full = dict.fromkeys(elements)
+        categories = ['Sectors','Electricity','Heat_low_T','Heat_high_T','Mobility','Freight','Ammonia',
+                   'Methanol','HVC','Conversion','Storage','Storage','Storage_daily','Resources',
+                   'Infrastructure','Years_1','Years_2','Phases']
+        for c in categories:
+            color_dict_full.update(self.dict_color(c))
+        
+        color_dict_full['END_USES'] = 'lightsteelblue'
+        
+        return color_dict_full
+    
+    #%% Dictionary with color correspondance depending on the category
     @staticmethod
     def dict_color(category):
         color_dict = {}
@@ -1817,7 +1860,7 @@ class AmplGraph:
             
         return color_dict
     
-    
+    #%% Method to customise the graphs
     @staticmethod
     def custom_fig(fig,title,yvals,xvals=['2020','2025','2030','2035','2040',
                         '2045','2050'], ftsize=18,annot_text=None,annot_pos=None,
@@ -1940,4 +1983,4 @@ class AmplGraph:
         if type_graph in ['bar','scatter']:
             fig.update_layout({ax:{"visible":False, "matches":None} for ax in fig.to_dict()["layout"] if "xaxis" in ax})
         
-        fig.update_layout(margin_b = 10, margin_r = 30, margin_l = 30)#,margin_pad = 20)
+        fig.update_layout(margin_b = 10, margin_r = 30, margin_l = 30)
