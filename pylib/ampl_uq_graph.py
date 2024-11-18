@@ -1759,6 +1759,7 @@ class AmplUQGraph:
         if ampl_uq_collector == None:
             ampl_uq_collector = self.ampl_uq_collector
         
+        
         col_plot = ['GAS_RE','H2_RE','AMMONIA_RE','METHANOL_RE']
         results = ampl_uq_collector['Resources'].copy()
         results.reset_index(inplace=True)

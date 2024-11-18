@@ -467,50 +467,6 @@ class AmplObject:
         df.index.name = None # get rid of the name of the index (multilevel)
         return df
 
-    @staticmethod
-    def to_pd_pivot(amplpy_df):
-        """
-        Function to transform an amplpy.DataFrame into pandas.DataFrame for easier manipulation
-
-        Parameters
-        ----------
-        amplpy_df : amplpy.DataFrame
-        amplpy dataframe to transform
-
-
-        Returns
-        -------
-        df : pandas.DataFrame
-        DataFrame transformed as 'long' dataframe (can be easily pivoted later)
-        """
-    
-        nindices = amplpy_df.getNumIndices()
-        headers = amplpy_df.getHeaders()
-        columns = {header: list(amplpy_df.getColumn(header)) for header in headers}
-        df = pd.DataFrame(columns)
-        if nindices==1:
-            df = df.set_index(headers[0])
-            df.index.name = None # get rid of the name of the index (multilevel)
-        elif nindices==2:
-            df = df.pivot(index=headers[0], columns=headers[1], values=headers[2])
-            df.index.name = None # get rid of the name of the index (multilevel)
-        elif nindices==3:
-            dic = dict()
-            for i in set(columns[headers[0]]):
-                dic[i] = df[df[headers[0]]==i].pivot(index=headers[2], columns=headers[1], values=headers[3])
-                dic[i].index.name = None # to get rid of name (multilevel)
-            df = dic
-        elif nindices==4:
-            dic = dict()
-            for i in set(columns[headers[0]]):
-                dic[i] = dict()
-                for j in set(columns[headers[3]]):
-                    dic[i][int(j)] = df.loc[(df[headers[0]]==i) & (df[headers[3]]==j),:].pivot(index=headers[2], columns=headers[1], values=headers[4])
-                    dic[i][int(j)].index.name = None # to get rid of name (multilevel)
-            df = dic
-        
-        return df
-
     def get_results(self):
         """Wrapper function to get the summary results"""
         logging.info('Getting summary')
@@ -605,8 +561,6 @@ class AmplObject:
         C_tot_opex.set_index(['Years'],inplace=True)
         self.results['C_tot_opex'] = C_tot_opex
         
-        
-        
         return
     
     def get_cost_breakdown(self):
@@ -629,9 +583,6 @@ class AmplObject:
         tau.index.names = index_names
 
         c_inv_ann = c_inv.mul(tau['Value'], axis=0)
-
-        # concat c_exch_network to c_inv_ann
-        # c_inv_ann = pd.concat([c_inv_ann, c_exch_network.rename(columns={'C_exch_network': 'C_inv'})], axis=0)
 
         # Merge costs into cost breakdown
         cost_breakdown = c_inv_ann.merge(c_maint, left_index=True, right_index=True, how='outer') \

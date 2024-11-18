@@ -51,6 +51,7 @@ CO2_neutrality_2050_val = 3406.92 # Value equivalent to CO2-neutrality in 2050
 run_opti = False # True to run optimisation
 deterministic = True # True to run deterministic optimisation, one run
 UQ = False # True to run PCE via RHEIA
+pol_order = 2 # Polynomial order for PCE
 
 if deterministic :
     case_study = 'test_test' # Give here the name of the case study for 
@@ -63,9 +64,8 @@ else:
     # Path to results folder in RHEIA where ES_PATHWAY must be created
     folder_uq = ('/Users/xrixhon/.pyenv/versions/3.7.6/lib/python3.7/'
                 'site-packages/rheia/RESULTS/ES_PATHWAY/UQ/')
-    pol_order = 2 # Polynomial order for PCE
 
-graph = True # True to plot graphs for deterministic run
+graph = False # True to plot graphs for deterministic run
 graph_comp = False # True to plot comparative graphs between two deterministic
                    # runs
 graph_UQ = False # True to plot graphs for UQ runs
@@ -237,11 +237,11 @@ if __name__ == '__main__':
             
     #%% Plot graphs for deterministic runs
     if graph:
-        case_study = case_study
+        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'#case_study
         
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
-        # ampl_graph.graph_resource() # Primary energy mix
+        ampl_graph.graph_resource() # Primary energy mix
         # ampl_graph.graph_cost() # Total annual system cost 
         # ampl_graph.graph_gwp_per_sector() # GWP per energy sector
         # ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
@@ -259,9 +259,10 @@ if __name__ == '__main__':
       # case_study_1: the reference case study
       # Graphs present the absolute difference: case_study - case_study_1
     if graph_comp:
-        case_study = case_study
+        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'#case_study
+        output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
-        output_folder_2 = output_folder
+        output_folder_2 = os.path.join(pth_output_all,case_study)
         output_file_2 = os.path.join(output_folder_2,'_Results.pkl')
         
         # Reference case: TD-Perfect foresight
@@ -272,19 +273,20 @@ if __name__ == '__main__':
 
         output_files = [output_file_1,output_file_2]
         
-        # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
-        # ampl_graph.graph_comparison(output_files,'C_op_phase')
-        # ampl_graph.graph_comparison(output_files,'Resources')
-        # ampl_graph.graph_comparison(output_files,'Cost_return')
-        # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
-        # ampl_graph.graph_comparison(output_files,'Total_system_cost')
-        # ampl_graph.graph_comparison(output_files,'Tech_cap')
+        ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
+        ampl_graph.graph_comparison(output_files,'C_op_phase')
+        ampl_graph.graph_comparison(output_files,'Resources')
+        ampl_graph.graph_comparison(output_files,'Cost_return')
+        ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+        ampl_graph.graph_comparison(output_files,'Total_system_cost')
+        ampl_graph.graph_comparison(output_files,'Tech_cap')
         ampl_graph.graph_comparison(output_files,'Layer')
-        # ampl_graph.graph_comparison(output_files,'GWP_per_sector')
-        # ampl_graph.graph_comparison(output_files,'Load_factor')
+        ampl_graph.graph_comparison(output_files,'GWP_per_sector')
+        ampl_graph.graph_comparison(output_files,'Load_factor')
     
     #%% Plot graphs related to UQ analysis
     if graph_UQ :
+        case_study_uq = '/Users/xrixhon/.pyenv/versions/3.7.6/lib/python3.7/site-packages/rheia/RESULTS/ES_PATHWAY/UQ/run_2_gwp_budget_isoRL_moret_smr_2_1.5_TD_no_efuels_2020_full'
         result_dir = [case_study_uq]
         
         # Two deterministic cases to compare the runs under 
@@ -298,9 +300,9 @@ if __name__ == '__main__':
         # ampl_uq_graph.graph_sobol()
         # ampl_uq_graph.graph_pdf()
         # ampl_uq_graph.graph_cdf()
-        ampl_uq_graph.graph_tech_cap()
+        # ampl_uq_graph.graph_tech_cap()
         # ampl_uq_graph.graph_layer()
-        # ampl_uq_graph.graph_electrofuels()
+        ampl_uq_graph.graph_electrofuels()
         # ampl_uq_graph.graph_local_RE()
         
         # elements = [#'H2_ELECTROLYSIS',
