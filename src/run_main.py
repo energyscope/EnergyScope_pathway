@@ -35,10 +35,6 @@ from ampl_graph import AmplGraph
 type_of_model = 'TD' # Define the time resolution of the model. 'TD' for hourly
                      # model and 'MO' for monthly model
 
-nbr_tds = 12 # Number of typical days per year to consider. Can choose between
-             # 2, 4, 6, 8, 10, 12 and 20. Per Limpens et al. (2019), 12 seemed 
-             # the best trade-off between accuracy and computational time.
-
 gwp_budget = True # True if limiting the overall GWP of the whole transition
 gwp_budget_val = 1224935.4 # GWP budget for the whole transition [ktCO2,eq]
 CO2_neutrality_2050 = False # True if setting the GWP of 2050 to carbon-
@@ -63,28 +59,28 @@ if type_of_model == 'MO':
     mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
                 os.path.join(pth_model,'PESMO_store_variables.mod'),
                 os.path.join(pth_model,'PES_store_variables.mod')]
-    mod_2_path = [os.path.join(pth_model,'PESMO_initialise_2020.mod'),
+    mod_2_path = [os.path.join(pth_model,'PESMO_initialise_2025.mod'),
                   os.path.join(pth_model,'fix.mod')]
     dat_path = [os.path.join(pth_model,'PESMO_data_all_years.dat')]
 else:
     mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
             os.path.join(pth_model,'PESTD_store_variables.mod'),
             os.path.join(pth_model,'PES_store_variables.mod')]
-    mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2020.mod'),
+    mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2025.mod'),
               os.path.join(pth_model,'fix.mod')]
     dat_path = [os.path.join(pth_model,'PESTD_data_all_years.dat'),
-                os.path.join(pth_model,'PESTD_{}TD.dat'.format(nbr_tds))]
+                os.path.join(pth_model,'PESTD_12TD.dat')]
 
 dat_path += [os.path.join(pth_model,'PES_data_all_years.dat'),
              os.path.join(pth_model,'PES_seq_opti.dat'),
              os.path.join(pth_model,'PES_data_year_related.dat'),
              os.path.join(pth_model,'PES_data_efficiencies.dat'),
-             os.path.join(pth_model,'PES_data_set_AGE_2020.dat')]
+             os.path.join(pth_model,'PES_data_set_AGE_2025.dat')]
 dat_path_0 = dat_path + [os.path.join(pth_model,'PES_data_remaining.dat'),
-             os.path.join(pth_model,'PES_data_decom_allowed_2020.dat')]
+             os.path.join(pth_model,'PES_data_decom_allowed_2025.dat')]
 
 dat_path += [os.path.join(pth_model,'PES_data_remaining_wnd.dat'),
-             os.path.join(pth_model,'PES_data_decom_allowed_2020.dat')]
+             os.path.join(pth_model,'PES_data_decom_allowed_2025.dat')]
 
 #%% Options for ampl and gurobi
 gurobi_options = ['predual=-1',
