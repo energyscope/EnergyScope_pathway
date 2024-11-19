@@ -2,7 +2,7 @@
 """
 Created on Mon May 17 10:21 2021
 
-@author: Xavier Rixhon
+@author: Xavier Rixhon_master
 """
 
 #%% Import Python packages and paths creation
