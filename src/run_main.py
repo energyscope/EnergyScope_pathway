@@ -28,13 +28,11 @@ from ampl_object import AmplObject
 from ampl_preprocessor import AmplPreProcessor
 from ampl_collector import AmplCollector
 from ampl_graph import AmplGraph
-from ampl_uq_graph import AmplUQGraph
-from ampl_uq import AmplUQ
 
 
 #%% Options of this run_main.py
 
-type_of_model = 'MO' # Define the time resolution of the model. 'TD' for hourly
+type_of_model = 'TD' # Define the time resolution of the model. 'TD' for hourly
                      # model and 'MO' for monthly model
 
 nbr_tds = 12 # Number of typical days per year to consider. Can choose between
@@ -49,26 +47,14 @@ CO2_neutrality_2050_val = 3406.92 # Value equivalent to CO2-neutrality in 2050
                                   # [ktCO2,eq]
                                   
 run_opti = False # True to run optimisation
-deterministic = True # True to run deterministic optimisation, one run
-UQ = False # True to run PCE via RHEIA
-pol_order = 2 # Polynomial order for PCE
-
-if deterministic :
-    case_study = 'test_test' # Give here the name of the case study for 
-                        # deterministic run
-    expl_text = 'test_text' # Give here explanation text to describe the
-                            # case study
-else:
-    case_study_uq = 'test_uq' # Give here the name of the case study for 
-                              # UQ run
-    # Path to results folder in RHEIA where ES_PATHWAY must be created
-    folder_uq = ('/Users/xrixhon/.pyenv/versions/3.7.6/lib/python3.7/'
-                'site-packages/rheia/RESULTS/ES_PATHWAY/UQ/')
-
 graph = False # True to plot graphs for deterministic run
 graph_comp = False # True to plot comparative graphs between two deterministic
                    # runs
-graph_UQ = False # True to plot graphs for UQ runs
+
+case_study = 'test_test' # Give here the name of the case study for 
+                    # deterministic run
+expl_text = 'test_text' # Give here explanation text to describe the
+                        # case study
         
 #%% Join the .dat and .mod files depending on the type of model (MO or TD).
 # ! The order of the files in the list is important !
@@ -127,8 +113,8 @@ ampl_options = {'show_stats': 1,
 #%% Actual script part
 if __name__ == '__main__':
     
-    N_year_opti = 30 # Duration of the time window to optimise. Must be a
-                     # multiple of 5, between 5 and 30.
+    N_year_opti = 25 # Duration of the time window to optimise. Must be a
+                     # multiple of 5, between 5 and 25.
     N_year_overlap = 0 # Duration of the overlap between two consecutives
                        # time windows. Must be a multiple of 5 and smaller 
                        # than the duration of the time window
@@ -167,7 +153,7 @@ if __name__ == '__main__':
             ampl.ampl.eval("shell 'gurobi -v';")
             
             # Set the actual gwp limit in 2020
-            ampl.set_params('gwp_limit',{('YEAR_2020'):124000})
+            ampl.set_params('gwp_limit',{('YEAR_2025'):124000})
             
             if gwp_budget:
                 ampl.set_params('gwp_limit_transition',gwp_budget_val)
@@ -176,39 +162,9 @@ if __name__ == '__main__':
                 ampl.set_params('gwp_limit',{('YEAR_2050'):
                                              CO2_neutrality_2050_val})
 
-            #%% Run PCE and UQ             
-            # Relevant only for perfect foresight (N_year_opti=30 and 
-            # N_year_overlap = 0)
-            if UQ :
-                
-                # Parameters for RHEIA                
-                dict_uq = {'case':'ES_PATHWAY',
-                        'n jobs':                1,
-                        'pol order':             pol_order,
-                        'objective names':       ['total_transition_cost'],
-                        'objective of interest': 'total_transition_cost',
-                        'draw pdf cdf':          [True, 1e5],
-                        'results dir':           case_study_uq,
-                        'ampl_obj':              [mod_1_path, mod_2_path, 
-                                                  dat_path, ampl_options, 
-                                                  type_of_model],
-                        'ampl_collector':        ampl_collector
-                        }
-                
-                # Path to the file storing the samples
-                sample_file = Path(os.path.join(folder_uq,case_study_uq,
-                                                'samples.csv'))
-                if not(sample_file.is_file()):
-                    rheia_uq.run_uq(dict_uq, design_space = 'design_space.csv')
-                elapsed = time.time()-t
-                print('Time to solve the whole problem: ',elapsed)
-                
-                break
-            
             #%% Run deterministic optimisation and collect results
-            if deterministic: 
-                solve_result = ampl.run_ampl()
-                ampl.get_results()
+            solve_result = ampl.run_ampl()
+            ampl.get_results()
             
             # Initialisation of the collector
             if i==0: 
@@ -237,11 +193,11 @@ if __name__ == '__main__':
             
     #%% Plot graphs for deterministic runs
     if graph:
-        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'#case_study
+        case_study = 'case_study'
         
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
-        ampl_graph.graph_resource() # Primary energy mix
+        # ampl_graph.graph_resource() # Primary energy mix
         # ampl_graph.graph_cost() # Total annual system cost 
         # ampl_graph.graph_gwp_per_sector() # GWP per energy sector
         # ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
@@ -259,105 +215,30 @@ if __name__ == '__main__':
       # case_study_1: the reference case study
       # Graphs present the absolute difference: case_study - case_study_1
     if graph_comp:
-        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'#case_study
+        case_study = 'case_study'
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
         output_folder_2 = os.path.join(pth_output_all,case_study)
         output_file_2 = os.path.join(output_folder_2,'_Results.pkl')
         
         # Reference case: TD-Perfect foresight
-        case_study_1 = 'TD_30_0_gwp_budget_no_efuels_2020'
+        case_study_1 = 'case_ref'
         output_folder_1 = os.path.join(pth_output_all,case_study_1)
         output_file_1 = os.path.join(output_folder_1,'_Results.pkl')
         
 
         output_files = [output_file_1,output_file_2]
         
-        ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
-        ampl_graph.graph_comparison(output_files,'C_op_phase')
-        ampl_graph.graph_comparison(output_files,'Resources')
-        ampl_graph.graph_comparison(output_files,'Cost_return')
-        ampl_graph.graph_comparison(output_files,'Total_trans_cost')
-        ampl_graph.graph_comparison(output_files,'Total_system_cost')
-        ampl_graph.graph_comparison(output_files,'Tech_cap')
-        ampl_graph.graph_comparison(output_files,'Layer')
-        ampl_graph.graph_comparison(output_files,'GWP_per_sector')
-        ampl_graph.graph_comparison(output_files,'Load_factor')
-    
-    #%% Plot graphs related to UQ analysis
-    if graph_UQ :
-        case_study_uq = '/Users/xrixhon/.pyenv/versions/3.7.6/lib/python3.7/site-packages/rheia/RESULTS/ES_PATHWAY/UQ/run_2_gwp_budget_isoRL_moret_smr_2_1.5_TD_no_efuels_2020_full'
-        result_dir = [case_study_uq]
-        
-        # Two deterministic cases to compare the runs under 
-        # uncertainties with reference cases
-        ref_case = 'TD_30_0_gwp_budget_no_efuels_2020'
-        smr_case = 'TD_30_0_gwp_budget_no_efuels_2020_SMR'
-        
-        ampl_uq_graph = AmplUQGraph(case_study_uq,ampl_0,ref_case,
-                                    smr_case,result_dir_comp =
-                                    result_dir, pol_order=pol_order)
-        # ampl_uq_graph.graph_sobol()
-        # ampl_uq_graph.graph_pdf()
-        # ampl_uq_graph.graph_cdf()
-        # ampl_uq_graph.graph_tech_cap()
-        # ampl_uq_graph.graph_layer()
-        ampl_uq_graph.graph_electrofuels()
-        # ampl_uq_graph.graph_local_RE()
-        
-        # elements = [#'H2_ELECTROLYSIS',
-        #             'CCGT_AMMONIA',
-        #             'SYN_METHANOLATION',
-        #             'METHANE_TO_METHANOL',
-                    # 'NUCLEAR_SMR']#,
-        #             'BIOMETHANATION',
-        #             'BIO_HYDROLYSIS']
-        # outputs = ['F'] * len(elements)
-        
-        # elements = ['PV',
-        #             'WIND_ONSHORE',
-        #             'WIND_OFFSHORE']
-        # outputs = ['F'] * len(elements)
-        
-        # elements_2 = [['AMMONIA_RE','AMMONIA'],
-        #             ['GAS_RE','GAS'],
-        #             ['H2_RE','H2'],
-        #             ['METHANOL_RE','METHANOL']]
-        
-        # # elements_2 = [['CAR_FUEL_CELL','MOB_PRIVATE']]
-        
-        # # elements_2 = 5*[['PV','ELECTRICITY'],
-        # #             ['WIND_ONSHORE','ELECTRICITY'],
-        # #             ['WIND_OFFSHORE','ELECTRICITY']]
-        
-        # elements = elements_2
-        
-        # outputs = ['Ft'] * len(elements)
-        
-        # elements += ['NUCLEAR_SMR']
-        
-        # outputs += ['F']
-
-        
-        # # elements_3 = ['']
-        # # elements += elements_3
-        
-        # # # elements += elements_3
-        
-        # # outputs += ['TotalGwp'] * len(elements_3)
-        
-        # years = ['YEAR_2050'] * len(elements)
-        
-        # years = ['YEAR_2025']*3
-        # years += ['YEAR_2030']*3
-        # years += ['YEAR_2035']*3
-        # years += ['YEAR_2040']*3
-        # years += ['YEAR_2045']*3
-        # # ampl_uq_graph.get_spec_output_test(dict_uq,outputs,elements,years,calc_Sobol=False)
-        # ampl_uq_graph.get_spec_output_test_4(dict_uq,outputs,elements,years,calc_Sobol=True)
-        
-        
-        # break
+        # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
+        # ampl_graph.graph_comparison(output_files,'C_op_phase')
+        # ampl_graph.graph_comparison(output_files,'Resources')
+        # ampl_graph.graph_comparison(output_files,'Cost_return')
+        # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+        # ampl_graph.graph_comparison(output_files,'Total_system_cost')
+        # ampl_graph.graph_comparison(output_files,'Tech_cap')
+        # ampl_graph.graph_comparison(output_files,'Layer')
+        # ampl_graph.graph_comparison(output_files,'GWP_per_sector')
+        # ampl_graph.graph_comparison(output_files,'Load_factor')
 
         
     ###############################################################################
