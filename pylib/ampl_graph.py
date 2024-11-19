@@ -41,7 +41,7 @@ class AmplGraph:
 
     def __init__(self, pkl_file, ampl_obj,case_study):
         self.pkl_file = pkl_file
-        self.x_axis = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+        self.x_axis = [2025, 2030, 2035, 2040, 2045, 2050]
         
         # In 2020, 37.41% of electricity in EU-27 was produced from renewables 
         # (https://ec.europa.eu/eurostat/databrowser/view/NRG_IND_REN__custom_
@@ -155,11 +155,11 @@ class AmplGraph:
                 title = "<b>{} - Layer balance</b><br>[{}]".format(k,
                                                        self.dict_layer_unit[k])
                 if k in ['GAS','H2','WOOD','WET_BIOMASS']:
-                    EUD_2020 = 0
+                    EUD_2025 = 0
                     EUD_2050 = 0
                 else:
-                    EUD_2020 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') &
-                                              (df_to_plot['Years']=='2020')][k].values[0]
+                    EUD_2025 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') &
+                                              (df_to_plot['Years']=='2025')][k].values[0]
                     EUD_2050 = df_to_plot.loc[(df_to_plot['Elements']=='END_USES') &
                                               (df_to_plot['Years']=='2050')][k].values[0]
                     
@@ -167,7 +167,7 @@ class AmplGraph:
                 temp_pos = temp_pos.groupby(['Years']).sum()
                 temp_neg = df_to_plot[df_to_plot[k]<0]
                 temp_neg = temp_neg.groupby(['Years']).sum()
-                yvals = sorted([round(min(temp_neg[k]),1),round(EUD_2020,1),
+                yvals = sorted([round(min(temp_neg[k]),1),round(EUD_2025,1),
                                 round(EUD_2050,1),0,round(max(temp_pos[k]),1)])
                 
                 self.custom_fig(fig,title,yvals,neg_value=True)
@@ -258,7 +258,7 @@ class AmplGraph:
             temp = df_to_plot.set_index(['Years','Resources'])
             temp = temp.groupby(by=['Years']).sum()
             yvals = sorted([0,int(min(round(temp.loc['2050']))),
-                            int(max(round(temp.loc['2020'])))])
+                            int(max(round(temp.loc['2025'])))])
             self.custom_fig(fig,title,yvals)
             fig.write_image(self.outdir+"Resources.pdf", width=1200, height=550)
 
@@ -574,7 +574,7 @@ class AmplGraph:
         
         cost_elec_re = pd.DataFrame(columns=df_to_plot.columns)
         cost_elec_nre = pd.DataFrame(columns=df_to_plot.columns)
-        for i,j in enumerate(['2020','2025','2030','2035','2040','2045','2050']):
+        for i,j in enumerate(['2025','2030','2035','2040','2045','2050']):
             total_elec_cost = df_to_plot.loc[(df_to_plot['Years'] == j) &
                             (df_to_plot['Elements'] == 'ELECTRICITY')]['Cost']
             if len(total_elec_cost) > 0:
@@ -640,7 +640,7 @@ class AmplGraph:
         title = "<b>Annual system cost</b><br>[b€<sub>2015</sub>/y]"
         temp = df_to_plot.groupby(['Years']).sum()
         yvals = sorted([0,min(round(temp['Cost'],1)),
-                        round(temp.loc['2020']['Cost'],1),
+                        round(temp.loc['2025']['Cost'],1),
                         max(round(temp['Cost'],1))])
         
         self.custom_fig(fig,title,yvals)
@@ -739,7 +739,7 @@ class AmplGraph:
         df_to_plot_eff.reset_index(inplace=True)
         df_to_plot_eff_full = df_to_plot_eff.copy()
         df_to_plot_eff = df_to_plot_eff[~df_to_plot_eff['Years'].
-                                        isin(['2020','2025'])]
+                                        isin(['2025','2030'])]
         
         if plot:
         
@@ -767,7 +767,7 @@ class AmplGraph:
                                 height=550)
                 plt.close()
             
-            order_entry_new = df_to_plot_eff.loc[df_to_plot_eff['Years'] == '2030']
+            order_entry_new = df_to_plot_eff.loc[df_to_plot_eff['Years'] == '2035']
             order_entry_new.sort_values(by=['Cost_return'],inplace=True,ascending=False)
             order_entry_new = order_entry_new['Category']
             
@@ -788,9 +788,9 @@ class AmplGraph:
             
             
             title = "<b>Respective salvage values, at the end year of each time window</b><br>[b€<sub>2015</sub>]"
-            ELEC_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
-            INF_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
-            yvals = [0,round(ELEC_2030,1),round(ELEC_2030,1)]
+            ELEC_2035 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2035') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
+            INF_2035 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2035') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
+            yvals = [0,round(ELEC_2035,1),round(INF_2035,1)]
             self.custom_fig(fig,title,yvals, xvals=df_to_plot_eff['Years'].unique())
             fig.write_image(self.outdir+"Return_eff_line.pdf", width=1200, height=550)
             plt.close()
@@ -809,10 +809,10 @@ class AmplGraph:
             fig.write_html(self.outdir+"_Raw/Return_eff_area.html")
             
             title = "<b>Sum of respective salvage values, at the end year of each time window</b><br>[b€<sub>2015</sub>]"
-            ELEC_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
-            INF_2030 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2030') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
+            ELEC_2035 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2035') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
+            INF_2035 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2035') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
             temp = df_to_plot_eff.groupby(['Years']).sum()['Cost_return']
-            yvals = sorted([0,round(INF_2030,1),round(ELEC_2030+INF_2030,1),round(temp[-1],1),round(temp[0],1)])
+            yvals = sorted([0,round(INF_2035,1),round(ELEC_2035+INF_2035,1),round(temp[-1],1),round(temp[0],1)])
             self.custom_fig(fig,title,yvals, xvals=df_to_plot_eff['Years'].unique())
             fig.write_image(self.outdir+"Return_eff_area.pdf", width=1200, height=550)
             plt.close()
@@ -852,7 +852,7 @@ class AmplGraph:
         df_to_plot.dropna(how='all',inplace=True)
         df_to_plot.reset_index(inplace=True)
         df_to_plot_full = df_to_plot.copy()
-        df_to_plot = df_to_plot.loc[~df_to_plot['Phases'].isin(['2015_2020'])]
+        df_to_plot = df_to_plot.loc[~df_to_plot['Phases'].isin(['2020_2025'])]
         df_to_plot['Technologies'] = df_to_plot['Technologies'].astype("str")
         
         df_to_plot_full['Category'] = df_to_plot_full['Technologies']
@@ -969,17 +969,17 @@ class AmplGraph:
         results_res['Phases'] = results_res['Phases'].map(lambda x: x[-4:])
         results_res.rename(columns={'Phases':'Years'},inplace=True)
         
-        results_2020 = ampl_collector['Cost_breakdown'].copy()
-        results_2020 = results_2020.loc[results_2020.
+        results_2025 = ampl_collector['Cost_breakdown'].copy()
+        results_2025 = results_2025.loc[results_2025.
                                         index.get_level_values
-                                        ('Years') == 'YEAR_2020',:]
-        results_2020.fillna(0,inplace=True)
-        results_2020['C_op'] = results_2020['C_op']+results_2020['C_maint']
-        results_2020.drop(columns=['C_inv','C_maint'],inplace=True)
-        results_2020.reset_index(inplace=True)
-        results_2020['Years'] = results_2020['Years'].map(lambda x: x[-4:])
+                                        ('Years') == 'YEAR_2025',:]
+        results_2025.fillna(0,inplace=True)
+        results_2025['C_op'] = results_2025['C_op']+results_2025['C_maint']
+        results_2025.drop(columns=['C_inv','C_maint'],inplace=True)
+        results_2025.reset_index(inplace=True)
+        results_2025['Years'] = results_2025['Years'].map(lambda x: x[-4:])
         
-        df_to_plot = pd.concat([results_2020,results_tech,results_res],
+        df_to_plot = pd.concat([results_2025,results_tech,results_res],
                                axis=0,ignore_index=True)
         
         
@@ -991,7 +991,7 @@ class AmplGraph:
         
         cost_elec_re = pd.DataFrame(columns=df_to_plot.columns)
         cost_elec_nre = pd.DataFrame(columns=df_to_plot.columns)
-        for i,j in enumerate(['2020','2025','2030','2035','2040','2045','2050']):
+        for i,j in enumerate(['2025','2030','2035','2040','2045','2050']):
             total_elec_cost = df_to_plot.loc[(df_to_plot['Years'] == j) &
                                              (df_to_plot['Elements'] == 
                                               'ELECTRICITY')]['C_op']
@@ -1862,7 +1862,7 @@ class AmplGraph:
     
     #%% Method to customise the graphs
     @staticmethod
-    def custom_fig(fig,title,yvals,xvals=['2020','2025','2030','2035','2040',
+    def custom_fig(fig,title,yvals,xvals=['2025','2030','2035','2040',
                         '2045','2050'], ftsize=18,annot_text=None,annot_pos=None,
                    type_graph = None, neg_value = False):
     

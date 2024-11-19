@@ -499,7 +499,7 @@ class AmplObject:
         c_inv_phase_index = c_inv_phase.index.names
         c_inv_phase = c_inv_phase.rename_axis(index={c_inv_phase_index[0]:'Phases'},axis=1)
         c_inv_phase = c_inv_phase.reset_index()
-        c_inv_phase['Phases'] = pd.Categorical(c_inv_phase['Phases'],['2015_2020'] + self.sets['PHASE_UP_TO'])
+        c_inv_phase['Phases'] = pd.Categorical(c_inv_phase['Phases'],['2020_2025'] + self.sets['PHASE_UP_TO'])
         c_inv_phase = c_inv_phase[c_inv_phase['Phases'].notna()]
         c_inv_phase = c_inv_phase.set_index(['Phases'])
         c_inv_phase.sort_index(inplace=True)
@@ -509,7 +509,7 @@ class AmplObject:
         c_inv_phase_tech_index = c_inv_phase_tech.index.names
         c_inv_phase_tech = c_inv_phase_tech.rename_axis(index={c_inv_phase_tech_index[0]:'Phases'},axis=1)
         c_inv_phase_tech = c_inv_phase_tech.reset_index()
-        phases = sorted(set(['2015_2020'] + self.sets['PHASE_UP_TO'] + self.sets['PHASE_WND']))
+        phases = sorted(set(['2020_2025'] + self.sets['PHASE_UP_TO'] + self.sets['PHASE_WND']))
         c_inv_phase_tech['Phases'] = pd.Categorical(c_inv_phase_tech['Phases'],phases)
         c_inv_phase_tech = c_inv_phase_tech[c_inv_phase_tech['Phases'].notna()]
         c_inv_phase_tech = c_inv_phase_tech.set_index(['Phases','Technologies'])
@@ -927,7 +927,7 @@ class AmplObject:
         assets = F_new.merge(F_old, left_on=['Phases', 'Technologies'], right_index=True)\
                 .merge(F_decom, left_on=['Phases', 'Technologies'], right_index=True).reset_index()
         # set Years and Technologies as categorical data and sort it
-        assets['Phases'] = pd.Categorical(assets['Phases'], ['2015_2020']+self.sets['PHASE_UP_TO'])
+        assets['Phases'] = pd.Categorical(assets['Phases'], ['2020_2025']+self.sets['PHASE_UP_TO'])
         assets = assets[assets['Phases'].notna()]
         self.categorical_esmy(df=assets, col_name='Technologies', el_name='Technologies')
         assets.sort_values(by=['Phases', 'Technologies'], axis=0, ignore_index=True, inplace=True)

@@ -49,6 +49,8 @@ class AmplCollector:
         Years = ampl_obj.sets['YEARS'].copy()
         if 'YEAR_2015' in Years:
             Years.remove('YEAR_2015')
+        if 'YEAR_2020' in Years:
+            Years.remove('YEAR_2020')
         
         Phases = ampl_obj.sets['PHASE'].copy()
 
@@ -82,7 +84,7 @@ class AmplCollector:
         for k in self.results:
             results = ampl_obj.results[k]
             if k in ['New_old_decom','F_decom','C_inv_phase','C_inv_phase_tech','C_op_phase_tech','C_op_phase_res']:
-                phases_up_to = ['2015_2020'] + self.ampl_pre.phases_up_to[i]
+                phases_up_to = ['2020_2025'] + self.ampl_pre.phases_up_to[i]
                 temp_res = results.loc[results.index.get_level_values('Phases').isin(phases_up_to),:]
             else:
                 temp_res = results.loc[results.index.get_level_values('Years').isin(curr_years_wnd),:]

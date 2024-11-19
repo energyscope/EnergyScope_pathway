@@ -42,7 +42,7 @@ class AmplPreProcessor:
         self.mod_path = ampl_obj.dir
         self.list_year = ampl_obj.sets['YEARS']
         self.list_phase = ampl_obj.sets['PHASE']
-        self.without_2015(self)
+        self.without_2015_2020(self)
         self.years_opti = list()
         self.phases_opti = list()
         self.years_up_to = list()
@@ -134,7 +134,7 @@ class AmplPreProcessor:
     '''
     def remaining_update(self,i,file_in = 'PES_data_remaining.dat', file_out = 'PES_data_remaining_wnd.dat'):
         
-        curr_phases_up_to = ['2015_2020'] + self.phases_up_to[i]
+        curr_phases_up_to = ['2020_2025'] + self.phases_up_to[i]
         curr_phases_wnd = self.phases_opti[i]
         phase_list = deepcopy(curr_phases_up_to)
         n_year_overlap = self.n_years_overlap
@@ -187,8 +187,8 @@ class AmplPreProcessor:
 
         if years_window % 5 != 0:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt should be a multiple of 5')
-        elif years_window > 30 or years_window <= 0:
-            raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt cannot be smaller than 0 or greater than 30')
+        elif years_window > 25 or years_window <= 0:
+            raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt cannot be smaller than 0 or greater than 25')
         elif years_window < self.t_phase:
             raise ValueError('Error : the number of years in the window of optimisation is not correct.\nIt must be bigger or equal to the number of years within a phase')
         elif years_window <= years_overlap:
@@ -231,6 +231,8 @@ class AmplPreProcessor:
         self.phases_up_to = phases_up_to
 
     @staticmethod
-    def without_2015(self):
+    def without_2015_2020(self):
         self.list_year.remove('YEAR_2015')
+        self.list_year.remove('YEAR_2020')
         self.list_phase.remove('2015_2020')
+        self.list_phase.remove('2020_2025')
