@@ -430,9 +430,17 @@ class AmplUncertGraph:
         if ampl_uncert_collector == None:
             ampl_uncert_collector = self.ampl_uncert_collector
         
+        col_plot_full = ['ELECTRICITY','GASOLINE','DIESEL','LFO','COAL',
+                       'AMMONIA','METHANOL','H2',
+                       'GAS','URANIUM','WOOD','WET_BIOMASS','WASTE',
+                       'RES_SOLAR','RES_WIND',
+                       'AMMONIA_RE','METHANOL_RE','H2_RE','GAS_RE',
+                       'BIODIESEL','BIOETHANOL']
+        
         col_plot = ['METHANOL_RE','AMMONIA_RE','GAS_RE','H2_RE']
         results = ampl_uncert_collector['Resources'].copy()
         results.reset_index(inplace=True)
+        results_full = results.loc[results['Resources'].isin(col_plot_full),:]
         results = results.loc[results['Resources'].isin(col_plot),:]
         results['Resources'] = results['Resources'].astype("str")
         results.dropna(how='all',inplace=True)
