@@ -8,38 +8,38 @@
 # SOURCE_2: For missing data (hydro, coal, geothermal, ...) EU reference scenario 2020 - Trends to 2050
 # SOURCE_3: https://economie.fgov.be/fr/publications/energy-key-data-fevrier-2022#:~:text=La%20Direction%20g%C3%A9n%C3%A9rale%20de%20l'Energie%20produit%20et%20publie%2C%20chaque,%C3%A9volution%20au%20fil%20du%20temps.
 
-subject to elec_prod_NUCLEAR_2020: sum {t in PERIODS}   (   F_t ['YEAR_2025','NUCLEAR', t] * t_op[t] ) = 34400; #from SPF_Economie, versus 31700 from ELIA, versus 34883 from EU
-# subject to elec_prod_CCGT_2020: sum {t in PERIODS} (        F_t ['YEAR_2025','CCGT', t] * t_op[t] ) = 26800; #from SPF_Economie, versus 27 800 from ELIA, versus 27602 from EU
-subject to elec_prod_WIND_OFFSHORE_2020: sum {t in PERIODS} ( F_t ['YEAR_2025','WIND_OFFSHORE', t] * t_op[t] ) = 6989; #versus 6700 from ELIA, versus 6826 from EU (SPF_Economie gives 12.8 TWh for all the wind)
-subject to elec_prod_WIND_ONSHORE_2020: sum {t in PERIODS}  ( F_t ['YEAR_2025','WIND_ONSHORE' , t] * t_op[t])  = 5811; #from SPF_Economie, versus 4100 from ELIA, versus 4052 from EU (SPF_Economie gives 12.8 TWh for all the wind)
-subject to elec_prod_PV_2020: sum {t in PERIODS} (F_t ['YEAR_2025','PV', t] * t_op[t] ) = 5100; #from SPF_Economie, versus 4300 from ELIA, versus 4327 from EU
-subject to elec_prod_GEOTHERMAL_2020: sum {t in PERIODS} (F_t ['YEAR_2025','GEOTHERMAL', t] * t_op[t] ) = 0; #from EU
-subject to elec_prod_HYDRO_RIVER_2020: sum {t in PERIODS} (F_t ['YEAR_2025','HYDRO_RIVER', t] * t_op[t] ) = 353; #from EU (confirmed by SPF_Economie, 300)
-subject to elec_prod_COAL_US_2020: sum {t in PERIODS} (     F_t ['YEAR_2025','COAL_US', t] * t_op[t] ) = 1900; #from SPF_Economie
-subject to elec_prod_COAL_IGCC_2020: sum {t in PERIODS} (   F_t ['YEAR_2025','COAL_IGCC', t] * t_op[t] ) = 0; #As done by GL for 2015
-subject to no_elec_import_2020: sum {t in PERIODS} (   F_t ['YEAR_2025','ELECTRICITY', t] * t_op[t] ) = 0; #from SPF_Economie
+subject to elec_prod_NUCLEAR_2025: sum {t in PERIODS}   (   F_t ['YEAR_2025','NUCLEAR', t] * t_op[t] ) = 34400; #from SPF_Economie, versus 31700 from ELIA, versus 34883 from EU
+# subject to elec_prod_CCGT_2025: sum {t in PERIODS} (        F_t ['YEAR_2025','CCGT', t] * t_op[t] ) = 26800; #from SPF_Economie, versus 27 800 from ELIA, versus 27602 from EU
+subject to elec_prod_WIND_OFFSHORE_2025: sum {t in PERIODS} ( F_t ['YEAR_2025','WIND_OFFSHORE', t] * t_op[t] ) = 6989; #versus 6700 from ELIA, versus 6826 from EU (SPF_Economie gives 12.8 TWh for all the wind)
+subject to elec_prod_WIND_ONSHORE_2025: sum {t in PERIODS}  ( F_t ['YEAR_2025','WIND_ONSHORE' , t] * t_op[t])  = 5811; #from SPF_Economie, versus 4100 from ELIA, versus 4052 from EU (SPF_Economie gives 12.8 TWh for all the wind)
+subject to elec_prod_PV_2025: sum {t in PERIODS} (F_t ['YEAR_2025','PV', t] * t_op[t] ) = 5100; #from SPF_Economie, versus 4300 from ELIA, versus 4327 from EU
+subject to elec_prod_GEOTHERMAL_2025: sum {t in PERIODS} (F_t ['YEAR_2025','GEOTHERMAL', t] * t_op[t] ) = 0; #from EU
+subject to elec_prod_HYDRO_RIVER_2025: sum {t in PERIODS} (F_t ['YEAR_2025','HYDRO_RIVER', t] * t_op[t] ) = 353; #from EU (confirmed by SPF_Economie, 300)
+subject to elec_prod_COAL_US_2025: sum {t in PERIODS} (     F_t ['YEAR_2025','COAL_US', t] * t_op[t] ) = 1900; #from SPF_Economie
+subject to elec_prod_COAL_IGCC_2025: sum {t in PERIODS} (   F_t ['YEAR_2025','COAL_IGCC', t] * t_op[t] ) = 0; #As done by GL for 2015
+subject to no_elec_import_2025: sum {t in PERIODS} (   F_t ['YEAR_2025','ELECTRICITY', t] * t_op[t] ) = 0; #from SPF_Economie
 
 
 ### Production of bioethanol and biodiesel
 # SOURCE: https://op.europa.eu/en/publication-detail/-/publication/14d7e768-1b50-11ec-b4fe-01aa75ed71a1 --> Values for 2019
-subject to bioethanol_2020: sum {t in PERIODS} (F_t ['YEAR_2025','BIOETHANOL', t] * t_op[t] ) = 1504.9;# 129.4 ktoe = >
-subject to biodiesel_2020: sum {t in PERIODS} (F_t ['YEAR_2025','BIODIESEL', t] * t_op[t] ) = 4139.1;# 355.9 ktoe = >
+subject to bioethanol_2025: sum {t in PERIODS} (F_t ['YEAR_2025','BIOETHANOL', t] * t_op[t] ) = 1504.9;# 129.4 ktoe = >
+subject to biodiesel_2025: sum {t in PERIODS} (F_t ['YEAR_2025','BIODIESEL', t] * t_op[t] ) = 4139.1;# 355.9 ktoe = >
 
 ### No import of electrofuels in 2020
-subject to no_H2_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2025','H2_RE', t] * t_op[t] ) = 0.0;
-subject to no_GAS_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2025','GAS_RE', t] * t_op[t] ) = 0.0;
-subject to no_AMMONIA_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2025','AMMONIA_RE', t] * t_op[t] ) = 0.0;
-subject to no_METHANOL_RE_2020: sum {t in PERIODS} (F_t ['YEAR_2025','METHANOL_RE', t] * t_op[t] ) = 0.0;
+subject to no_H2_RE_2025: sum {t in PERIODS} (F_t ['YEAR_2025','H2_RE', t] * t_op[t] ) = 0.0;
+subject to no_GAS_RE_2025: sum {t in PERIODS} (F_t ['YEAR_2025','GAS_RE', t] * t_op[t] ) = 0.0;
+subject to no_AMMONIA_RE_2025: sum {t in PERIODS} (F_t ['YEAR_2025','AMMONIA_RE', t] * t_op[t] ) = 0.0;
+subject to no_METHANOL_RE_2025: sum {t in PERIODS} (F_t ['YEAR_2025','METHANOL_RE', t] * t_op[t] ) = 0.0;
 
 ### Production of biomethane
 # SOURCE: https://www.cng-mobility.ch/wp-content/uploads/2020/09/EBA-Conference-1-Sept-2020-Dirk-Focroul.pdf
-subject to biogas_2020: sum {t in PERIODS} (F_t ['YEAR_2025','BIOMETHANATION', t] * t_op[t] )  = 2500;
+subject to biogas_2025: sum {t in PERIODS} (F_t ['YEAR_2025','BIOMETHANATION', t] * t_op[t] )  = 2500;
 
 ### Non-energy demand production ###
 # SOURCE: https://scholar.google.com/citations?view_op=view_citation&hl=fr&user=i3Y6c7wAAAAJ&citation_for_view=i3Y6c7wAAAAJ:2osOgNQ5qMEC
-subject to ned_prod_METHANOL_2020: sum {t in PERIODS} (F_t ['YEAR_2025','METHANOL', t] * t_op[t] ) = end_uses_input['YEAR_2025',"NON_ENERGY"] * share_ned ['YEAR_2025',"METHANOL"]; #Only import of methanol in 2020 to supply methanol
-subject to ned_prod_HVC_2020: sum {t in PERIODS} (F_t ['YEAR_2025','OIL_TO_HVC', t] * t_op[t] ) = end_uses_input['YEAR_2025',"NON_ENERGY"] * share_ned ['YEAR_2025',"HVC"]; #Only Naphtha/LPG cracking to supply HVC
-subject to ned_prod_AMMONIA_2020: sum {t in PERIODS} (F_t ['YEAR_2025','HABER_BOSCH', t] * t_op[t] ) = end_uses_input['YEAR_2025',"NON_ENERGY"] * share_ned ['YEAR_2025',"AMMONIA"]; #Only Haber-Bosch cracking to supply ammonia
+subject to ned_prod_METHANOL_2025: sum {t in PERIODS} (F_t ['YEAR_2025','METHANOL', t] * t_op[t] ) = end_uses_input['YEAR_2025',"NON_ENERGY"] * share_ned ['YEAR_2025',"METHANOL"]; #Only import of methanol in 2020 to supply methanol
+subject to ned_prod_HVC_2025: sum {t in PERIODS} (F_t ['YEAR_2025','OIL_TO_HVC', t] * t_op[t] ) = end_uses_input['YEAR_2025',"NON_ENERGY"] * share_ned ['YEAR_2025',"HVC"]; #Only Naphtha/LPG cracking to supply HVC
+subject to ned_prod_AMMONIA_2025: sum {t in PERIODS} (F_t ['YEAR_2025','HABER_BOSCH', t] * t_op[t] ) = end_uses_input['YEAR_2025',"NON_ENERGY"] * share_ned ['YEAR_2025',"AMMONIA"]; #Only Haber-Bosch cracking to supply ammonia
 
 
 ### As done per GL for 2015

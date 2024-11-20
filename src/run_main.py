@@ -32,18 +32,18 @@ from ampl_graph import AmplGraph
 
 #%% Options of this run_main.py
 
-type_of_model = 'TD' # Define the time resolution of the model. 'TD' for hourly
+type_of_model = 'MO' # Define the time resolution of the model. 'TD' for hourly
                      # model and 'MO' for monthly model
 
 gwp_budget = True # True if limiting the overall GWP of the whole transition
 gwp_budget_val = 1224935.4 # GWP budget for the whole transition [ktCO2,eq]
-CO2_neutrality_2050 = False # True if setting the GWP of 2050 to carbon-
+CO2_neutrality_2050 = True # True if setting the GWP of 2050 to carbon-
                             # neutrality
 CO2_neutrality_2050_val = 3406.92 # Value equivalent to CO2-neutrality in 2050
                                   # [ktCO2,eq]
                                   
-run_opti = False # True to run optimisation
-graph = False # True to plot graphs for deterministic run
+run_opti = True # True to run optimisation
+graph = True # True to plot graphs for deterministic run
 graph_comp = False # True to plot comparative graphs between two deterministic
                    # runs
 
@@ -148,8 +148,8 @@ if __name__ == '__main__':
                               ampl_options, type_model = type_of_model)
             ampl.ampl.eval("shell 'gurobi -v';")
             
-            # Set the actual gwp limit in 2020
-            ampl.set_params('gwp_limit',{('YEAR_2025'):124000})
+            # Set the actual gwp limit in 2025
+            # ampl.set_params('gwp_limit',{('YEAR_2025'):124000})
             
             if gwp_budget:
                 ampl.set_params('gwp_limit_transition',gwp_budget_val)
@@ -189,11 +189,11 @@ if __name__ == '__main__':
             
     #%% Plot graphs for deterministic runs
     if graph:
-        case_study = 'case_study'
+        case_study = case_study
         
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
-        # ampl_graph.graph_resource() # Primary energy mix
+        ampl_graph.graph_resource() # Primary energy mix
         # ampl_graph.graph_cost() # Total annual system cost 
         # ampl_graph.graph_gwp_per_sector() # GWP per energy sector
         # ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
@@ -211,7 +211,7 @@ if __name__ == '__main__':
       # case_study_1: the reference case study
       # Graphs present the absolute difference: case_study - case_study_1
     if graph_comp:
-        case_study = 'case_study'
+        case_study = case_study
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
         output_folder_2 = os.path.join(pth_output_all,case_study)
