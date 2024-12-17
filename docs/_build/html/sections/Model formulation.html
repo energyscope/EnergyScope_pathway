@@ -1,0 +1,1835 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Model formulation &mdash; EnergyScope_documentation 2.2 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Input Data" href="Input%20Data.html" />
+    <link rel="prev" title="Getting started" href="Getting%20started.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> EnergyScope_documentation
+            <img src="../_static/estd_graphical_abstract.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Releases.html">Releases</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Getting%20started.html">Getting started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Model formulation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#typical-days-selection">Typical days selection</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#clustering-methods">Clustering methods</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implementing-seasonality-with-typical-days">Implementing seasonality with typical days</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#energy-system-model">Energy system model</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#linear-programming-formulation">Linear programming formulation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#conceptual-modelling-framework">Conceptual modelling framework</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#sets-parameters-and-variables">Sets, parameters and variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#energy-model-formulation">Energy model formulation</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#end-use-demand">End-use demand</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#annual-cost-and-emissions">Annual cost and emissions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#system-design-and-operation">System design and operation</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#storage">Storage</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#networks">Networks</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#additional-constraints">Additional Constraints</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#decentralised-heat-production">Decentralised heat production</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#vehicle-to-grid">Vehicle-to-grid</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#peak-demand">Peak demand</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#adaptations-for-the-case-study">Adaptations for the case study</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#technology-aging">Technology aging</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#transition-cost-and-objective-function">Transition cost and objective function</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#implementation">Implementation</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="Input%20Data.html">Input Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">EnergyScope_documentation</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Model formulation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/sections/Model formulation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="model-formulation">
+<span id="ch-estd"></span><h1>Model formulation<a class="headerlink" href="#model-formulation" title="Permalink to this headline"></a></h1>
+<p><strong>Model overview:</strong></p>
+<figure class="align-default" id="fig-ch2-overview">
+<img alt="Overview of the LP modeling framework" src="../_images/chp_estd_overview.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 3 </span><span class="caption-text">Overview of the LP modeling framework.</span><a class="headerlink" href="#fig-ch2-overview" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline"></a></h2>
+<p>Due to computational restrictions, energy system models rarely optimise
+the 8760h of the year. As an example, running our model with 8760h time
+series takes more than 19 hours; while the hereafter presented
+methodology needs approximately 1 minute. A typical solution is to use a
+subset of representative days called TD; this is a trade-off between
+introducing an approximation error in the representation of the energy
+system (especially for short-term dynamics) and computational time.</p>
+<ul class="simple">
+<li><p>the first step consists in pre-processing the time series and solving
+a MILP problem to determine the adequate set of
+(Section <a class="reference internal" href="#sec-td-selection"><span class="std std-ref">Typical days selection</span></a>).</p></li>
+<li><p>the second step is the main energy model: it identifies the optimal
+design and operation of the energy system over the selected (Section
+<a class="reference internal" href="#sec-estd"><span class="std std-ref">Energy system model</span></a>), i.e. technology selection, sizing and operation
+for a target future year.</p></li>
+</ul>
+<p>These two steps can be computed independently. Usually, the first step
+is computed once for an energy system with given weather data whereas
+the second step is computed several times (once for each different
+scenario). The following <a class="reference internal" href="#fig-processstructure"><span class="std std-numref">Figure 4</span></a>  illustrates the overall structure of the code.</p>
+<figure class="align-default" id="fig-processstructure">
+<img alt="Overview of the EnergyScope TD framework in two-steps." src="../_images/meth_process_structure.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 4 </span><span class="caption-text">Overview of the EnergyScope TD framework in two-steps. <strong>STEP 1</strong>:
+optimal selection of typical days (Section <a class="reference internal" href="#sec-td-selection"><span class="std std-ref">Typical days selection</span></a>). <strong>STEP 2</strong>:
+Energy system model (Section <a class="reference internal" href="#sec-estd"><span class="std std-ref">Energy system model</span></a>). The first step processes
+only a subset of parameters, which account for the 8760h time series.
+Abbreviations: TD, MILP, LP and GWP</span><a class="headerlink" href="#fig-processstructure" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>This documentation is built from previous works (<span id="id1"><sup><a class="reference internal" href="Bibliography.html#id9" title="Gauthier Limpens. Generating energy transition pathways: application to Belgium. PhD thesis, UCLouvain, 2021. doi:10.13140/RG.2.2.25755.18724.">1</a>,<a class="reference internal" href="Bibliography.html#id10" title="Gauthier Limpens, Stefano Moret, Hervé Jeanmart, and Francois Maréchal. EnergyScope TD: A novel open-source model for regional energy systems. Applied Energy, 255(March):113729, 2019.">3</a>,<a class="reference internal" href="Bibliography.html#id8" title="Stefano Moret. Strategic energy planning under uncertainty. PhD thesis, École Polytechnique Fédérale de Lausanne, 2017. doi:10.5075/EPFL-THESIS-7961.">5</a></sup></span>).
+For more details about the research approach, the choice of clustering method or the reconstruction method; refer to <span id="id2"><sup><a class="reference internal" href="Bibliography.html#id9" title="Gauthier Limpens. Generating energy transition pathways: application to Belgium. PhD thesis, UCLouvain, 2021. doi:10.13140/RG.2.2.25755.18724.">1</a></sup></span>.</p>
+</section>
+<section id="typical-days-selection">
+<span id="sec-td-selection"></span><h2>Typical days selection<a class="headerlink" href="#typical-days-selection" title="Permalink to this headline"></a></h2>
+<p>Resorting to TDs has the main advantage of reducing the computational
+time by several orders of magnitude. Usually, studies use between 6 and
+20 TDs
+<span id="id3"><sup><a class="reference internal" href="Bibliography.html#id2" title="Paolo Gabrielli, Matteo Gazzani, Emanuele Martelli, and Marco Mazzotti. Corrigendum to “Optimal design of multi-energy systems with seasonal storage” [Appl. Energy (2017)]. Applied Energy, 212(June):720, 2018. doi:10.1016/j.apenergy.2017.12.070.">6</a>,<a class="reference internal" href="Bibliography.html#id3" title="Jacques Després, Silvana Mima, Alban Kitous, Patrick Criqui, Nouredine Hadjsaid, and Isabelle Noirot. Storage as a flexibility option in power systems with high shares of variable renewable energy sources: a POLES-based analysis. Energy Economics, 64:638–650, 2017. doi:10.1016/j.eneco.2016.03.006.">7</a>,<a class="reference internal" href="Bibliography.html#id4" title="Paul Nahmmacher, Eva Schmid, Lion Hirth, and Brigitte Knopf. Carpe diem: a novel approach to select representative days for long-term power system modeling. Energy, 112:430–442, 2016.">8</a>,<a class="reference internal" href="Bibliography.html#id5" title="André Pina, Carlos A. Silva, and Paulo Ferrão. High-resolution modeling framework for planning electricity systems with high penetration of renewables. Applied Energy, 112:215–223, 2013. doi:10.1016/j.apenergy.2013.05.074.">9</a></sup></span>
+sometimes even less
+<span id="id4"><sup><a class="reference internal" href="Bibliography.html#id6" title="Kris Poncelet, Hanspeter Hoschle, Erik Delarue, Ana Virag, and William Drhaeseleer. Selecting representative days for capturing the implications of integrating intermittent renewables in generation expansion planning problems. IEEE Transactions on Power Systems, 32(3):1936–1948, 2017. doi:10.1109/TPWRS.2016.2596803.">10</a>,<a class="reference internal" href="Bibliography.html#id7" title="Fernando Domínguez-Muñoz, José M. Cejudo-López, Antonio Carrillo-Andrés, and Manuel Gallardo-Salazar. Selection of typical demand days for CHP optimization. Energy and Buildings, 43(11):3036–3043, 2011. doi:10.1016/j.enbuild.2011.07.024.">11</a></sup></span>.</p>
+<section id="clustering-methods">
+<h3>Clustering methods<a class="headerlink" href="#clustering-methods" title="Permalink to this headline"></a></h3>
+<p>In a previous work <span id="id5"><sup><a class="reference internal" href="Bibliography.html#id10" title="Gauthier Limpens, Stefano Moret, Hervé Jeanmart, and Francois Maréchal. EnergyScope TD: A novel open-source model for regional energy systems. Applied Energy, 255(March):113729, 2019.">3</a></sup></span>, it has been estimated
+that 12 typical days were appropriate for this model.
+Moreover, a comparison between different clustering algorithm shown that the method of
+<span id="id6"><sup><a class="reference internal" href="Bibliography.html#id7" title="Fernando Domínguez-Muñoz, José M. Cejudo-López, Antonio Carrillo-Andrés, and Manuel Gallardo-Salazar. Selection of typical demand days for CHP optimization. Energy and Buildings, 43(11):3036–3043, 2011. doi:10.1016/j.enbuild.2011.07.024.">11</a></sup></span> had the best performances.</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>A small mistake has been corrected on the distance used in the clustering method.
+The impact of this mistake on previous work has been assessed and the conclusion is that the impact is negligible.
+The error and explanation are detailed in the pdf Erratum_STEP_1.pdf.</p>
+</div>
+</section>
+<section id="implementing-seasonality-with-typical-days">
+<h3>Implementing seasonality with typical days<a class="headerlink" href="#implementing-seasonality-with-typical-days" title="Permalink to this headline"></a></h3>
+<p>Using TDs can introduce some limitations. As an example, traditionally,
+model based on TDs are not able to include inter-days or seasonal
+storage due to the discontinuity between the selected days. Thus, they
+assess only the capacity of production without accounting for storage
+capacities. Carbon-neutral energy system will require long term storage
+and thus, this limitation must be overcome. Therefore, we implemented a
+method proposed by <span id="id7">Gabrielli <em>et al.</em><sup><a class="reference internal" href="Bibliography.html#id2" title="Paolo Gabrielli, Matteo Gazzani, Emanuele Martelli, and Marco Mazzotti. Corrigendum to “Optimal design of multi-energy systems with seasonal storage” [Appl. Energy (2017)]. Applied Energy, 212(June):720, 2018. doi:10.1016/j.apenergy.2017.12.070.">6</a></sup></span> to rebuild a year
+based on the typical days by defining a sequence of . This allows to
+optimise the storage level of charge over the 8760h of the year.
+<span id="id8">Gabrielli <em>et al.</em><sup><a class="reference internal" href="Bibliography.html#id2" title="Paolo Gabrielli, Matteo Gazzani, Emanuele Martelli, and Marco Mazzotti. Corrigendum to “Optimal design of multi-energy systems with seasonal storage” [Appl. Energy (2017)]. Applied Energy, 212(June):720, 2018. doi:10.1016/j.apenergy.2017.12.070.">6</a></sup></span> assigned a TD to each day of the
+year; all decision variables are optimised over the TDs, apart from the
+amount of energy stored, which is optimised over 8760h. This methodology
+is illustrated in the follwing   <a class="reference internal" href="#fig-seasonalityimplementation"><span class="std std-numref">Figure 5</span></a>.</p>
+<figure class="align-default" id="fig-seasonalityimplementation">
+<a class="reference internal image-reference" href="../_images/gabrielli.png"><img alt="Illustration of the typical days reconstruction method" src="../_images/gabrielli.png" style="width: 14cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 5 </span><span class="caption-text">Illustration of the typical days reconstruction method proposed by
+<span id="id9"><sup><a class="reference internal" href="Bibliography.html#id2" title="Paolo Gabrielli, Matteo Gazzani, Emanuele Martelli, and Marco Mazzotti. Corrigendum to “Optimal design of multi-energy systems with seasonal storage” [Appl. Energy (2017)]. Applied Energy, 212(June):720, 2018. doi:10.1016/j.apenergy.2017.12.070.">6</a></sup></span> over a week. The example is based
+on 3 TDs: TD 1 represents a cloudy weekday, applied to Monday,
+Thursday and Friday; TD 2 is a sunny weekday, applied to Tuesday and
+Wednesday; and TD 3 represents sunny weekend days. The power profile
+(above) depends solely on the typical day but the energy stored
+(below) is optimised over the 8760 hours of the year (blue curve).
+Note that the level of charge is not the same at the beginning
+(Monday 1 am) and at the end of the week (Sunday 12 pm).</span><a class="headerlink" href="#fig-seasonalityimplementation" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The performances of this method has been quantified in a previous work <span id="id10"><sup><a class="reference internal" href="Bibliography.html#id10" title="Gauthier Limpens, Stefano Moret, Hervé Jeanmart, and Francois Maréchal. EnergyScope TD: A novel open-source model for regional energy systems. Applied Energy, 255(March):113729, 2019.">3</a></sup></span>.
+With 12 Typical days, the key performances indicators (cost, emissions, installed capacity and primary energy used) are well captured.
+The only exception are the long term storage capacities which are slightly underestimated (by maximum a factor of 2).</p>
+</section>
+</section>
+<section id="energy-system-model">
+<span id="sec-estd"></span><h2>Energy system model<a class="headerlink" href="#energy-system-model" title="Permalink to this headline"></a></h2>
+<p>Hereafter, we present the core of the energy model. First, we introduce
+the conceptual modelling framework with an illustrative example, in
+order to clarify as well the nomenclature. Second, we introduce the
+constraints of the energy model (data used are detailed in
+the Section <a class="reference internal" href="Input%20Data.html"><span class="doc">Input Data</span></a>).</p>
+<section id="linear-programming-formulation">
+<span id="ssec-lp-framework"></span><h3>Linear programming formulation<a class="headerlink" href="#linear-programming-formulation" title="Permalink to this headline"></a></h3>
+<p>The model is mathematically formulated as a LP problem
+<span id="id11"><sup><a class="reference internal" href="Bibliography.html#id11" title="Robert Fourer, David M Gay, and Brian W Kernighan. Ampl: a mathematical programming language. Management Science, 36(5):519–554, 1990.">12</a></sup></span>.
+<a class="reference internal" href="#fig-linear-programming-example"><span class="std std-numref">Figure 6</span></a> represents - in a simple
+manner - what is a LP problem and the nomenclature used. In italic
+capital letters, <em>SETS</em> are collections of distinct items (as in the
+mathematical definition), e.g. the <em>RESOURCES</em> set regroups all the
+available resources (NG, WOOD, etc.). In italic lowercase letters,
+<em>parameters</em> are known values (inputs) of the model, such as the demand
+or the resource availability. In bold with first letter in uppercase,
+<strong>Variables</strong> are unknown values of the model, such as the installed
+capacity of PV. These values are determined (optimised) by the solver
+within an upper and a lower bound (both being parameters). As an
+example, the installed capacity of wind turbines is a decision variable;
+this quantity is bounded between zero and the maximum available
+potential. <em>Decision variables</em> can be split in two categories:
+independent decision variables, which can be freely fixed, and dependent
+decision variables, which are linked via equality constraints to the
+previous ones. As an example the investment cost for wind turbines is a
+variable but it directly depends on the number of wind turbines, which
+is an independent decision variable. <em>Constraints</em> are inequality or
+equality restrictions that must be satisfied. The problem is subject to
+(<em>s.t.</em>) constraints that can enforce, for example, an upper limit for
+the availability of resources, energy or mass balance, etc. Finally, an
+<em>objective function</em> is a particular constraint whose value is to be
+maximised (or minimised).</p>
+<figure class="align-default" id="fig-linear-programming-example">
+<a class="reference internal image-reference" href="../_images/chp_estd_lp_conceptual.png"><img alt="Conceptual illustration of a LP problem." src="../_images/chp_estd_lp_conceptual.png" style="width: 14cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 6 </span><span class="caption-text">Conceptual illustration of a LP problem and the nomenclature used.
+Symbol description: maximum installed size of a technology
+(<em>fmax</em>), installed capacity of a technology (<strong>F</strong>) and total
+system cost (<strong>Ctot</strong>). In this example, a specific technology (<strong>F</strong>
+[<em>’PV’</em>]) has been chosen from the set TECHNOLOGY.</span><a class="headerlink" href="#fig-linear-programming-example" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+<section id="conceptual-modelling-framework">
+<span id="ssec-conceptual-modelling-framework"></span><h3>Conceptual modelling framework<a class="headerlink" href="#conceptual-modelling-framework" title="Permalink to this headline"></a></h3>
+<p>The proposed modelling framework is a simplified representation of an
+energy system accounting for the energy flows within its boundaries. Its
+primary objective is to satisfy the energy balance constraints, meaning
+that the demand is known and the supply has to meet it. In the energy
+modelling practice, the energy demand is often expressed in terms of
+FEC. According to the definition of the European commission, FEC is
+defined as “<em>the energy which reaches the final consumer’s door</em>”
+<span id="id12"><sup><a class="reference internal" href="Bibliography.html#id12" title="European Commission - Eurostat. Glossary: Final Energy Consumption.">13</a></sup></span>. In other words, the FEC is the amount of
+input energy needed to satisfy the EUD in energy services. As an
+example, in the case of decentralised heat production with a NG boiler,
+the FEC is the amount of NG consumed by the boiler; the EUD is the
+amount of heat produced by the boiler, i.e. the heating service needed
+by the final user.</p>
+<p>The input for the proposed modelling framework is the EUD in energy
+services, represented as the sum of four energy-sectors: electricity,
+heating, mobility and non-energy demand; this replaces the classical
+economic-sector based representation of energy demand. Heat is divided
+in three EUTs: high temperature heat for industry, low temperature for
+space heating and low temperature for hot water. Mobility is divided in
+two EUTs: passenger mobility and freight <a class="footnote-reference brackets" href="#id49" id="id13">1</a>. Non-energy demand is,
+based on the IEA definition, “<em>fuels that are used as raw materials in
+the different sectors and are not consumed as a fuel or transformed into
+another fuel.</em>” <span id="id14"><sup><a class="reference internal" href="Bibliography.html#id13" title="International Energy Agency. Definitions. URL: https://www.iea.org/statistics/resources/balancedefinitions/ (visited on 29-07-2019).">14</a></sup></span>. As examples,
+the European Commission includes as non-energy the following materials:
+“<em>chemical feed-stocks, lubricants and asphalt for road construction.</em>”
+<span id="id15"><sup><a class="reference internal" href="Bibliography.html#id14" title="Pantelis Capros, A De Vita, N Tasios, P Siskos, M Kannavou, A Petropoulos, S Evangelopoulou, M Zampara, D Papadopoulos, Ch Nakos, and others. Eu reference scenario 2016-energy, transport and ghg emissions trends to 2050. European Commission Directorate-General for Energy, 2016. doi:10.2833/9127.">15</a></sup></span>.</p>
+<figure class="align-default" id="fig-conceptual-example">
+<a class="reference internal image-reference" href="../_images/chp_estd_conceptual_framework.png"><img alt="Conceptual example of an energy system." src="../_images/chp_estd_conceptual_framework.png" style="width: 16cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 7 </span><span class="caption-text">Conceptual example of an energy system with 3 resources, 8
+technologies (of which 2 storages (in colored oval) and 1
+infrastructure (grey rectangle)) and 3 end use demands.
+Abbreviations: PHS, electrical heat pump (eHP), CHP, CNG. Some icons
+from <span id="id16"><sup><a class="reference internal" href="Bibliography.html#id15" title="FlatIcon. URL: https://www.flaticon.com (visited on 2019-09-20).">16</a></sup></span>.</span><a class="headerlink" href="#fig-conceptual-example" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>A simplified conceptual example of the energy system structure is
+proposed in  <a class="reference internal" href="#fig-conceptual-example"><span class="std std-numref">Figure 7</span></a>. The system is
+split in three parts: resources, energy conversion and demand. In this
+illustrative example, resources are solar energy, electricity and NG.
+The EUD are electricity, space heating and passenger mobility. The
+energy system encompasses all the energy conversion technologies needed
+to transform resources and supply the EUD. In this example, Solar and NG
+resources cannot be directly used to supply heat. Thus, they use
+technologies, such as boilers or CHP for NG, to supply the EUT layer
+(e.g. the high temperature industrial heat layer). <em>Layers</em> are defined
+as all the elements in the system that need to be balanced in each time
+period; they include resources and EUTs. As an example, the electricity
+layer must be balanced at any time, meaning that the production and
+storage must equal the consumption and losses. These layers are
+connected to each other by <em>technologies</em>. We define three types of
+technologies: <em>technologies of end-use type</em>, <em>storage technologies</em> and
+<em>infrastructure technologies</em>. A technology of end-use type can convert
+the energy (e.g. a fuel resource) from one layer to an EUT layer, such
+as a CHP unit that converts NG into heat and electricity. A storage
+technology converts energy from a layer to the same one, such as TS that
+stores heat to provide heat. In this example (
+<a class="reference internal" href="#fig-conceptual-example"><span class="std std-numref">Figure 7</span></a>), there are two storage technologies:
+TS for heat and PHS for electricity. An infrastructure technology
+gathers the remaining technologies, including the networks, such as the
+power grid and DHNs, but also technologies linking non end-use layers,
+such as methane production from wood gasification or hydrogen production
+from methane reforming.</p>
+<p>As an illustrative example of the concept of <em>layer</em>, Figure
+<a class="reference internal" href="#fig-layerelec"><span class="std std-numref">Figure 8</span></a> gives a perspective of the electricity layer
+which is the most complex one, since the electrification of other
+sectors is foreseen as a key of the energy transition
+<span id="id17"><sup><a class="reference internal" href="Bibliography.html#id16" title="Masahiro Sugiyama. Climate change mitigation and electrification. Energy Policy, 44:464–468, 2012. doi:10.1016/j.enpol.2012.01.028.">17</a></sup></span>. In the proposed version, 42
+technologies are related to the electricity layer. 9 technologies
+produce exclusively electricity, such as CCGT, PV or wind. 12
+cogenerations of heat and power (CHPs) produce heat and electricity,
+such as industrial waste CHP. 6 technologies are related to the
+production of synthetic fuels and CCS. 1 infrastructure represents the
+grid. 4 storage technologies are implemented, such as PHS, batteries or
+V2G. The remains are consumers regrouped in the electrification of heat
+and mobility. Electrification of the heating sector is supported by
+direct electric heating but also by the more expensive but more
+efficient electrical heat pumps for low temperature heat demand.
+Electrification of mobility is achieved via electric public
+transportation (train, trolley, metro and electrical/hybrid buses),
+electric private transportation including and hydrogen cars <a class="footnote-reference brackets" href="#id50" id="id18">2</a> and
+trains for freight.</p>
+<figure class="align-default" id="fig-layerelec">
+<a class="reference internal image-reference" href="../_images/Layer_Elec.png"><img alt="Representation of the Electricity layer." src="../_images/Layer_Elec.png" style="width: 16cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 8 </span><span class="caption-text">Representation of the Electricity layer with all the technologies
+implemented in ESTD v2.1. <strong>Bold Italic technologies</strong> represent a group
+of different technologies. Abbreviations: atmospheric (atm.), Carbon
+capture (CC), CCGT, CHP, HP, electricity (elec.), HP, industrial
+(ind.) IGCC, PHS, synthetic methanolation (S. Methanol.), V2G, EUD.</span><a class="headerlink" href="#fig-layerelec" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The energy system is formulated as a LP problem. It optimises the design
+by computing the installed capacity of each technology, as well as the
+operation in each period, to meet the energy demand and minimize the
+total annual cost of the system. In the following, we present the
+complete formulation of the model in two parts. First, all the terms
+used are summarised in a figure and tables:  <a class="reference internal" href="#fig-sets"><span class="std std-numref">Figure 9</span></a>
+for sets, Tables <a class="reference internal" href="#tab-paramsdistributions"><span class="std std-numref">1</span></a> and
+<a class="reference internal" href="#tab-params"><span class="std std-numref">2</span></a> for parameters, and
+<a class="reference internal" href="#tab-variablesindependent"><span class="std std-numref">3</span></a> and
+<a class="reference internal" href="#tab-variablesdependent"><span class="std std-numref">4</span></a> for variables. On
+this basis, the equations representing the constraints and the objective
+function are formulated in  <a class="reference internal" href="#fig-endusedemand"><span class="std std-numref">Figure 10</span></a> and
+Eqs. <a class="reference internal" href="#equation-eq-c-tot-year">(1)</a> - <a class="reference internal" href="#equation-eq-efficiency">(41)</a>
+and described in the following paragraphs.</p>
+</section>
+<section id="sets-parameters-and-variables">
+<span id="ssec-sets-params-vars"></span><h3>Sets, parameters and variables<a class="headerlink" href="#sets-parameters-and-variables" title="Permalink to this headline"></a></h3>
+<p><a class="reference internal" href="#fig-sets"><span class="std std-numref">Figure 9</span></a> gives a visual representation of the sets
+with their relative indices used in the followings.
+<a class="reference internal" href="#tab-paramsdistributions"><span class="std std-numref">1</span></a> and <a class="reference internal" href="#tab-params"><span class="std std-numref">2</span></a>
+list and describe the model parameters. Tables
+<a class="reference internal" href="#tab-variablesindependent"><span class="std std-numref">3</span></a> and
+<a class="reference internal" href="#tab-variablesdependent"><span class="std std-numref">4</span></a> list and describe
+the independent and dependent variables, respectively.</p>
+<figure class="align-default" id="fig-sets">
+<img alt="Visual representation of the sets and indices used." src="../_images/ses_sets_v2.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 9 </span><span class="caption-text">Visual representation of the sets and indices used in the LP
+framework. Abbreviations: SH, HW, temperature (T), MOB, passenger
+(<em>Pass.</em>), V2G, TS.</span><a class="headerlink" href="#fig-sets" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<div class="docutils container">
+<table class="docutils align-default" id="tab-paramsdistributions">
+<caption><span class="caption-number">Table 1 </span><span class="caption-text">Time series parameters</span><a class="headerlink" href="#tab-paramsdistributions" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 17%" />
+<col style="width: 42%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Parameter</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_{elec}(h,td)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Yearly time series
+(adding up to 1) of
+electricity end-uses</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_{sh}(h,td)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Yearly time series
+(adding up to 1) of SH
+end-uses</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_{elec}(h,td)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Yearly time series
+(adding up to 1) of
+passenger mobility
+end-uses</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_{fr}(h,td)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Yearly time series
+(adding up to 1) of
+freight mobility end-uses</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(c_{p,t}(tech,h,td)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Hourly maximum capacity
+factor for each
+technology (default 1)</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="docutils container">
+<table class="docutils align-default" id="tab-params">
+<caption><span class="caption-number">Table 2 </span><span class="caption-text">List of parameters (except time series).</span><a class="headerlink" href="#tab-params" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Units</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\tau\)</span>(tech)</p></td>
+<td><p>[-]</p></td>
+<td><p>Investment cost
+annualization factor</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(i_{rate}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Real discount rate</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(endUses_
+{year}
+(eui,s)\)</span></p></td>
+<td><p>[GWh/y] <a class="reference internal" href="#a" id="id19"><span>[a]</span></a></p></td>
+<td><p>Annual end-uses in
+energy services per
+sector</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(endUsesInput
+(eui)\)</span></p></td>
+<td><p>[GWh/y] <a class="reference internal" href="#a" id="id20"><span>[a]</span></a></p></td>
+<td><p>Total annual
+end-uses in energy
+services</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(re_{share}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>minimum share [0;1]
+of primary RE</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(gwp
+_{limit}\)</span></p></td>
+<td><p>[ktCO<span class="math notranslate nohighlight">\(_{2-eq}\)</span>/y]</p></td>
+<td><p>Higher
+CO<span class="math notranslate nohighlight">\(_{2-eq}\)</span>
+emissions limit</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_
+{public,min},
+\%_{public,max}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Lower and upper
+limit to
+<span class="math notranslate nohighlight">\(\textbf{%}_
+{\textbf{Public}}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_
+{fr,rail,min},
+\%_{fr,rail,max}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Lower and upper
+limit to
+<span class="math notranslate nohighlight">\(\textbf{%}_
+{\textbf{Fr,Rail}}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_
+{fr,boat,min},
+\%_{fr,boat,max}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Lower and upper
+limit to
+<span class="math notranslate nohighlight">\(\textbf{%}_
+{\textbf{Fr,Boat}}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_
+{fr,truck,min},
+\%_{fr,truck,max}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Lower and upper
+limit to
+<span class="math notranslate nohighlight">\(\textbf{%}_
+{\textbf{Fr,Truck}}\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_
+{dhn,min},
+\%_{dhn,max}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Lower and upper
+limit to
+<span class="math notranslate nohighlight">\(\textbf{%}_
+{\textbf{Dhn}}\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_
+{ned}(EUT\_OF\_EUC(
+NON\_ENERGY))\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Share of non-energy
+demand per type
+of feedstocks</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(t_
+{op}(h,td)\)</span></p></td>
+<td><p>[h]</p></td>
+<td><p>Time period duration
+(default 1h)</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(f_{min},
+f_{max}
+(tech)\)</span></p></td>
+<td><p>[GW] <a class="reference internal" href="#a" id="id21"><span>[a]</span></a> <a class="reference internal" href="#b" id="id22"><span>[b]</span></a></p></td>
+<td><p>Min./max. installed
+size of the
+technology</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(f_{min,\%},
+f_{max,\%}(tech)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Min./max. relative
+share of a
+technology in a
+layer</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(avail(res)\)</span></p></td>
+<td><p>[GWh/y]</p></td>
+<td><p>Resource yearly
+total availability</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(c_{op}(res)\)</span></p></td>
+<td><p>[M€<span class="math notranslate nohighlight">\(_{2015}\)</span>/GWh]</p></td>
+<td><p>Specific cost of
+resources</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(veh_{capa}\)</span></p></td>
+<td><p>[km-pass/h/veh.] <a class="reference internal" href="#a" id="id23"><span>[a]</span></a></p></td>
+<td><p>Mobility capacity
+per vehicle (veh.).</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_{
+Peak_{sh}}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Ratio peak/max.
+space heating demand
+in typical days</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(f(
+res\cup tech
+\setminus sto, l)\)</span></p></td>
+<td><p>[GW] <a class="reference internal" href="#c" id="id24"><span>[c]</span></a></p></td>
+<td><p>Input from (&lt;0) or
+output to (&gt;0) layers
+. f(i,j) = 1 if j is
+main output layer for
+technology/resource
+i.</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(c_
+{inv}(tech)\)</span></p></td>
+<td><p>[M€<span class="math notranslate nohighlight">\(_{2015}\)</span>
+/GW] <a class="reference internal" href="#c" id="id25"><span>[c]</span></a> <a class="reference internal" href="#b" id="id26"><span>[b]</span></a></p></td>
+<td><p>Technology specific
+investment cost</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(c_{maint}
+(tech)\)</span></p></td>
+<td><p>[M€<span class="math notranslate nohighlight">\(_{2015}\)</span>
+/GW/y]
+<a class="reference internal" href="#c" id="id27"><span>[c]</span></a> <a class="reference internal" href="#b" id="id28"><span>[b]</span></a></p></td>
+<td><p>Technology specific
+yearly maintenance
+cost</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\({
+lifetime}(tech)\)</span></p></td>
+<td><p>[y]</p></td>
+<td><p>Technology lifetime</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(gwp_{constr}
+(tech)\)</span></p></td>
+<td><p>[ktCO<span class="math notranslate nohighlight">\(_2\)</span>-eq./GW]
+<a class="reference internal" href="#a" id="id29"><span>[a]</span></a> <a class="reference internal" href="#b" id="id30"><span>[b]</span></a></p></td>
+<td><p>Technology
+construction
+specific GHG
+emissions</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(gwp_
+{op}(res)\)</span></p></td>
+<td><p>[ktCO<span class="math notranslate nohighlight">\(_2\)</span>-eq./GWh]</p></td>
+<td><p>Specific GHG
+emissions of
+resources</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(c_{p}(tech)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Yearly capacity
+factor</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\eta_{s
+to,in},\eta_{sto
+,out} (sto,l)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Efficiency [0;1] of
+storage input from/
+output to layer. Set
+to 0 if storage not
+related to layer</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_{
+sto_{loss}}(sto)\)</span></p></td>
+<td><p>[1/h]
+(self discharge)</p></td>
+<td><p>Losses in storage</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(t_{sto_{in}}
+(sto)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Time to charge
+storage (Energy to
+power ratio)</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(t_{sto_{out}}
+(sto)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Time to discharge
+storage (Energy to
+power ratio)</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\%_
+{sto_{avail}}
+(sto)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Storage technology
+availability to
+charge/discharge</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\%_{net_
+{loss}}(eut)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Losses coefficient
+<span class="math notranslate nohighlight">\([0;1]\)</span> in the
+networks (grid and
+DHN)</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(ev_{b
+att,size}(v2g)\)</span></p></td>
+<td><p>[GWh]</p></td>
+<td><p>Battery size per V2G
+car technology</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(soc_{min,ev}
+(v2g,h)\)</span></p></td>
+<td><p>[GWh]</p></td>
+<td><p>Minimum state of
+charge for electric
+vehicles</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(c_
+{grid,extra}\)</span></p></td>
+<td><p>[M€<span class="math notranslate nohighlight">\(_2015\)</span>/GW]</p></td>
+<td><p>Cost to reinforce
+the grid per GW of
+intermittent
+renewable</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(elec_{
+import,max}\)</span></p></td>
+<td><p>[GW]</p></td>
+<td><p>Maximum net transfer
+capacity</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\({solar}\)</span> _
+<span class="math notranslate nohighlight">\({area}\)</span></p></td>
+<td><p>[km<span class="math notranslate nohighlight">\(^2\)</span>]</p></td>
+<td><p>Available area for
+solar panels</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\({power}\)</span> _
+<span class="math notranslate nohighlight">\(density_{pv}\)</span></p></td>
+<td><p>[GW/km<span class="math notranslate nohighlight">\(^2\)</span>]</p></td>
+<td><p>Peak power density
+of PV</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\({power}\)</span> _
+<span class="math notranslate nohighlight">\(density_{
+solar,thermal}\)</span></p></td>
+<td><p>[GW/km<span class="math notranslate nohighlight">\(^2\)</span>]</p></td>
+<td><p>Peak power density
+of solar thermal</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="citation">
+<dt class="label" id="a"><span class="brackets">a</span><span class="fn-backref">(<a href="#id19">1</a>,<a href="#id20">2</a>,<a href="#id21">3</a>,<a href="#id23">4</a>,<a href="#id29">5</a>)</span></dt>
+<dd><p>[Mpkm] (millions of passenger-km) for passenger,
+[Mtkm] (millions of ton-km) for freight mobility end-uses</p>
+</dd>
+<dt class="label" id="b"><span class="brackets">b</span><span class="fn-backref">(<a href="#id22">1</a>,<a href="#id26">2</a>,<a href="#id28">3</a>,<a href="#id30">4</a>)</span></dt>
+<dd><p>[GWh] if <span class="math notranslate nohighlight">\({{tech}} \in {{STO}}\)</span></p>
+</dd>
+<dt class="label" id="c"><span class="brackets">c</span><span class="fn-backref">(<a href="#id24">1</a>,<a href="#id25">2</a>,<a href="#id27">3</a>)</span></dt>
+<dd><p>[Mpkm/h] for passenger, [Mtkm/h] for freight
+mobility end-uses</p>
+</dd>
+</dl>
+<div class="docutils container">
+<table class="docutils align-default" id="tab-variablesindependent">
+<caption><span class="caption-number">Table 3 </span><span class="caption-text">Independent variables. All variables are continuous and non-negative, unless otherwise indicated.</span><a class="headerlink" href="#tab-variablesindependent" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 41%" />
+<col style="width: 18%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Units</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{Public}}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Ratio <span class="math notranslate nohighlight">\([0;1]\)</span>
+public mobility over
+total passenger mobility</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{Fr,Rail}}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Ratio <span class="math notranslate nohighlight">\([0;1]\)</span> rail
+transport over total
+freight transport</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{Fr,Boat}}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Ratio <span class="math notranslate nohighlight">\([0;1]\)</span> boat
+transport over total
+freight transport</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{Fr,Truck}}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Ratio <span class="math notranslate nohighlight">\([0;1]\)</span> truck
+transport over total
+freight transport</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{Dhn}}\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Ratio <span class="math notranslate nohighlight">\([0;1]\)</span>
+centralized over total
+low-temperature heat</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{F}(tech)\)</span></p></td>
+<td><p>[GW] <a class="reference internal" href="#d" id="id31"><span>[d]</span></a></p></td>
+<td><p>Installed capacity with
+respect to main output</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{F}_
+{\textbf{t}}(tech
+\cup res,h,td)\)</span></p></td>
+<td><p>[GW] <a class="reference internal" href="#d" id="id32"><span>[d]</span></a></p></td>
+<td><p>Operation in each period</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{Sto}_{
+\textbf{in}},
+\textbf{Sto}_{
+\textbf{out}}
+(sto, l, h, td)\)</span></p></td>
+<td><p>[GW]</p></td>
+<td><p>Input to/output from
+storage units</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{P}_{
+\textbf{Nuclear}}\)</span></p></td>
+<td><p>[GW]</p></td>
+<td><p>Constant load of nuclear</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{Import}_
+\textbf{Constant}\)</span>
+(RES_IMPORT_CONSTANT)</p></td>
+<td><p>[GW]</p></td>
+<td><p>Resources imported at
+a constant flow</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{PassMob}}(TECH\
+OF\ EUC(PassMob))\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Constant share of
+passenger mobility</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{FreightMob}}
+(TECH~OF~EUC(FreightMob))\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Constant share of
+freight mobility</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{%}_{
+\textbf{HeatLowTDEC}}
+(TECH~OF~EUT(HeatLowTDec)
+\setminus {Dec_{Solar}}
+)\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Constant share of low
+temperature heat
+decentralised supplied
+by a technology plus its
+associated thermal solar
+and storage</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{F}_{
+\textbf{sol}}
+(TECH~OF~EUT(HeatLowTDec)
+\setminus {Dec_{Solar}})\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Solar thermal installed
+capacity associated to a
+decentralised heating
+technology</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{F}_{
+\textbf{t}_{\textbf{sol}}}
+(TECH~OF~EUT(HeatLowTDec)
+\setminus {Dec_{Solar}})\)</span></p></td>
+<td><p>[-]</p></td>
+<td><p>Solar thermal operation
+in each period</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="citation">
+<dt class="label" id="d"><span class="brackets">d</span><span class="fn-backref">(<a href="#id31">1</a>,<a href="#id32">2</a>)</span></dt>
+<dd><p>[Mpkm] (millions of passenger-km) for passenger,
+[Mtkm] (millions of ton-km) for freight mobility end-uses</p>
+</dd>
+</dl>
+<div class="docutils container">
+<table class="docutils align-default" id="tab-variablesdependent">
+<caption><span class="caption-number">Table 4 </span><span class="caption-text">Dependent variable. All variables are continuous and non-negative, unless otherwise indicated.</span><a class="headerlink" href="#tab-variablesdependent" title="Permalink to this table"></a></caption>
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Variable</strong></p></th>
+<th class="head"><p><strong>Units</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{
+EndUses}(l,h,td)\)</span></p></td>
+<td><p>[GW] <a class="reference internal" href="#e" id="id33"><span>[e]</span></a></p></td>
+<td><p>End-uses demand. Set
+to 0 if
+<span class="math notranslate nohighlight">\(l \notin\)</span>
+<em>EUT</em></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{C}_
+{\textbf{tot}}\)</span></p></td>
+<td><p>[M€<sub>2015</sub>/y]</p></td>
+<td><p>Total annual cost of
+the energy system</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{C}_
+{\textbf{inv}}(
+tech)\)</span></p></td>
+<td><p>[M€<sub>2015</sub>]</p></td>
+<td><p>Technology total
+investment cost</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{C}_
+{\textbf{maint}}(
+tech)\)</span></p></td>
+<td><p>[M€<sub>2015</sub>/y]</p></td>
+<td><p>Technology yearly
+maintenance cost</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{C}_
+{\textbf{op}}(
+res)\)</span></p></td>
+<td><p>[M€<sub>2015</sub>/y]</p></td>
+<td><p>Total cost of
+resources</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{GWP}_
+{\textbf{tot}}\)</span></p></td>
+<td><p>[ktCO<span class="math notranslate nohighlight">\(_2\)</span>-eq./y]</p></td>
+<td><p>Total yearly GHG
+emissions of the
+energy system</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{GWP}_
+{\textbf{constr}}(
+tech)\)</span></p></td>
+<td><p>[ktCO<span class="math notranslate nohighlight">\(_2\)</span>-eq.]</p></td>
+<td><p>Technology
+construction GHG
+emissions</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{GWP}_
+{\textbf{po}}(
+res)\)</span></p></td>
+<td><p>[ktCO<span class="math notranslate nohighlight">\(_2\)</span>-eq./y]</p></td>
+<td><p>Total GHG emissions
+of resources</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\textbf{Net}_
+{\textbf{losses}}(
+eut,h,td)\)</span></p></td>
+<td><p>[GW]</p></td>
+<td><p>Losses in the
+networks (grid and
+DHN)</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(\textbf{Sto}_
+{\textbf{level}}(
+sto,t)\)</span></p></td>
+<td><p>[GWh]</p></td>
+<td><p>Energy stored over
+the year</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="citation">
+<dt class="label" id="e"><span class="brackets"><a class="fn-backref" href="#id33">e</a></span></dt>
+<dd><p>[Mpkm] (millions of passenger-km) for passenger,
+[Mtkm] (millions of ton-km) for freight mobility end-uses</p>
+</dd>
+</dl>
+</section>
+<section id="energy-model-formulation">
+<span id="ssec-lp-formulation"></span><h3>Energy model formulation<a class="headerlink" href="#energy-model-formulation" title="Permalink to this headline"></a></h3>
+<p>In the following, the overall LP formulation is proposed through <a class="reference internal" href="#fig-endusedemand"><span class="std std-numref">Figure 10</span></a> and equations
+ <a class="reference internal" href="#equation-eq-c-tot-year">(1)</a> - <a class="reference internal" href="#equation-eq-solararealimited">(44)</a>
+the constraints are regrouped in paragraphs. It starts with the
+calculation of the EUD. Then, the cost, the GWP and the objective
+functions are introduced. Then, it follows with more specific
+paragraphs, such as <em>storage</em> or <em>vehicle-to-grid</em> implementations.</p>
+<section id="end-use-demand">
+<h4>End-use demand<a class="headerlink" href="#end-use-demand" title="Permalink to this headline"></a></h4>
+<p>Imposing the EUD instead of the FEC has two advantages. First, it
+introduces a clear distinction between demand and supply. On the one
+hand, the demand concerns the definition of the end-uses, i.e. the
+requirements in energy services (e.g. the mobility needs). On the other
+hand, the supply concerns the choice of the energy conversion
+technologies to supply these services (e.g. the types of vehicles used
+to satisfy the mobility needs). Based on the technology choice, the same
+EUD can be satisfied with different FEC, depending on the efficiency of
+the chosen energy conversion technology. Second, it facilitates the
+inclusion in the model of electric technologies for heating and
+transportation.</p>
+<figure class="align-default" id="fig-endusedemand">
+<a class="reference internal image-reference" href="../_images/EndUseDemand.png"><img alt="Hourly **EndUses** demands calculation." src="../_images/EndUseDemand.png" style="width: 16cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 10 </span><span class="caption-text">Hourly <strong>EndUses</strong> demands calculation starting from yearly demand
+inputs (<em>endUsesInput</em>). Adapted from
+<span id="id34"><sup><a class="reference internal" href="Bibliography.html#id8" title="Stefano Moret. Strategic energy planning under uncertainty. PhD thesis, École Polytechnique Fédérale de Lausanne, 2017. doi:10.5075/EPFL-THESIS-7961.">5</a></sup></span>. Abbreviations: space heating
+(sh), district heating network (DHN), high value chemicals (HVC), hot water (HW), passenger
+(pass), freight (fr) and non-energy demand (NED).</span><a class="headerlink" href="#fig-endusedemand" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The hourly end-use demands (<strong>EndUses</strong>) are computed based on the
+yearly end-use demand (<em>endUsesInput</em>), distributed according to its
+time series (listed in <a class="reference internal" href="#tab-paramsdistributions"><span class="std std-numref">Table 1</span></a>).
+<a class="reference internal" href="#fig-endusedemand"><span class="std std-numref">Figure 10</span></a> graphically presents the constraints
+associated to the hourly end use demand (<strong>EndUses</strong>), e.g. the public
+mobility demand at time <span class="math notranslate nohighlight">\(t\)</span> is equal to the hourly passenger
+mobility demand times the public mobility share (<strong>%Public</strong>).</p>
+<p>Electricity end-uses result from the sum of the electricity-only demand,
+assumed constant throughout the year, and the variable demand of
+electricity, distributed across the periods according to <em>%elec</em>.
+Low-temperature heat demand results from the sum of the yearly demand
+for HW, evenly shared across the year, and SH, distributed across the
+periods according to <em>%sh</em>. The percentage repartition between
+centralized (DHN) and decentralized heat demand is defined by the
+variable <strong>%Dhn</strong>. High temperature process heat and mobility demand
+are evenly distributed across the periods. Passenger mobility demand is
+expressed in passenger-kilometers (pkms), freight transportation demand
+is in ton-kilometers (tkms). The variable <strong>%Public</strong> defines the
+penetration of public transportation in the passenger mobility sector.
+Similarly, <strong>%Rail</strong>, <strong>%Boat</strong> and <strong>%Truck</strong> define the
+penetration of train, boat and trucks for freight mobility,
+respectively.</p>
+</section>
+<section id="annual-cost-and-emissions">
+<h4>Annual cost and emissions<a class="headerlink" href="#annual-cost-and-emissions" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-c-tot-year">
+<span class="eqno">(1)<a class="headerlink" href="#equation-eq-c-tot-year" title="Permalink to this equation"></a></span>\[\textbf{C}_{\textbf{tot}}(y) = \sum_{j \in \text{TECH}} \Big(\textbf{$\tau$}(y,j) \textbf{C}_{\textbf{inv}}(y,j) + \textbf{C}_{\textbf{maint}} (y,j)\Big) + \sum_{i \in \text{RES}} \textbf{C}_{\textbf{op}}(y,i)
+~~~~~~ \forall y \in \text{YEARS}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-tau">
+<span class="eqno">(2)<a class="headerlink" href="#equation-eq-tau" title="Permalink to this equation"></a></span>\[\begin{split}\text{s.t. }  \textbf{$\tau$}(y,j) =  \frac{i_{\text{rate}}(i_{\text{rate}}+1)^{lifetime(y,j)}}{(i_{\text{rate}}+1)^{lifetime(y,j)} - 1} ~~~~~~ \forall y \in \text{YEARS}, j \in \text{TECH}\\\end{split}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-c-inv">
+<span class="eqno">(3)<a class="headerlink" href="#equation-eq-c-inv" title="Permalink to this equation"></a></span>\[\begin{split}\textbf{C}_{\textbf{inv}}(y,j) = c_{\text{inv}}(y,j) \textbf{F}(y,j) ~~~~~~ \forall  y \in \text{YEARS}, j \in \text{TECH}\\\end{split}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-c-maint">
+<span class="eqno">(4)<a class="headerlink" href="#equation-eq-c-maint" title="Permalink to this equation"></a></span>\[\begin{split}\textbf{C}_{\textbf{maint}}(y,j) = c_{\text{maint}}(y,j) \textbf{F}(y,j) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{TECH}\\\end{split}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-c-op">
+<span class="eqno">(5)<a class="headerlink" href="#equation-eq-c-op" title="Permalink to this equation"></a></span>\[\textbf{C}_{\textbf{op}}(y,i) = \sum_{t \in T | \{h,td\} \in T\_H\_TD(t)} c_{\text{op}}(y,i) \textbf{F}_{\textbf{t}}(y,i,h,td) t_{op} (h,td)
+~~~~~~ \forall y \in \text{YEARS}, i \in \text{RES}\]</div>
+<p>Eq. <a class="reference internal" href="#equation-eq-c-tot-year">(1)</a> is the total annual cost of the energy system for a representative year (<span class="math notranslate nohighlight">\(\textbf{C}_{\textbf{tot}}\)</span>).
+It is defined as the sum of the annualized investment cost of the technologies
+(<span class="math notranslate nohighlight">\(\tau\textbf{C}_{\textbf{inv}}\)</span>), the operating and maintenance cost of the
+technologies (<span class="math notranslate nohighlight">\(\textbf{C}_{\textbf{maint}}\)</span>) and the operating cost of the resources
+(<span class="math notranslate nohighlight">\(\textbf{C}_{\textbf{op}}\)</span>). The total investment cost (<span class="math notranslate nohighlight">\(\textbf{C}_{\textbf{inv}}\)</span>) of each technology
+results from the multiplication of its specific investment cost
+(<span class="math notranslate nohighlight">\(c_{inv}\)</span>) and its installed size (<strong>F</strong>), the latter defined with
+respect to the main end-uses output <a class="footnote-reference brackets" href="#id51" id="id35">3</a> type,
+Eq. <a class="reference internal" href="#equation-eq-c-inv">(3)</a>. <span class="math notranslate nohighlight">\(\textbf{C}_{\textbf{inv}}\)</span> is annualised with the
+factor <span class="math notranslate nohighlight">\(\tau\)</span>, calculated based on the interest rate (<span class="math notranslate nohighlight">\(t_{op}\)</span>)
+and the technology lifetime (<em>lifetime</em>), Eq. <a class="reference internal" href="#equation-eq-tau">(2)</a>.
+The total operation and maintenance cost is calculated in the same way,
+Eq. <a class="reference internal" href="#equation-eq-c-maint">(4)</a>. The total cost of the resources is
+calculated as the sum of the end-use over different periods multiplied
+by the period duration (<span class="math notranslate nohighlight">\(t_{op}\)</span>) and the specific cost of the resource
+(<span class="math notranslate nohighlight">\(c_{op}\)</span>), Eq. <a class="reference internal" href="#equation-eq-c-op">(5)</a>. Note that, in
+Eq. <a class="reference internal" href="#equation-eq-c-op">(5)</a>), summing over the typical days using the
+set T_H_TD <a class="footnote-reference brackets" href="#id52" id="id36">4</a> is equivalent to summing over the 8760h of the year.</p>
+<div class="math notranslate nohighlight" id="equation-eq-gwp-tot">
+<span class="eqno">(6)<a class="headerlink" href="#equation-eq-gwp-tot" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{GWP}_\textbf{tot} (y) = \sum_{j \in \text{TECH}} \frac{\textbf{GWP}_\textbf{constr} (y,j)}{lifetime(y,j)} +   \sum_{i \in \text{RES}} \textbf{GWP}_\textbf{y,op} (i)
+~~~~~~~\forall y \in \text{YEARS}\\\left(\text{in this version of the model} :   \textbf{GWP}_\textbf{tot} (y) =    \sum_{i \in \text{RES}} \textbf{GWP}_\textbf{op} (y,i) \right)\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-gwp-constr">
+<span class="eqno">(7)<a class="headerlink" href="#equation-eq-gwp-constr" title="Permalink to this equation"></a></span>\[\textbf{GWP}_\textbf{constr}(y,j) = gwp_{\text{constr}}(y,j) \textbf{F}(y,j) ~~~~~~ \forall j \in \text{TECH}, y \in \text{YEARS}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-gwp-op">
+<span class="eqno">(8)<a class="headerlink" href="#equation-eq-gwp-op" title="Permalink to this equation"></a></span>\[\textbf{GWP}_\textbf{op}(y,i) = \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} gwp_\text{op}(y,i) \textbf{F}_\textbf{t}(y,i,h,td)  t_{op} (h,td )~~~~~~ \forall i \in \text{RES}, y \in \text{YEARS}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-gwp-tot-transition">
+<span class="eqno">(9)<a class="headerlink" href="#equation-eq-gwp-tot-transition" title="Permalink to this equation"></a></span>\[\textbf{GWP}_\textbf{tot,trans}(y,i) = \textbf{GWP}_\textbf{tot} ('YEAR\_2015')  + t_{phase}/2 \sum_{\{p, y_{start},y_{stop}\}}     \left(\textbf{GWP}_\textbf{tot}(y_{start}) +\textbf{GWP}_\textbf{tot}(y_{stop}) \right)\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-limit-gwp-trans">
+<span class="eqno">(10)<a class="headerlink" href="#equation-eq-limit-gwp-trans" title="Permalink to this equation"></a></span>\[\textbf{GWP}_\textbf{tot,trans}} \leq gwp_{lim,trans}\]</div>
+<div class="math notranslate nohighlight">
+\[\sum_{\{p, y_{start},y_{stop}\}} \Leftrightarrow \sum_{p \in PHASE, y_{start} \in 'Y\_START', y_{stop} \in 'Y\_STOP'}\]</div>
+<p>The global annual GHG emissions are calculated using for each representative year a LCA approach ,
+i.e. taking into account emissions of the technologies and resources
+‘<em>from cradle to grave</em>’. For climate change, the natural choice as
+indicator is the GWP, expressed in ktCO<span class="math notranslate nohighlight">\(_2\)</span>-eq./year. In
+Eq. <a class="reference internal" href="#equation-eq-gwp-tot">(6)</a>, the total yearly emissions of the
+system (<span class="math notranslate nohighlight">\(\textbf{GWP}_{\textbf{tot}}\)</span>) are defined as the sum of the emissions related to
+the construction and end-of-life of the energy conversion technologies
+<span class="math notranslate nohighlight">\(\textbf{GWP}_{\textbf{constr}}\)</span>, allocated to one year based on the technology
+lifetime (<span class="math notranslate nohighlight">\(lifetime\)</span>), and the emissions related to resources
+<span class="math notranslate nohighlight">\(\textbf{GWP}_{\textbf{op}}\)</span>). Similarly to the costs, the total emissions related to
+the construction of technologies are the product of the specific
+emissions (<span class="math notranslate nohighlight">\(gwp_{constr}\)</span> and the installed size (<span class="math notranslate nohighlight">\(\textbf{F}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-gwp-constr">(7)</a>. The total emissions of the
+resources are the emissions associated to fuels (from cradle to
+combustion) and imports of electricity (<span class="math notranslate nohighlight">\(gwp_{op}\)</span>) multiplied by the
+period duration (<span class="math notranslate nohighlight">\(t_{op}\)</span>), Eq. <a class="reference internal" href="#equation-eq-gwp-op">(8)</a>. GWP
+accounting can be conducted in different manners deepending on the scope of emission. The
+European Commission and the IEA mainly uses resource-related emissions
+<span class="math notranslate nohighlight">\(\textbf{GWP}_{\textbf{op}}\)</span> while neglecting indirect emissions related to the
+construction of technologies <span class="math notranslate nohighlight">\(\textbf{GWP}_{\textbf{constr}}\)</span>. To facilitate the
+comparison with their results, a similar implementation is proposed in
+Eq. <a class="reference internal" href="#equation-eq-gwp-tot">(6)</a>.
+The overall emissions during the transition is calculated by Eq. <a class="reference internal" href="#equation-eq-gwp-tot-transition">(9)</a>.
+It sums the emissions of each year between 2015 and 2050. For the years between representative ones, it is linearly interpolated.
+The overall emissions can be seen as a carbon budget that the system will emit during the transition.
+This carbon budget can be limited by a threshold in Eq. <a class="reference internal" href="#equation-eq-limit-gwp-trans">(10)</a>.</p>
+</section>
+<section id="system-design-and-operation">
+<h4>System design and operation<a class="headerlink" href="#system-design-and-operation" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-fmin-fmax">
+<span class="eqno">(11)<a class="headerlink" href="#equation-eq-fmin-fmax" title="Permalink to this equation"></a></span>\[f_{\text{min}} (y,j) \leq \textbf{F}(y,j) \leq f_{\text{max}} (y,j) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{TECH}\]</div>
+<p>The installed capacity of a technology (<strong>F</strong>) is constrained between
+upper and lower bounds (<em>fmax</em> and <em>fmin</em>),
+Eq. <a class="reference internal" href="#equation-eq-fmin-fmax">(11)</a>. This formulation allows
+accounting for old technologies still existing in the target year (lower
+bound), but also for the maximum deployment potential of a technology.
+As an example, for offshore wind turbines, <span class="math notranslate nohighlight">\(f_{min}\)</span> represents
+the existing installed capacity (which will still be available in the
+future), while <span class="math notranslate nohighlight">\(f_{max}\)</span> represents the maximum potential.</p>
+<div class="math notranslate nohighlight" id="equation-eq-cp-t">
+<span class="eqno">(12)<a class="headerlink" href="#equation-eq-cp-t" title="Permalink to this equation"></a></span>\[\textbf{F}_\textbf{t}(y,i,h,td) \leq \textbf{F}_\textbf{t}(y,i) \cdot c_{p,t} (i,h,td) ~~~~~~ \forall y \in \text{YEARS}, i \in \text{TECH}, h \in H, td \in TD\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-c-p">
+<span class="eqno">(13)<a class="headerlink" href="#equation-eq-c-p" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,j,h,td) t_{op}(h,td)  \leq   \textbf{F} (y,j) c_{p} (y,j) \sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} t_{op} (h,td)\\\forall y \in \text{YEARS}, j \in \text{TECH}\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-res-avail">
+<span class="eqno">(14)<a class="headerlink" href="#equation-eq-res-avail" title="Permalink to this equation"></a></span>\[\sum_{t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,i,h,td) t_{op}(h,td)  \leq \text{avail} (y,i) ~~~~~~ \forall y \in \text{YEARS}, i \in \text{RES}\]</div>
+<p>The operation of resources and technologies in each period is determined
+by the decision variable <span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}}\)</span>. The capacity factor of technologies
+is conceptually divided into two components: a capacity factor for each
+period (<span class="math notranslate nohighlight">\(c_{p,t}\)</span>) depending on resource availability (e.g. renewables)
+and a yearly capacity factor (<em>cp</em>) accounting for technology downtime
+and maintenance. For a given technology, the definition of only one of
+these two is needed, the other one being fixed to the default value of
+1. For example, intermittent renewables are constrained by an hourly
+load factor (<span class="math notranslate nohighlight">\(c_{p,t}\in[0;1]\)</span>) while CCGTs are constrained by
+an annual load factor (<span class="math notranslate nohighlight">\(c_{p}\)</span>, in that case 96% in 2035).
+Eqs. <a class="reference internal" href="#equation-eq-cp-t">(12)</a> and <a class="reference internal" href="#equation-eq-c-p">(13)</a> link the
+installed size of a technology to its actual use in each period (<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}}\)</span>)
+via the two capacity factors. The total use of resources is limited by
+the yearly availability (<span class="math notranslate nohighlight">\(avail\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-res-avail">(14)</a>.</p>
+<div class="math notranslate nohighlight" id="equation-eq-layer-balance">
+<span class="eqno">(15)<a class="headerlink" href="#equation-eq-layer-balance" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\sum_{i \in \text{RES}~\cup \text{TECH} \setminus \text{STO}} f(y,i,l) \textbf{F}_\textbf{t}(y,i,h,td) + \sum_{j \in \text{STO}} \bigg(\textbf{Sto}_\textbf{out}(y,j,l,h,td) - \textbf{Sto}_\textbf{in}(y,j,l,h,td)\bigg)\\- \textbf{EndUses}(y,l,h,td) = 0\\\forall y \in \text{YEARS}, l \in L, \forall h \in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<p>The matrix <span class="math notranslate nohighlight">\(f\)</span> defines for all technologies and resources outputs to
+(positive) and inputs (negative) layers.
+Eq. <a class="reference internal" href="#equation-eq-layer-balance">(15)</a> expresses the balance
+for each layer: all outputs from resources and technologies (including
+storage) are used to satisfy the EUD or as inputs to other resources and
+technologies.</p>
+</section>
+<section id="storage">
+<h4>Storage<a class="headerlink" href="#storage" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-sto-level">
+<span class="eqno">(16)<a class="headerlink" href="#equation-eq-sto-level" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{Sto}_\textbf{level} (y,j,t) =    \textbf{Sto}_\textbf{level} (y,j,t-1)\cdot\left(1 - \%_{sto_{loss}}(y,j) \right)\\ + t_{op} (h,td)\cdot \Big(\sum_{l \in L | \eta_{\text{sto,in} (y,j,l) &gt; 0}} \textbf{Sto}_\textbf{in}        (y,j,l,h,td) \eta_{\text{sto,in}} (y,j,l)\\ ~~~~~~ - \sum_{l \in L | \eta_{\text{sto,out} (j,l) &gt; 0}} \textbf{Sto}_\textbf{out} (y,j,l,h,td) /  \eta_{\text{sto,out}} (y,j,l)\Big)\\ \forall y \in \text{YEARS}, j \in \text{STO}, \forall t \in \text{T}| \{h,td\} \in T\_H\_TD(t)\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-sto-level-bound-daily">
+<span class="eqno">(17)<a class="headerlink" href="#equation-eq-sto-level-bound-daily" title="Permalink to this equation"></a></span>\[\textbf{Sto}_\textbf{level} (y,j,t) = \textbf{F}_\textbf{t} (y,j,h,td) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{STO DAILY},\forall t \in \text{T}| \{h,td\} \in T\_H\_TD(t)\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-sto-level-bound">
+<span class="eqno">(18)<a class="headerlink" href="#equation-eq-sto-level-bound" title="Permalink to this equation"></a></span>\[\textbf{Sto}_\textbf{level} (y,j,t) \leq \textbf{F} (y,j) ~~~~~~ \forall y \in \text{YEARS}, j \in \text{STO} \setminus \text{STO DAILY},\forall t \in \text{T}\]</div>
+<p>The storage level (<span class="math notranslate nohighlight">\(\textbf{Sto}_{\textbf{level}}\)</span>) at a time step (<span class="math notranslate nohighlight">\(t\)</span>) is equal
+to the storage level at <span class="math notranslate nohighlight">\(t-1\)</span> (accounting for the losses in
+<span class="math notranslate nohighlight">\(t-1\)</span>), plus the inputs to the storage, minus the output from the
+storage (accounting for input/output efficiencies),
+Eq. <a class="reference internal" href="#equation-eq-sto-level">(16)</a>:. The storage systems which can
+only be used for short-term (daily) applications are included in the
+daily storage set (STO DAILY). For these units,
+Eq. <a class="reference internal" href="#equation-eq-sto-level-bound-daily">(17)</a>: imposes
+that the storage level be the same at the end of each typical day <a class="footnote-reference brackets" href="#id53" id="id37">5</a>.
+Adding this constraint drastically reduces the computational time. For
+the other storage technologies, which can also be used for seasonal
+storage, the capacity is bounded by
+Eq. <a class="reference internal" href="#equation-eq-sto-level-bound">(18)</a>. For these units,
+the storage behaviour is thus optimized over 8760h.</p>
+<div class="math notranslate nohighlight" id="equation-eq-stoinceil">
+<span class="eqno">(19)<a class="headerlink" href="#equation-eq-stoinceil" title="Permalink to this equation"></a></span>\[\textbf{Sto}_\textbf{in}(y,j,l,h,td)\cdot \Big(\lceil  \eta_{sto,in}(y,j,l)\rceil -1 \Big) = 0  ~~~~~~ \forall j \in \text{STO},\forall l \in \text{L}, \forall y \in \text{YEARS}, h \in \text{H}, \forall td \in \text{TD}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-stooutceil">
+<span class="eqno">(20)<a class="headerlink" href="#equation-eq-stooutceil" title="Permalink to this equation"></a></span>\[\textbf{Sto}_\textbf{out}(y,j,l,h,td)\cdot \Big(\lceil  \eta_{sto,out}(y,j,l)\rceil -1 \Big) = 0  ~~~~~~ \forall j \in \text{STO},\forall l \in \text{L}, \forall y \in \text{YEARS}, h \in \text{H}, \forall td \in \text{TD}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-limitchargeanddischarge">
+<span class="eqno">(21)<a class="headerlink" href="#equation-eq-limitchargeanddischarge" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\Big(\textbf{Sto}_\textbf{in} (y,j,l,h,td)t_{sto_{in}}(y,j) + \textbf{Sto}_\textbf{out}(y,j,l,h,td)t_{sto_{out}}(y,j)\Big) \leq \textbf{F} (y,j)\%_{sto_{avail}}(y,j)\\\forall y \in \text{YEARS}, j \in STO \setminus {V2G} , \forall l \in L, \forall h \in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<p>Eqs. <a class="reference internal" href="#equation-eq-stoinceil">(19)</a> - <a class="reference internal" href="#equation-eq-stooutceil">(20)</a>
+force the power input and output to zero if the layer is
+incompatible <a class="footnote-reference brackets" href="#id54" id="id38">6</a>. As an example, a PHS will only be linked to the
+electricity layer (input/output efficiencies <span class="math notranslate nohighlight">\(&gt;\)</span> 0). All other
+efficiencies will be equal to 0, to impede that the PHS exchanges with
+incompatible layers (e.g. mobility, heat, etc).
+Eq. <a class="reference internal" href="#equation-eq-limitchargeanddischarge">(21)</a>
+limits the power input/output of a storage technology based on its
+installed capacity (<strong>F</strong>) and three specific characteristics. First,
+storage availability (<span class="math notranslate nohighlight">\(\%_{sto_{avail}}\)</span>) is defined as the ratio between
+the available storage capacity and the total installed capacity (default
+value is 100%). This parameter is only used to realistically represent
+V2G, for which we assume that only a fraction of the fleet (i.e. 20% in
+these cases) can charge/discharge at the same time. Second and third,
+the charging/discharging time (<span class="math notranslate nohighlight">\(t_{sto_{in}}\)</span>, <span class="math notranslate nohighlight">\(t_{sto_{out}}\)</span>), which are
+the time to complete a full charge/discharge from empty/full
+storage <a class="footnote-reference brackets" href="#id55" id="id39">7</a>. As an example, a daily thermal storage needs at least 4
+hours to discharge
+(<span class="math notranslate nohighlight">\(t_{sto_{out}}=4\)</span>[h]), and
+another 4 hours to charge
+(<span class="math notranslate nohighlight">\(t_{sto_{in}}=4\)</span>[h]). Eq. <a class="reference internal" href="#equation-eq-limitchargeanddischarge">(21)</a> applies for
+all storage except electric vehicles which are limited by another constraint Eq. <a class="reference internal" href="#equation-eq-limitchargeanddischarge-ev">(34)</a>, presented later.</p>
+</section>
+<section id="networks">
+<h4>Networks<a class="headerlink" href="#networks" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-loss">
+<span class="eqno">(22)<a class="headerlink" href="#equation-eq-loss" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{Net}_\textbf{loss}(y,eut,h,td) = \Big(\sum_{i \in \text{RES} \cup \text{TECH} \setminus \text{STO} | f(y,i,eut) &gt; 0} f(y,i,eut)\textbf{F}_\textbf{t}(y,i,h,td) \Big) \%_{\text{net}_{loss}} (y,eut)\\\forall \forall y \in \text{YEARS}, eut = \text{EUT}, \forall h \in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-mult-grid">
+<span class="eqno">(23)<a class="headerlink" href="#equation-eq-mult-grid" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F} (y,'Grid') = 1 + \frac{c_{grid,extra}}{c_{inv}(y,'Grid')}
+\Big(
+\textbf{F}(y,'Wind_{onshore}') + \textbf{F}(y,'Wind_{offshore}') + \textbf{F}(y,'PV')\\-\big(
+f_{min}(y,'Wind_{onshore}') + f_{min}(y,'Wind_{offshore}') + f_{min}(y,'PV')
+\big)
+\Big)
+~~~~~~~\forall y \in \text{YEARS}\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-dhncost">
+<span class="eqno">(24)<a class="headerlink" href="#equation-eq-dhncost" title="Permalink to this equation"></a></span>\[\textbf{F} (y,'DHN') = \sum_{j \in \text{TECH} \setminus {STO} | f(y,j,'\text{HeatLowTDHN}') &gt;0} f(y,j,'\text{HeatLowTDHN}') \cdot \textbf{F} (y,j)
+~~~~~~~\forall y \in \text{YEARS}\]</div>
+<p>Eq. <a class="reference internal" href="#equation-eq-loss">(22)</a> calculates network losses as a share
+(<span class="math notranslate nohighlight">\(%_{net_{loss}}\)</span>) of the total energy transferred through the network. As
+an example, losses in the electricity grid are estimated to be 4.5% of
+the energy transferred in 2015 <a class="footnote-reference brackets" href="#id56" id="id40">8</a>.
+Eqs. <a class="reference internal" href="#equation-eq-mult-grid">(23)</a> - <a class="reference internal" href="#equation-eq-dhncost">(24)</a>
+define the extra investment for networks. Integration of intermittent RE
+implies additional investment costs for the electricity grid
+(<span class="math notranslate nohighlight">\(c_{grid,ewtra}\)</span>). As an example, the reinforcement of the electricity
+grid is estimated to be 358 millions €<sub>2015</sub> per Gigawatt of
+intermittent renewable capacity installed (see
+<a class="reference external" href="#ssec:app1_grid:">Data for the grid</a> for details).
+Eq. <a class="reference internal" href="#equation-eq-dhncost">(24)</a> links the size of DHN to the total
+size of the installed centralized energy conversion technologies.</p>
+</section>
+<section id="additional-constraints">
+<h4>Additional Constraints<a class="headerlink" href="#additional-constraints" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-cstnuke">
+<span class="eqno">(25)<a class="headerlink" href="#equation-eq-cstnuke" title="Permalink to this equation"></a></span>\[\textbf{F}_\textbf{t} (Nuclear,h,td) = \textbf{P}_\textbf{Nuclear}  ~~~~~~ \forall h \in H, \forall td \in TD\]</div>
+<p>Nuclear power plants are assumed to have no power variation over the
+year, Eq. <a class="reference internal" href="#equation-eq-cstnuke">(25)</a>. If needed, this equation can
+be replicated for all other technologies for which a constant operation
+over the year is desired.</p>
+<div class="math notranslate nohighlight" id="equation-eq-mob-share-fix">
+<span class="eqno">(26)<a class="headerlink" href="#equation-eq-mob-share-fix" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F}_\textbf{t} (y,j,h,td) = \textbf{%}_\textbf{PassMob} (y,j)   \sum_{l \in EUT\_of\_EUC(PassMob)} \textbf{EndUses}(y,l,h,td)
+~~~~~~~\forall y \in \text{YEARS}\\\forall j \in TECH\_OF\_EUC(PassMob) , \forall h \in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-freight-share-fix">
+<span class="eqno">(27)<a class="headerlink" href="#equation-eq-freight-share-fix" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F}_\textbf{t} (y,j,h,td) = \textbf{%}_\textbf{FreightMob} (y,j)   \sum_{l \in EUT\_of\_EUC(FreightMob)} \textbf{EndUses}(y,l,h,td)\\\forall y \in \text{YEARS}, j \in TECH\_OF\_EUC(FreightMob) , \forall h \in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-freight-share-constant">
+<span class="eqno">(28)<a class="headerlink" href="#equation-eq-freight-share-constant" title="Permalink to this equation"></a></span>\[\textbf{%}_\textbf{Fr,Rail} (y) + \textbf{%}_\textbf{Fr,Train} (y) + \textbf{%}_\textbf{Fr,Boat} (y) = 1
+~~~~~~~\forall y \in \text{YEARS}\]</div>
+<p>Eqs. <a class="reference internal" href="#equation-eq-mob-share-fix">(26)</a> - <a class="reference internal" href="#equation-eq-freight-share-fix">(27)</a>
+impose that the share of the different technologies for mobility
+(<span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{PassMob}}\)</span>) and (<span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{Freight}}\)</span>) be the same at each time
+step <a class="footnote-reference brackets" href="#id58" id="id41">9</a>. In other words, if 20% of the mobility is supplied by train,
+this share remains constant in the morning or the afternoon.
+Eq. <a class="reference internal" href="#equation-eq-freight-share-constant">(28)</a>
+verifies that the freight technologies supply the overall freight demand
+(this constraint is related to <a class="reference internal" href="#fig-endusedemand"><span class="std std-numref">Figure 10</span></a>).</p>
+</section>
+<section id="decentralised-heat-production">
+<h4>Decentralised heat production<a class="headerlink" href="#decentralised-heat-production" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-de-strategy-dec-total-st">
+<span class="eqno">(29)<a class="headerlink" href="#equation-eq-de-strategy-dec-total-st" title="Permalink to this equation"></a></span>\[\textbf{F} (y,'Dec_{Solar}') = \sum_{j \in \text{TECH OF EUT} (y,'\text{HeatLowTDec}') \setminus \{ 'Dec_{Solar}' \}} \textbf{F}_\textbf{sol} (y,j)
+~~~~~~~\forall y \in \text{YEARS}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-op-strategy-dec-total-st">
+<span class="eqno">(30)<a class="headerlink" href="#equation-eq-op-strategy-dec-total-st" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F}_{\textbf{t}_\textbf{sol}} (y,j,h,td) \leq  \textbf{F}_\textbf{sol} (y,j)  c_{p,t}('Dec_{Solar}',h,td)\\\forall y \in \text{YEARS}, j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \}, \forall h\in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<p>endgroup
+Thermal solar is implemented as a decentralized technology. It is always
+installed together with another decentralized technology, which serves
+as backup to compensate for the intermittency of solar thermal. Thus, we
+define the total installed capacity of solar thermal
+<strong>F</strong>(‘’<span class="math notranslate nohighlight">\(Dec_{solar}\)</span>’’) as the sum of <strong>Fsol</strong>(<span class="math notranslate nohighlight">\(j\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-de-strategy-dec-total-st">(29)</a>,
+where <span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{sol}}(j)\)</span> is the solar thermal
+capacity associated to the backup technology <span class="math notranslate nohighlight">\(j\)</span>.
+Eq. <a class="reference internal" href="#equation-eq-op-strategy-dec-total-st">(30)</a>
+links the installed size of each solar thermal capacity
+<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{sol}}(j)\)</span> to its actual production
+:<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}_\textbf{sol}}(j,h,td))\)</span> via the
+solar capacity factor (<span class="math notranslate nohighlight">\(c_{p,t}('Dec_{solar}')\)</span>).</p>
+<div class="math notranslate nohighlight" id="equation-eq-heat-decen-share">
+<span class="eqno">(31)<a class="headerlink" href="#equation-eq-heat-decen-share" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F}_\textbf{t} (y,j,h,td) + \textbf{F}_{\textbf{t}_\textbf{sol}} (y,j,h,td)\\+ \sum_{l \in \text{L}}\Big( \textbf{Sto}_\textbf{out} (y,i,l,h,td) - \textbf{Sto}_\textbf{in} (y,i,l,h,td) \Big)\\= \textbf{%}_\textbf{HeatDec}(y,j) \textbf{EndUses}(HeatLowT,h,td)\\\forall y \in \text{YEARS}, j \in \text{TECH OF EUT} (\text{HeatLowTDec}) \setminus \{ 'Dec_{Solar}' \},\\i \in \text{TS OF DEC TECH}(j)  , \forall h\in H, \forall td \in TD\end{aligned}\end{align} \]</div>
+<figure class="align-default" id="fig-fsolandtsimplementation">
+<a class="reference internal image-reference" href="../_images/ts_and_Fsolv2.png"><img alt="Illustrative example of a decentralised heating layer." src="../_images/ts_and_Fsolv2.png" style="width: 12cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 11 </span><span class="caption-text">Illustrative example of a decentralised heating layer with thermal
+storage, solar thermal and two conventional production technologies,
+gas boilers and electrical HP. In this case,
+Eq. <a class="reference internal" href="#equation-eq-heat-decen-share">(31)</a> applied to the
+electrical HPs becomes the equality between the two following terms:
+left term is the heat produced by: the eHPs
+(<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}}('eHPs',h,td)\)</span>), the solar panel
+associated to the eHPs
+(<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}_\textbf{sol}}('eHPs',h,td)\)</span>) and
+the storage associated to the eHPs; right term is the product between
+the share of decentralised heat supplied by eHPs
+(<span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{HeatDec}}('eHPs')\)</span>) and heat low temperature decentralised
+demand (<span class="math notranslate nohighlight">\(\textbf{EndUses}(HeatLowT,h,td)\)</span>).</span><a class="headerlink" href="#fig-fsolandtsimplementation" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>A thermal storage <span class="math notranslate nohighlight">\(i\)</span> is defined for each decentralised heating
+technology <span class="math notranslate nohighlight">\(j\)</span>, to which it is related via the set <em>TS OF DEC TECH</em>,
+i.e. <span class="math notranslate nohighlight">\(i\)</span>=<em>TS OF DEC TECH(j)</em>. Each thermal storage <span class="math notranslate nohighlight">\(i\)</span> can store
+heat from its technology <span class="math notranslate nohighlight">\(j\)</span> and the associated thermal solar
+<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{sol}}\)</span> (<span class="math notranslate nohighlight">\(j\)</span>). Similarly to the passenger mobility,
+Eq. <a class="reference internal" href="#equation-eq-heat-decen-share">(31)</a> makes the model
+more realistic by defining the operating strategy for decentralized
+heating. In fact, in the model we represent decentralized heat in an
+aggregated form; however, in a real case, residential heat cannot be
+aggregated. A house heated by a decentralised gas boiler and solar
+thermal panels should not be able to be heated by the electrical heat
+pump and thermal storage of the neighbours, and vice-versa. Hence,
+Eq. <a class="reference internal" href="#equation-eq-heat-decen-share">(31)</a> imposes that the
+use of each technology (<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}}(j,h,td)\)</span>),
+plus its associated thermal solar
+(<span class="math notranslate nohighlight">\(\textbf{F}_{\textbf{t}_\textbf{sol}}(j,h,td)\)</span>) plus
+its associated storage outputs
+(<span class="math notranslate nohighlight">\(\textbf{Sto}_{\textbf{out}}(i,l,h,td)\)</span>) minus its associated
+storage inputs (<span class="math notranslate nohighlight">\(\textbf{Sto}_{\textbf{in}}(i,l,h,td)\)</span>) should
+be a constant share (<span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{HeatDec}}(j)\)</span>) of the decentralised heat
+demand <span class="math notranslate nohighlight">\((\textbf{EndUses}(HeatLowT,h,td)\)</span>). <a class="reference internal" href="#fig-fsolandtsimplementation"><span class="std std-numref">Figure 11</span></a> shows, through an example with
+two technologies (a gas boiler and a HP), how decentralised thermal
+storage and thermal solar are implemented.</p>
+</section>
+<section id="vehicle-to-grid">
+<h4>Vehicle-to-grid<a class="headerlink" href="#vehicle-to-grid" title="Permalink to this headline"></a></h4>
+<figure class="align-default" id="fig-v2gandbatteries">
+<a class="reference internal image-reference" href="../_images/v2gAndBatteries.png"><img alt="Illustrative example of a V2G implementation." src="../_images/v2gAndBatteries.png" style="width: 7cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 12 </span><span class="caption-text">Illustrative example of a V2G implementation. The battery can
+interact with the electricity layer.
+The size of the battery is directly related to the number of cars (see Eq. <a class="reference internal" href="#equation-eq-sizeofbev">(32)</a>).
+The V2G takes the electricity from the battery to provide a constant share (<span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{PassMob}}\)</span>) of the
+passenger mobility layer (<em>Mob. Pass.</em>). Thus, it imposes the amount of electricity that electric car must deserve (see Eq. <a class="reference internal" href="#equation-eq-btobev">(33)</a>).
+The remaining capacity of battery available can be used to provide V2G services (see <a class="reference internal" href="#equation-eq-limitchargeanddischarge-ev">(34)</a>).</span><a class="headerlink" href="#fig-v2gandbatteries" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<div class="math notranslate nohighlight" id="equation-eq-sizeofbev">
+<span class="eqno">(32)<a class="headerlink" href="#equation-eq-sizeofbev" title="Permalink to this equation"></a></span>\[\textbf{F} (y,i) = \frac{\textbf{F} (y,j)}{ veh_{capa} (y,j)} ev_{batt,size} (y,j)  ~~~~~~ \forall y \in \text{YEARS}, j \in  V2G, i \in \text{EVs_BATT OF V2G}(j)\]</div>
+<p>Vehicle-to-grid dynamics are included in the model via the <em>V2G</em> set.
+For each vehicle <span class="math notranslate nohighlight">\(j \in V2G\)</span>, a battery <span class="math notranslate nohighlight">\(i\)</span> (<span class="math notranslate nohighlight">\(i\)</span>
+<span class="math notranslate nohighlight">\(\in\)</span> <em>EVs_BATT</em>) is associated using the set EVs_BATT_OF_V2G
+(<span class="math notranslate nohighlight">\(i \in \text{EVs_BATT_OF_V2G}(j)\)</span>). Each type <span class="math notranslate nohighlight">\(j\)</span>
+of <em>V2G</em> has a different size of battery per car
+(<span class="math notranslate nohighlight">\(ev_{batt,size}(j)\)</span>), e.g. the first generation battery of the
+Nissan Leaf (ZE0) has a capacity of 24 kWh <a class="footnote-reference brackets" href="#id59" id="id42">10</a>. The number of vehicles
+of a given technology is calculated with the installed capacity (<strong>F</strong>)
+in [km-pass/h] and its capacity per vehicles (<span class="math notranslate nohighlight">\(veh_{capa}\)</span> in
+[km-pass/h/veh.]). Thus, the energy that can be stored in batteries
+<strong>F</strong>(<span class="math notranslate nohighlight">\(i\)</span>) of <em>V2G</em>(<span class="math notranslate nohighlight">\(j\)</span>) is the ratio of the installed capacity of
+vehicle by its specific capacity per vehicles times the size of battery
+per car (<span class="math notranslate nohighlight">\(ev_{batt,size}(j)\)</span>), Eq.
+<a class="reference internal" href="#equation-eq-sizeofbev">(32)</a>. As an example, if this technology
+of cars covers 10 Mpass-km/h, and the capacity per vehicle is 50.4
+pass-km/car/h (which represents an average speed of 40km/h and occupancy
+of 1.26 passenger per car); thus, the amount of BEV cars are 0.198
+million cars. And if a BEV has a 24kWh of battery, such as the Nissan
+Leaf (ZE0), thus, the equivalent battery has a capacity of 4.76 GWh.</p>
+<div class="math notranslate nohighlight" id="equation-eq-btobev">
+<span class="eqno">(33)<a class="headerlink" href="#equation-eq-btobev" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{Sto}_\textbf{out} (y,j,'Elec',h,td) \geq - f(y,i,'Elec') \textbf{F}_\textbf{t} (y,i,h,td)\\\forall  y \in \text{YEARS}, i \in V2G , j \in \text{EVs_BATT OF V2G}(j), \forall h \in H, td \in TD\end{aligned}\end{align} \]</div>
+<p>Eq. <a class="reference internal" href="#equation-eq-btobev">(33)</a> forces batteries of electric vehicles
+to supply, at least, the energy required by each associated electric
+vehicle technology. This lower bound is not an equality; in fact,
+according to the V2G concept, batteries can also be used to support the
+grid. <a class="reference internal" href="#fig-v2gandbatteries"><span class="std std-numref">Figure 12</span></a> shows through an example
+with only BEVs how Eq. <a class="reference internal" href="#equation-eq-btobev">(33)</a> simplifies the
+implementation of V2G. In this illustration, a battery technology is
+associated to a BEV. The battery can either supply the BEV needs or
+sends electricity back to the grid.</p>
+<div class="math notranslate nohighlight" id="equation-eq-limitchargeanddischarge-ev">
+<span class="eqno">(34)<a class="headerlink" href="#equation-eq-limitchargeanddischarge-ev" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{Sto}_\textbf{in} (y,j,l,h,td)t_{sto_{in}}(y,j) + \Big(\textbf{Sto}_\textbf{out}(y,j,l,h,td) + f(y,i,'Elec') \textbf{F}_\textbf{t} (y,i,h,td) \Big) \cdot t_{sto_{out}}(y,j)\\\leq \Big( \textbf{F} (y,j) - \frac{\textbf{F} (y,j)}{ veh_{capa} (y,j)} ev_{batt,size} (y,j) \Big) \cdot \%_{sto_{avail}}(y,j)\\\forall  y \in \text{YEARS}, i \in V2G , j \in \text{EVs_BATT OF V2G}(j) , l \in L, h \in H,  td \in TD\end{aligned}\end{align} \]</div>
+<p>Eq. <a class="reference internal" href="#equation-eq-limitchargeanddischarge-ev">(34)</a> limits the availability of batteries to the number of vehicle connected to the grid.
+This equation is similar to the one for other type of storage (see Eq. <a class="reference internal" href="#equation-eq-limitchargeanddischarge">(21)</a>);
+except that a part of the batteries are not accounted, i.e. the one running (see Eq. <a class="reference internal" href="#equation-eq-btobev">(33)</a>).
+Therefore, the available output is corrected by removing the electricity powering the running car (here, <span class="math notranslate nohighlight">\(f(i,Elec) \leq 0\)</span>)
+and the available batteries is corrected by removing the numbers of electric cars running (<span class="math notranslate nohighlight">\(\frac{\textbf{F} (j)}{ veh_{capa} (j)} ev_{batt,size} (j)\)</span>).</p>
+<div class="math notranslate nohighlight" id="equation-eq-ev-min-state-of-charge">
+<span class="eqno">(35)<a class="headerlink" href="#equation-eq-ev-min-state-of-charge" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{Sto}_\textbf{level} (y,j,t) \geq \textbf{F}[i] soc_{ev}(y,i,h)\\\forall y \in \text{YEARS}, i \in V2G, j \in \text{EVs_BATT OF V2G}(j) ,  t \in T| \{h,td\} \in T\_H\_TD\end{aligned}\end{align} \]</div>
+<p>For each electric vehicle (<span class="math notranslate nohighlight">\(ev\)</span>), a minimum state of charge is imposed for each hour of the day big(<span class="math notranslate nohighlight">\(soc_{ev}(i,h)\)</span>big).
+As an example, we can impose that the state of charge of EV is 60% in the morning, to ensure that cars can be used to go for work.
+Eq. <a class="reference internal" href="#equation-eq-ev-min-state-of-charge">(35)</a> imposes, for each type of <cite>V2G</cite>,
+that the level of charge of the EV batteries is greater than the minimum state of charge times the storage capacity.</p>
+</section>
+<section id="peak-demand">
+<h4>Peak demand<a class="headerlink" href="#peak-demand" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-dec-peak">
+<span class="eqno">(36)<a class="headerlink" href="#equation-eq-dec-peak" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F} (y,j)
+\geq
+\%_{Peak_{sh}}\max_{h\in H,td\in TD}\left\{\textbf{F}_\textbf{t}(y,j,h,td)\right\}\\\forall y \in \text{YEARS}, j \in \text{TECH OF  EUT} (HeatLowTDEC)   \setminus \{ 'Dec_{Solar}'\}\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-dhn-peak">
+<span class="eqno">(37)<a class="headerlink" href="#equation-eq-dhn-peak" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\sum_{\hspace{3cm}j \in \text{TECH OF EUT} ('HeatLowTDHN'), i \in \text{STO OF EUT}('HeatLowTDHN')}\\\Big( \textbf{F} (y,j)+
+\textbf{F} (y,i)/t_{sto_{out}}(y,i,'HeatLowTDHN')  \Big)\\\geq
+\%_{Peak_{sh}} \max_{h\in H,td\in TD}  \big\{ \textbf{EndUses}(HeatLowTDHN,h,td) \big\}
+~~~~~~~~\forall y \in \text{YEARS}\end{aligned}\end{align} \]</div>
+<p>Finally,
+Eqs. <a class="reference internal" href="#equation-eq-dec-peak">(36)</a> - <a class="reference internal" href="#equation-eq-dhn-peak">(37)</a>
+constrain the installed capacity of low temperature heat supply. Based
+on the selected TDs, the ratio between the yearly peak demand and the
+TDs peak demand is defined for space heating (<span class="math notranslate nohighlight">\(\%_{Peak_{sh}}\)</span>).
+Eq. <a class="reference internal" href="#equation-eq-dec-peak">(36)</a> imposes that the installed
+capacity for decentralised technologies covers the real peak over the
+year. Similarly, Eq. <a class="reference internal" href="#equation-eq-dhn-peak">(37)</a> forces the
+centralised heating system to have a supply capacity (production plus
+storage) higher than the peak demand. These equations force the
+installed capacity to meet the peak heating demand, i.e. which
+represents, somehow, the network adequacy  <a class="footnote-reference brackets" href="#id60" id="id43">11</a>.</p>
+</section>
+<section id="adaptations-for-the-case-study">
+<span id="sssec-lp-adaptation-case-study"></span><h4>Adaptations for the case study<a class="headerlink" href="#adaptations-for-the-case-study" title="Permalink to this headline"></a></h4>
+<p>Additional constraints are required to implement scenarios. Scenarios
+require six additional constraints
+(Eqs. <a class="reference internal" href="#equation-eq-limitgwp">(38)</a> - <a class="reference internal" href="#equation-eq-solararealimited">(44)</a>)
+to impose a limit on the GWP emissions, the minimum share of RE primary
+energy, the relative shares of technologies, such as gasoline cars in
+the private mobility, the cost of energy efficiency measures, the
+electricity import power capacity and the available surface area for
+solar technologies.</p>
+<div class="math notranslate nohighlight" id="equation-eq-limitgwp">
+<span class="eqno">(38)<a class="headerlink" href="#equation-eq-limitgwp" title="Permalink to this equation"></a></span>\[\textbf{GWP}_\textbf{tot}(y) \leq gwp_{limit} (y)
+~~~~~~~~\forall y \in \text{YEARS}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-limitre">
+<span class="eqno">(39)<a class="headerlink" href="#equation-eq-limitre" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\sum_{j \in  \text{RES}_\text{re},t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,j,h,td)  \cdot  t_{op} (h,td)\\\geq
+re_{share} \sum_{j \in \text{RES} ,t \in T| \{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t}(y,j,h,td) \cdot  t_{op} (h,td)
+~~~~~~~~\forall y \in \text{YEARS}\end{aligned}\end{align} \]</div>
+<p>To force the Belgian energy system to decrease its emissions, two lever
+can constraint the annual emissions:
+Eq. <a class="reference internal" href="#equation-eq-limitgwp">(38)</a> imposes a maximum yearly
+emissions threshold on the GWP (<span class="math notranslate nohighlight">\(gwp_{limit}\)</span>); and
+Eq. <a class="reference internal" href="#equation-eq-limitre">(39)</a> fixes the minimum renewable primary
+energy share.</p>
+<div class="math notranslate nohighlight" id="equation-eq-fmin-max-perc">
+<span class="eqno">(40)<a class="headerlink" href="#equation-eq-fmin-max-perc" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}f_{\text{min,\%}}(y,j) \sum_{j' \in \text{TECH OF EUT} (eut),t \in T|\{h,td\} \in T\_H\_TD(t)}    \textbf{F}_\textbf{t}(y,j',h,td)\cdot t_{op}(h,td)\\\leq
+    \sum_{t \in T|\{h,td\} \in T\_H\_TD(t)}  \textbf{F}_\textbf{t} (y,j,h,td)\cdot t_{op}(h,td)\\\leq
+f_{\text{max,\%}}(y,j) \sum_{j'' \in \text{TECH OF EUT} (eut),t \in T|\{h,td\} \in T\_H\_TD(t)}    \textbf{F}_\textbf{t}(y,j'',h,td)\cdot t_{op}(h,td)\\\forall y \in \text{YEARS}, eut \in EUT, j \in \text{TECH OF EUT} (eut)\end{aligned}\end{align} \]</div>
+<p>To represent the Belgian energy system in 2015,
+Eq. <a class="reference internal" href="#equation-eq-fmin-max-perc">(40)</a> imposes the relative
+share of a technology in its sector.
+Eq. <a class="reference internal" href="#equation-eq-fmin-max-perc">(40)</a> is complementary to
+Eq. <a class="reference internal" href="#equation-eq-fmin-fmax">(11)</a>, as it expresses the minimum
+(<span class="math notranslate nohighlight">\(f_{min,\%}\)</span>) and maximum (<span class="math notranslate nohighlight">\(f_{max,\%}\)</span>) yearly output shares of each
+technology for each type of EUD. In fact, for a given technology,
+assigning a relative share (e.g. boilers providing at least a given
+percentage of the total heat demand) is more intuitive and close to the
+energy planning practice than limiting its installed size. <span class="math notranslate nohighlight">\(f_{min,\%}\)</span>
+and <span class="math notranslate nohighlight">\(f_{max,\%}\)</span> are fixed to 0 and 1, respectively, unless otherwise
+indicated.</p>
+<div class="math notranslate nohighlight" id="equation-eq-efficiency">
+<span class="eqno">(41)<a class="headerlink" href="#equation-eq-efficiency" title="Permalink to this equation"></a></span>\[\textbf{F}(y,'Efficiency') =  efficiency(y)
+~~~~~~~~\forall y \in \text{YEARS}\]</div>
+<p>To account for efficiency measures from today to the target year,
+Eq. <a class="reference internal" href="#equation-eq-efficiency">(41)</a> imposes their cost. The EUD
+is based on a scenario detailed in
+<a class="reference external" href="#sec:app1_end_uses">Data for end use demand</a> and has a lower energy demand
+than the “business as usual” scenario, which has the highest energy
+demand. Hence, the energy efficiency cost accounts for all the
+investment required to decrease the demand from the “business as usual”
+scenario and the implemented one. As the reduced demand is imposed over
+the year, the required investments must be completed before this year.
+Therefore, the annualisation cost has to be deducted from one year. This
+mathematically implies to define the capacity of efficiency measures
+deployed to <span class="math notranslate nohighlight">\(1/ (1+i_{rate})\)</span> rather than 1. The investment is
+already expressed in €<sub>2015</sub>.</p>
+<div class="math notranslate nohighlight" id="equation-eq-elecimplimited">
+<span class="eqno">(42)<a class="headerlink" href="#equation-eq-elecimplimited" title="Permalink to this equation"></a></span>\[\textbf{F}_{\textbf{t}}(y,Electricity,h,td) \leq  elec_{import,max} (y) ~~~~~~ \forall y \in \text{YEARS}, h \in H, \forall td \in TD\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-import-resources-constant">
+<span class="eqno">(43)<a class="headerlink" href="#equation-eq-import-resources-constant" title="Permalink to this equation"></a></span>\[\textbf{F}_{\textbf{t}}(y,i,h,td) \cdot t_{op} (h,td) =  \textbf{Import}_{\textbf{constant}}(y,i) ~~~~~~ \forall y \in \text{YEARS}, i \in \text{RES_IMPORT_CONSTANT}, h \in H, \forall td \in TD\]</div>
+<p>Eq. <a class="reference internal" href="#equation-eq-elecimplimited">(42)</a> limits the power grid
+import capacity from neighbouring countries based on a net transfer
+capacity (<span class="math notranslate nohighlight">\(elec_{import,max}\)</span>). Eq. <a class="reference internal" href="#equation-eq-import-resources-constant">(43)</a> imposes that some resources are imported at a constant power.
+As an example, gas and hydrogen are supposed imported at a constant flow during the year.
+In addition to offering a more realistic representation, this implementation makes it possible to visualise the level of storage within the region (i.e. gas, petrol …).</p>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Adding too many ressource to Eq. <a class="reference internal" href="#equation-eq-import-resources-constant">(43)</a> increase drastically the computational time.
+In this implementation, only resources expensive to store have been accounted: hydrogen and gas.
+Other resources, such as diesel or ammonia, can be stored at a cheap price with small losses.
+By limiting to two types of resources (hydrogen and gas), the computation time is below a minute.
+By adding all resources, the computation time is above 6 minutes.</p>
+</div>
+<div class="math notranslate nohighlight" id="equation-eq-solararealimited">
+<span class="eqno">(44)<a class="headerlink" href="#equation-eq-solararealimited" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F}(y,'PV')/power\_density_{pv}\\+ \big( \textbf{F}(y,'Dec_{Solar}'') + \textbf{F}(y,'DHN_{Solar}') \big)/power\_density_{solar~thermal}  \leq solar_{area}\end{aligned}\end{align} \]</div>
+<p>In this model version, the upper limit for solar based technologies is
+calculated based on the available land area (<em>solararea</em>) and power
+densities of both PV (<span class="math notranslate nohighlight">\(power\_density_{pv}\)</span>) and solar thermal
+(<span class="math notranslate nohighlight">\(power\_density_{solar~thermal}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-solararealimited">(44)</a>. The equivalence
+between an install capacity (in watt peaks Wp) and the land use (in
+<span class="math notranslate nohighlight">\(km^2\)</span>) is calculated based on the power peak density
+(in [Wp/m<span class="math notranslate nohighlight">\(^2\)</span>]). In other words, it represents the peak power of a
+one square meter of solar panel. We evaluate that PV and solar thermal
+have a power peak density of <span class="math notranslate nohighlight">\(power\_density_{pv}\)</span> =0.2367 and
+<span class="math notranslate nohighlight">\(power\_density_{solar~thermal}\)</span> =0.2857 [GW/km<span class="math notranslate nohighlight">\(^2\)</span>] <a class="footnote-reference brackets" href="#id63" id="id44">12</a>. Thus,
+the land use of PV is the installed power (<span class="math notranslate nohighlight">\(\textbf{F}(PV)\)</span> in [GW])
+divided by the power peak density (in [GW/km<span class="math notranslate nohighlight">\(^2\)</span>]). This area is
+a lower bound of the real installation used. Indeed, here, the
+calculated area correspond to the installed PV. However, in utility
+plants, panels are oriented perpendicular to the sunlight. As a
+consequence, a space is required to avoid shadow between rows of panels.
+In the literature, the <em>ground cover ratio</em> is defined as the total
+spatial requirements of large scale solar PV relative to the area of the
+solar panels. This ratio is estimated around five
+<span id="id45"><sup><a class="reference internal" href="Bibliography.html#id17" title="Elise Dupont, Rembrandt Koppelaar, and Hervé Jeanmart. Global available solar energy under physical and energy return on investment constraints. Applied Energy, 257:113968, 2020.">18</a></sup></span>, which means that for each square
+meter of PV panel installed, four additional square meters are needed.</p>
+<div class="math notranslate nohighlight" id="equation-eq-use-waste">
+<span class="eqno">(45)<a class="headerlink" href="#equation-eq-use-waste" title="Permalink to this equation"></a></span>\[\sum_{t \in T|\{h,td\} \in T\_H\_TD(t)} \textbf{F}_\textbf{t} (y,'Waste',h,td)\cdot t_{op}(h,td) = avail (y,'Waste')
+~~~~~~ \forall y \in \text{YEARS}\]</div>
+<p>The Waste produced in the system are forced to be consumed in the system, Eq. <a class="reference internal" href="#equation-eq-use-waste">(45)</a>.</p>
+</section>
+<section id="technology-aging">
+<span id="sssec-lp-techno-link-between-years"></span><h4>Technology aging<a class="headerlink" href="#technology-aging" title="Permalink to this headline"></a></h4>
+<p>Until the following equations, the model is almost identical to the snapshot one,
+the exception is the addition of the years as a parameter.</p>
+<figure class="align-default" id="fig-path-eg-igcc">
+<a class="reference internal image-reference" href="../_images/path_e.g._tech.png"><img alt="Technology link between years." src="../_images/path_e.g._tech.png" style="width: 10cm;" /></a>
+<figcaption>
+<p><span class="caption-number">Fig. 13 </span><span class="caption-text">Illustration of the new variables of the pathway version. Example based on a technology with a 20 years lifetime.
+Initially 1~GW of capacity exists (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{new}\)</span> during phase 2010_2015).
+Then another 1~GW is deployed (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{new}\)</span> during phase 2015_2020).
+15 years later, a part of the capacity reaches its lifetime limit and is removed (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{old}\)</span> phase 2030_2035).
+Moreover, during the latter phase, additional capacity is decommissioned  prematurely (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{decom}\)</span>).
+Finally, the technology reaches its expected lifetime ans is fully withdrawn (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{decom}\)</span>).</span><a class="headerlink" href="#fig-path-eg-igcc" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<div class="math notranslate nohighlight" id="equation-eq-f-newbuilt">
+<span class="eqno">(46)<a class="headerlink" href="#equation-eq-f-newbuilt" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F} (y_{stop},i) = \textbf{F} (y_{start},i)
++ \textbf{F}_\textbf{new} (p,i)
+- \textbf{F}_\textbf{old} (p,i)
+- \sum_{p' \in PHASE \cup \text{2010_2015}} \textbf{F}_\textbf{decom} (p,p',i)\\~~~~~~ \forall i \in \text{TECH}, p \in \text{PHASE}| y_{stop} \in \text{Y_STOP}(p) \&amp; y_{start} \in \text{Y_START}(p)\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-f-decomnonphysic1">
+<span class="eqno">(47)<a class="headerlink" href="#equation-eq-f-decomnonphysic1" title="Permalink to this equation"></a></span>\[\textbf{F}_\textbf{decom} (p,p',i) = 0
+~~~~~~ \forall i \in \text{TECH}, p \in \text{PHASE}, p' \in \text{PHASE} \cup \text{2010_2015}| decom_{allowed}(p,p') = 0\]</div>
+<p>Figure <a class="reference internal" href="#fig-path-eg-igcc"><span class="std std-numref">Figure 13</span></a> illustrates how a technology varies over the different representative years and phases.
+The available capacity must be adapted between 2 representative years. Similarly to a mass balance, Eq. <a class="reference internal" href="#equation-eq-f-newbuilt">(46)</a> is
+the balance on the amount of technologies deployed. The constraint forces the installation or withdrawing of capacities between two representative years:
+at the end of the phase (<span class="math notranslate nohighlight">\(y_{stop}\)</span>), the available capacity is the one used in the next representative year (textbf{F}(<span class="math notranslate nohighlight">\(y_{stop}\)</span>)).
+This capacity is equal to the one available in the previous representative year (textbf{F}(<span class="math notranslate nohighlight">\(y_{start}\)</span>)) plus the new installed capacity
+(<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{new}\)</span>) minus the capacity that has reached its lifetime (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{old}\)</span>) minus the early decommissioned capacity
+(<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{decom}\)</span>).
+To decommission a technology (tech),  two information are required: the phase when it is decommissioned (<span class="math notranslate nohighlight">\(p\)</span>) and the phase when the decommissioned
+capacity has been built (<span class="math notranslate nohighlight">\(p_{built}\)</span>).
+This mathematical implementation allows a physical non-sence: the decommissioning of a technology which hasn’t been built yet
+(<span class="math notranslate nohighlight">\(p &lt; p_{built}\)</span>).
+To prevent it, Eq. <a class="reference internal" href="#equation-eq-f-decomnonphysic1">(47)</a> constrains in this case the decommissioning of this technology to zero.
+To do so, a parameter (<span class="math notranslate nohighlight">\(decom_{allowed}\)</span>) is defined <em>a priori</em> and is equal to 0 or 1 when decommissioning is not possible or possible, respectively.</p>
+<div class="math notranslate nohighlight" id="equation-eq-phase2015design">
+<span class="eqno">(48)<a class="headerlink" href="#equation-eq-phase2015design" title="Permalink to this equation"></a></span>\[\textbf{F}_\textbf{new} (\text{2010_2015},i) =  \textbf{F} (\text{YEAR_2015},i) ~~~~~~ \forall i \in \text{TECH}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-fold-def">
+<span class="eqno">(49)<a class="headerlink" href="#equation-eq-fold-def" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{F}_\textbf{old} (p,i) =\\\text{if} ( age = '\text{STILL_IN_USE}') \text{then} 0\\\text{else} \left( \textbf{F}_\textbf{new} (age,i) - \sum_{p' \in \text{PHASE}} \textbf{F}_\textbf{decom} (p',age,i) \right)\\~~~~~~ \forall p \in \text{PHASE} , \forall j \in \text{TECH} | age \in \text{AGE}(p,j)\end{aligned}\end{align} \]</div>
+<p>To initialise the problem in 2015 with the existing design, an additional phase ‘2010_2015’
+is created. Eq. <a class="reference internal" href="#equation-eq-phase2015design">(48)</a> requires that the capacity used in 2015 is installed in the previous phase.
+Eq. <a class="reference internal" href="#equation-eq-fold-def">(49)</a> defines the capacity reaching its lifetime limit at a certain phase. For each phase, a SET (AGE) is calculated
+<em>a priori</em> and indicates when the technology was built for a given phase.
+In the case the technology has already reached its lifetime limit, the SET (AGE) returns the phase when the technology has been built
+(the equation seems more complex than the problem addressed;
+nevertheless, the second part of the equation is needed to remove the capacity that could have been withdrawn before reaching its expected lifetime).
+As an example, Figure <a class="reference internal" href="#fig-path-eg-igcc"><span class="std std-numref">Figure 13</span></a> shows a 20 years lifetime technology with 1~GW of capacity installed before 2015.
+The technology (<span class="math notranslate nohighlight">\(tech\)</span>) can be used until 2030_2035 (i.e. <span class="math notranslate nohighlight">\(age(tech,\text{2030_2035})=\text{STILL_IN_USE}\)</span>),
+then it must be removed (i.e. <span class="math notranslate nohighlight">\(age(tech,\text{2030_2035})=\text{2010_2015} \)</span>), and so on.</p>
+<div class="math notranslate nohighlight" id="equation-eq-delta-tech-during-phase">
+<span class="eqno">(50)<a class="headerlink" href="#equation-eq-delta-tech-during-phase" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\Delta_\textbf{change}(p,i) \geq
+\sum_{t \in T |\{h,td\}\in T\_H\_TD}  \textbf{F}_\textbf{t}(y_{start},i,h,td)
+- \sum_{t \in T |\{h,td\}\in T\_H\_TD} \textbf{F}_\textbf{t}(y_{stop},i,h,td)\\ ~~~~~~ \forall j \in \text{TECH}, p \in \text{PHASE}, y_start \in \text{Y_START}(p), y_{stop} \in \text{Y_STOP}(p)\end{aligned}\end{align} \]</div>
+<div class="math notranslate nohighlight" id="equation-eq-limit-reno-ltheat">
+<span class="eqno">(51)<a class="headerlink" href="#equation-eq-limit-reno-ltheat" title="Permalink to this equation"></a></span>\[\sum_{euc \in \text{EUT_OF_CAT}('HeatLowT'),i \in \text{TECH_OF_EUT}(euc)} \Delta_\textbf{change}(p,i)
+\leq lim_{LT,ren} \cdot
+\left(
+eui(y_{start},'HotWater')
++  eui(y_{start},'SpaceHeat')
+\right)\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-limit-reno-passmob">
+<span class="eqno">(52)<a class="headerlink" href="#equation-eq-limit-reno-passmob" title="Permalink to this equation"></a></span>\[\sum_{euc \in \text{EUT_OF_CAT}('MobPass'), i \in \text{TECH_OF_EUT}(euc)} \Delta_\textbf{change}(p,i)
+\leq
+lim_{MobPass} \cdot eui(y_{start},'MobPass')\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-limit-reno-freight">
+<span class="eqno">(53)<a class="headerlink" href="#equation-eq-limit-reno-freight" title="Permalink to this equation"></a></span>\[\sum_{euc \in \text{EUT_OF_CAT}('MobFreight'),i \in \text{TECH_OF_EUT}(euc)} \Delta_\textbf{change}(p,i)
+\leq
+lim_{MobFreight} \cdot eui(y_{start},'MobFreight')\]</div>
+<p>To avoid unrealistic changes in the system, additional constraints are
+needed during the phases for the mobility and low temperature heat
+sectors.
+Eq.  <a class="reference internal" href="#equation-eq-delta-tech-during-phase">(50)</a>
+calculates the upper limit of change (<span class="math notranslate nohighlight">\(\Delta_\textbf{change}\)</span>) in
+terms of supplied demand instead of installed capacity. Based on this
+quantification, the amount of change per phase is limited for low
+temperature heat (<span class="math notranslate nohighlight">\(lim_{LT,ren}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-limit-reno-ltheat">(51)</a>, passenger
+mobility (<span class="math notranslate nohighlight">\(lim_{MobPass}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-limit-reno-passmob">(52)</a> and freight
+mobility (<span class="math notranslate nohighlight">\(lim_{MobFreight}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-limit-reno-freight">(53)</a>. As an
+example, setting the maximum change of supplied heat at low temperature
+to 25% would limit the change in technology related to heat at low
+temperature to 25% during a phase. In this case, if more than 25% of the
+low temperature heat was supplied by a technology, it would take more
+than one phase to replace it by a different one.</p>
+</section>
+<section id="transition-cost-and-objective-function">
+<h4>Transition cost and objective function<a class="headerlink" href="#transition-cost-and-objective-function" title="Permalink to this headline"></a></h4>
+<div class="math notranslate nohighlight" id="equation-eq-obj-func-v2">
+<span class="eqno">(54)<a class="headerlink" href="#equation-eq-obj-func-v2" title="Permalink to this equation"></a></span>\[\textbf{C}_\textbf{tot,trans} = \textbf{C}_\textbf{tot,capex} + \textbf{C}_\textbf{tot,opex}\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-capex-v2">
+<span class="eqno">(55)<a class="headerlink" href="#equation-eq-capex-v2" title="Permalink to this equation"></a></span>\[\textbf{C}_\textbf{tot,capex} =
+\sum_{j \in \text{TECH}} \textbf{C}_\textbf{inv}(2015,j)
++
+\sum_{p \in \text{PHASE}}
+\textbf{C}_\textbf{inv,phase}(p)
+-
+\sum_{j \in \text{TECH}}
+\textbf{C}_\textbf{inv,return}(j)\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-copex-tot-v2">
+<span class="eqno">(56)<a class="headerlink" href="#equation-eq-copex-tot-v2" title="Permalink to this equation"></a></span>\[\textbf{C}_\textbf{tot,opex} =  \textbf{C}_\textbf{opex}(2015)
++ t_{phase} \cdot \tau_{phase}(p) \cdot \sum_{\{p, y_{start},y_{stop}\}}
+ \Big(\textbf{C}_\textbf{opex}(y_{start}) + \textbf{C}_\textbf{opex}(y_{stop}) \Big)/2\]</div>
+<div class="math notranslate nohighlight" id="equation-eq-path-annu-factor">
+<span class="eqno">(57)<a class="headerlink" href="#equation-eq-path-annu-factor" title="Permalink to this equation"></a></span>\[\tau_{phase}(p) = 1/(1+i_{rate})^{diff\_2015\_year(p)}\]</div>
+<p>The objective function to be minimised is the total transition cost of
+the energy system (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{tot,trans}\)</span>), defined as the sum of the total
+CAPEX (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{tot,capex}\)</span>) and the OPEX (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{tot,opex}\)</span>), according to
+Eq. <a class="reference internal" href="#equation-eq-obj-func-v2">(54)</a>. The total CAPEX
+(<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{tot,capex}\)</span>) is the sum of the initial investment in year 2015
+(<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{inv}\)</span>) and the investment during each phase (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{tot,phase}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-capex-v2">(55)</a> to which the residual asset invetsment cost in 2050 is withdrawn (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{inv,return}\)</span>). Thus, these investments account for
+the installation and dismantlement costs of the technologies. The total
+OPEX (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{tot,opex}\)</span>) is the sum of the OPEX in 2015 and the annualised
+sum of the OPEX during each phase (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{opex}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-copex-tot-v2">(56)</a>. During a phase, the
+system OPEX is the product of the annualised phase factor, defined in
+Eq. <a class="reference internal" href="#equation-eq-path-annu-factor">(57)</a>, and the
+arithmetic average of OPEX cost for the representative years before and
+after the phase.</p>
+<div class="math notranslate nohighlight" id="equation-eq-opex-yearly">
+<span class="eqno">(58)<a class="headerlink" href="#equation-eq-opex-yearly" title="Permalink to this equation"></a></span>\[\textbf{C}_\textbf{opex} (y) = \sum_{i \in \text{TECH}} \textbf{C}_\textbf{maint}(y,i) + \sum_{j \in \text{RES}} \textbf{C}_\textbf{op}(y,j) ~~~~~~~\forall y\in \text{YEARS}\]</div>
+<p>For each year, the yearly OPEX (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{opex}\)</span>) is the sum of the operating
+and maintenance costs of technologies (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{main}\)</span>) and the operating
+cost of the resources (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{op}\)</span>),
+Eq. <a class="reference internal" href="#equation-eq-opex-yearly">(58)</a>. To calculate the total
+operation and maintenance costs (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{maint}\)</span>) and the cost of the
+resources (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{op}\)</span>), their equations from the snapshot model
+(<a class="reference internal" href="#equation-eq-c-maint">(4)</a>-<a class="reference internal" href="#equation-eq-c-op">(5)</a>) are used with
+an additional dimension: the year.</p>
+<div class="math notranslate nohighlight" id="equation-eq-phaseinv">
+<span class="eqno">(59)<a class="headerlink" href="#equation-eq-phaseinv" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{C}_\textbf{inv,phase}(p) = \sum_{j \in \text{TECH}} \textbf{F}_\textbf{new}(p,j)\cdot \tau_{phase}(p)\cdot \left(c_{inv}(y_{start},j) + c_{inv}(y_{stop},j)\right)/2\\\forall p \in \text{PHASE} | y_{start}\in \text{Y_START}(p),y_{stop}\in \text{Y_STOP}(p)\end{aligned}\end{align} \]</div>
+<p>The investment during a phase (<span class="math notranslate nohighlight">\(\textbf{C}_\textbf{inv,phase}\)</span>) results from the
+multiplication of the new technologies built (<span class="math notranslate nohighlight">\(\textbf{F}_\textbf{new}\)</span>) with their
+annualised arithmetic averaged specific cost,
+Eq. <a class="reference internal" href="#equation-eq-phaseinv">(59)</a>. The annualised phase factor is
+used, see Eq. <a class="reference internal" href="#equation-eq-path-annu-factor">(57)</a>, and
+the specific cost during the phase is defined as the average between the
+investment cost for the first and last year of the period.</p>
+<div class="math notranslate nohighlight" id="equation-eq-salvage">
+<span class="eqno">(60)<a class="headerlink" href="#equation-eq-salvage" title="Permalink to this equation"></a></span>\[ \begin{align}\begin{aligned}\textbf{C}_\textbf{inv,return}(i) = \sum_{\{p, y_{start},y_{stop}\}} \frac{remaining\_years(i,p)}{liftime(y_start,i)} \textbf{F}_\textbf{new}(p,i)\cdot \tau_{phase}(p)\cdot
+\left(c_{inv}(y_{start},j) + c_{inv}(y_{stop},j)\right)/2\\\forall p \in \text{PHASE} | y_{start}\in \text{Y_START}(p),y_{stop}\in \text{Y_STOP}(p)\end{aligned}\end{align} \]</div>
+<p>A part of the investment will remain after 2050. This residual investment, also called salvage, can be calculated for each technology.
+A parameter, calculated <em>a priori</em>, gives for each technology and construction phase, the remaining amount of years (<span class="math notranslate nohighlight">\(remaining\_years\)</span>).
+As an example, if a PV panel has been built in 2045 and has a 20 years lifetime, the parameter will equal 15 years.
+Thus, the residual value is to a fraction of the investment cost of this technology when it has been built.
+This fraction is the ratio between the number of remaining years and the lifetime of the technology.
+In the previous example, the residual investment of the PV built is 75%.</p>
+</section>
+</section>
+</section>
+<section id="implementation">
+<span id="ssec-estd-implementation"></span><h2>Implementation<a class="headerlink" href="#implementation" title="Permalink to this headline"></a></h2>
+<p>The formulation of the MILP and LP problems has been implemented using
+an algebraic modeling language. The latter allows the representation of
+large LP and MILP problems. Its syntax is similar to AMPL, which is -
+according to the NEOS-statistics <a class="footnote-reference brackets" href="#id66" id="id46">13</a> - the most popular format for
+representing mathematical programming problems. The formulation enable
+the use of different solvers as open sources ones, such as GLPK, or
+commercial ones, such as CPLEX or Gurobi. In the code, each of the
+equations defined above is found as it is with the corresponding
+numbering. SETS, Variables and parameters have the same names (unless
+explicitly stated in the definition of the term). <a class="reference internal" href="#fig-ch2-lp-formulation-implementation-colored"><span class="std std-numref">Figure 14</span></a> illustrates -
+for the balance constraint <a class="reference internal" href="#equation-eq-layer-balance">(15)</a> - the mathematical
+formulation presented in this work and its implementation in the code.
+Colors highlight the same elements. In the implementation, each
+constraint has a comment (starting with #) and has a name (colored in
+black), in this case <em>layer_balance</em>. In addition, most of the SETS,
+Variables and parameters are more explicitly named, as a first example
+the set layers is named <em>L</em> in the paper and <em>LAYERS</em> in the
+implementation; or as another example, the input efficiency who is named
+<em>f</em> in the paper and <em>layers_in_out</em> in the implementation.</p>
+<figure class="align-default">
+<img alt="Comparison of equation formulation and code. This is the equation" src="../_images/eqs_color.png" />
+</figure>
+<figure class="align-default" id="fig-ch2-lp-formulation-implementation-colored">
+<img alt="Comparison of equation formulation and code." src="../_images/ch_estd_code_screenshot.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 14 </span><span class="caption-text">Comparison of equation formulation (upper equation) and code
+implementation (lower figure). Example based on Eq.
+<a class="reference internal" href="#equation-eq-layer-balance">(15)</a>.</span><a class="headerlink" href="#fig-ch2-lp-formulation-implementation-colored" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<p>The entire implementation is available on the directory
+<span id="id47"><sup><a class="reference internal" href="Bibliography.html#id18" title="Gauthier Limpens. v2.1 Updated version of EnergyScope TD for Belgian application. URL: https://github.com/energyscope/EnergyScope/tree/v2.1.">19</a></sup></span> and its architecture is illustrated
+in <a class="reference internal" href="#fig-ch2-estd-repo-structure"><span class="std std-numref">Figure 15</span></a>. Four folders compose
+the repository and contain the documentation (<code class="docutils literal notranslate"><span class="pre">Documentation</span></code>), the
+data used (<code class="docutils literal notranslate"><span class="pre">Data_management</span></code>), the MILP implementation
+(<code class="docutils literal notranslate"><span class="pre">STEP_1_TD_selection</span></code>) and the LP implementation
+(<code class="docutils literal notranslate"><span class="pre">STEP_2_Energy_Model</span></code>). For each of the models, the definition of the
+terms (SETS, Variables and Parameters) as well as the domains of the
+variables, the formulation of the constraints and the objective function
+are included in the model file (with the extension <code class="docutils literal notranslate"><span class="pre">.mod</span></code>). The
+numerical values of the parameters are contained in separate files (with
+the extension <code class="docutils literal notranslate"><span class="pre">.dat</span></code>). Finally, the output data of the model are saved
+in a file (wit the extension <code class="docutils literal notranslate"><span class="pre">.out</span></code>) or a folder (<code class="docutils literal notranslate"><span class="pre">\outputs</span></code>). An
+interface - via excel - allows to visualise the data (<code class="docutils literal notranslate"><span class="pre">DATA.xlsx</span></code>) and
+to generate the data files (<code class="docutils literal notranslate"><span class="pre">STEP_1_in.xlsx</span></code>, <code class="docutils literal notranslate"><span class="pre">STEP_1_out.xlsx</span></code> and
+<code class="docutils literal notranslate"><span class="pre">STEP_2_in.xlsx</span></code>). Finally, a user guide manual is available in the
+documentation to support the modeler in her/his first steps.</p>
+<figure class="align-default" id="fig-ch2-estd-repo-structure">
+<img alt="EnergyScope TD repository structure." src="../_images/ch_estd_repo_structure.png" />
+<figcaption>
+<p><span class="caption-number">Fig. 15 </span><span class="caption-text">EnergyScope TD repository structure available at
+<span id="id48"><sup><a class="reference internal" href="Bibliography.html#id18" title="Gauthier Limpens. v2.1 Updated version of EnergyScope TD for Belgian application. URL: https://github.com/energyscope/EnergyScope/tree/v2.1.">19</a></sup></span>.</span><a class="headerlink" href="#fig-ch2-estd-repo-structure" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+<dl class="footnote brackets">
+<dt class="label" id="id49"><span class="brackets"><a class="fn-backref" href="#id13">1</a></span></dt>
+<dd><p>Passenger transport activity from aviation is accounted in passenger mobility (excluding international extra EU travels).</p>
+</dd>
+<dt class="label" id="id50"><span class="brackets"><a class="fn-backref" href="#id18">2</a></span></dt>
+<dd><p>Hydrogen can be produced based on many feed-stocks, among them electricity used for electrolysers.</p>
+</dd>
+<dt class="label" id="id51"><span class="brackets"><a class="fn-backref" href="#id35">3</a></span></dt>
+<dd><p>Indeed, some technologies have several outputs, such as a CHP. Thus,
+the installed size must be defined with respect to one of these
+outputs. As an example, CHP are defined based on the thermal output
+rather than the electrical one.</p>
+</dd>
+<dt class="label" id="id52"><span class="brackets"><a class="fn-backref" href="#id36">4</a></span></dt>
+<dd><p>To simplify the reading, the formulation
+<span class="math notranslate nohighlight">\(t \in T| \{h,td\} \in T\_H\_TD(t)\)</span> is used. However, this
+cannot be directly implemented in the code and it requires two
+additional sets : <span class="math notranslate nohighlight">\(HOUR\_OF\_PERIOD(t)\)</span> and
+<span class="math notranslate nohighlight">\(TYPICAL\_DAY\_OF\_PERIOD(t)\)</span>. Hence, we have:
+<span class="math notranslate nohighlight">\(t \in T| \{h,td\} \in T\_H\_TD(t)\)</span>, which is equivalent in the
+code to
+<span class="math notranslate nohighlight">\(t \in T| h \in HOUR\_OF\_PERIOD(t), td \in TYPICAL\_DAY\_OF\_PERIOD(t)\)</span>.</p>
+</dd>
+<dt class="label" id="id53"><span class="brackets"><a class="fn-backref" href="#id37">5</a></span></dt>
+<dd><p>In most cases, the activation of the constraint stated in
+Eq. <a class="reference internal" href="#equation-eq-sto-level">(16)</a> will have as a consequence
+that the level of storage be the same at the beginning and at the end
+of each day — hence the use of the terminology ‘<em>daily storage</em>’.
+Note, however, that such daily storage behaviour is not always
+guaranteed by this constraint and thus, depending on the typical days
+sequence, a daily storage behaviour might need to be explicitly
+enforced.</p>
+</dd>
+<dt class="label" id="id54"><span class="brackets"><a class="fn-backref" href="#id38">6</a></span></dt>
+<dd><p>In the code, these equations are implemented with a <em>if-then</em>
+statement.</p>
+</dd>
+<dt class="label" id="id55"><span class="brackets"><a class="fn-backref" href="#id39">7</a></span></dt>
+<dd><p>In this linear formulation, storage technologies can charge and
+discharge at the same time. On the one hand, this avoids the need of
+integer variables; on the other hand, it has no physical meaning.
+However, in a cost minimization problem, the cheapest solution
+identified by the solver will always choose to either charge or
+discharge at any given <span class="math notranslate nohighlight">\(t\)</span>, as long as cost and efficiencies
+are defined. Hence, we recommend to always verify numerically the
+fact that only storage inputs or outputs are activated at each
+<span class="math notranslate nohighlight">\(t\)</span>, as we do in all our implementations.</p>
+</dd>
+<dt class="label" id="id56"><span class="brackets"><a class="fn-backref" href="#id40">8</a></span></dt>
+<dd><p>This is the ratio between the losses in the grid and the total annual
+electricity production in Belgium in 2015
+<span id="id57"><sup><a class="reference internal" href="Bibliography.html#id19" title="European Commission - Eurostat. Statistical pocketbook 2017. Technical Report 4, European Commission - Eurostat., 2017. doi:10.2832/147440.">20</a></sup></span>.</p>
+</dd>
+<dt class="label" id="id58"><span class="brackets"><a class="fn-backref" href="#id41">9</a></span></dt>
+<dd><p>[foot:nonLinear]All equations expressed in a compact non-linear form
+in this section Eqs. <a class="reference internal" href="#equation-eq-mob-share-fix">(26)</a>, <a class="reference internal" href="#equation-eq-freight-share-fix">(27)</a>,
+<a class="reference internal" href="#equation-eq-heat-decen-share">(31)</a> and <a class="reference internal" href="#equation-eq-dhn-peak">(37)</a> can be linearised. For these
+cases, the <strong>EndUses</strong> is defined with parameters and a variable
+representing a constant share over the year (e.g.  <span class="math notranslate nohighlight">\(\textbf{%}_\textbf{public}\)</span>). As
+an example, <strong>EndUses</strong> in
+Eq. <a class="reference internal" href="#equation-eq-mob-share-fix">(26)</a> is equal to
+<span class="math notranslate nohighlight">\(\textbf{EndUsesInput}(PassMb) \cdot %pass (h, td) / t_op (h, td)\)</span>.
+The term <span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{public}}\)</span>, is missing in the equation, but is implicitly
+implemented in <span class="math notranslate nohighlight">\(\textbf{%}_{\textbf{PassMob}}\)</span>.</p>
+</dd>
+<dt class="label" id="id59"><span class="brackets"><a class="fn-backref" href="#id42">10</a></span></dt>
+<dd><p>This generation (ZE0) was marketed from 2010 to 2017 with a battery
+capacity of 24 kWh. The new generation (ZE1) accounts for an improved
+capacity and reaches 40 kWh per battery. Data from
+<a class="reference external" href="https://en.wikipedia.org/wiki/Nissan_Leaf">https://en.wikipedia.org/wiki/Nissan_Leaf</a>, consulted on 08-02-2021</p>
+</dd>
+<dt class="label" id="id60"><span class="brackets"><a class="fn-backref" href="#id43">11</a></span></dt>
+<dd><p>The model resolution of the dispatch is not accurate enough to verify
+the adequacy. As one model cannot address all the issues, another
+approach has been preferred: couple the model to a dispatch one, and
+iterate between them. Percy and Coates
+<span id="id61"><sup><a class="reference internal" href="Bibliography.html#id20" title="Damon Coates and Guillaume Percy. Energy models coupling: soft-link between a long-term planning model and a dispatch model (energyscope td - dispa-set). Master's thesis, UCLouvain, 2020. URL: http://hdl.handle.net/2078.1/thesis:25205.">21</a></sup></span> demonstrated the
+feasibility of coupling a design model (ESTD) with a dispatch one
+(Dispa-SET <span id="id62"><sup><a class="reference internal" href="Bibliography.html#id21" title="Sylvain Quoilin, Ignacio Hidalgo Gonzalez, and Andreas Zucker. JRC TECHNICAL REPORTS Modelling Future EU Power Systems Under High Shares of Renewables. Technical Report, European Union, 2017. doi:10.2760/25400.">22</a></sup></span>). Based on a feedback
+loop, they iterated on the design to verify the power grid adequacy
+and the strategic reserves. Results show that the backup capacities
+and storage needed to be slightly increased compared to the results
+of the design model alone.</p>
+</dd>
+<dt class="label" id="id63"><span class="brackets"><a class="fn-backref" href="#id44">12</a></span></dt>
+<dd><p>The calculation is based on the annual capacity factor, the
+conversion efficiency and the average yearly irradiation. As an
+example, for PV, the efficiency in 2035 is estimated at
+23% <span id="id64"><sup><a class="reference internal" href="Bibliography.html#id22" title="Danish Energy Agency. Technology Data for Energy Plants for Electricity and District heating generation - Feb. 2019. Technical Report February, Danish Energy Agency, 2019.">23</a></sup></span> with an average daily
+irradiation - similar to historical values - of
+2820 Wh/m<span class="math notranslate nohighlight">\(^2\)</span> in
+Belgium <span id="id65"><sup><a class="reference internal" href="Bibliography.html#id23" title="Institut Royal Météorologique. Atlas climatique. URL: https://www.meteo.be/fr/climat/atlas-climatique/cartes-climatiques/rayonnement-solaire/rayonnement-solaire-global/annuel (visited on 2019-08-01).">24</a></sup></span>. The capacity
+factor of solar is around 11.4%, hence specific area for 1 kilowatt
+peak (<span class="math notranslate nohighlight">\(kW_p\)</span>) is
+<span class="math notranslate nohighlight">\(2820/24\cdot0.23/0.114\approx236.7\)</span>[<span class="math notranslate nohighlight">\(MW_p\)</span>/km<span class="math notranslate nohighlight">\(^2\)</span>]=<span class="math notranslate nohighlight">\(0.2367\)</span>
+[<span class="math notranslate nohighlight">\(GW_p\)</span>/km<span class="math notranslate nohighlight">\(^2\)</span>].</p>
+</dd>
+<dt class="label" id="id66"><span class="brackets"><a class="fn-backref" href="#id46">13</a></span></dt>
+<dd><p>NEOS Server is an Internet-based client-server application that
+provides free access to a library of optimization solvers, statistics
+are available at: <a class="reference external" href="https://neos-server.org/neos/report.html">https://neos-server.org/neos/report.html</a>, consulted
+the 27/01/2021.</p>
+</dd>
+</dl>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="Getting%20started.html" class="btn btn-neutral float-left" title="Getting started" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="Input%20Data.html" class="btn btn-neutral float-right" title="Input Data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, G. Limpens.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
