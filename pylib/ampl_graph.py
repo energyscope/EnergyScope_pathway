@@ -757,9 +757,9 @@ class AmplGraph:
                 
                 title = "<b>Respective share of salvage value, by 2050</b><br>[%]"
                 temp = df_to_plot.copy()
-                yvals = [0,round(float(temp.loc[temp['Category'] == 'MOB_PRIVATE']
+                yvals = sorted([0,round(float(temp.loc[temp['Category'] == 'MOB_PRIVATE']
                                        ['Share_return']),1),
-                         max(round(temp['Share_return'],1))]
+                         max(round(temp['Share_return'],1))])
                 self.custom_fig(fig,title,yvals,xvals=df_to_plot['Category'].
                                 unique(),type_graph = 'bar')
                 fig.update_xaxes(showticklabels=False,visible=False)
@@ -790,7 +790,7 @@ class AmplGraph:
             title = "<b>Respective salvage values, at the end year of each time window</b><br>[b€<sub>2015</sub>]"
             ELEC_2035 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2035') & (df_to_plot_eff['Category'] == 'ELECTRICITY')]['Cost_return'])
             INF_2035 = float(df_to_plot_eff.loc[(df_to_plot_eff['Years'] == '2035') & (df_to_plot_eff['Category'] == 'INFRASTRUCTURE')]['Cost_return'])
-            yvals = [0,round(ELEC_2035,1),round(INF_2035,1)]
+            yvals = sorted([0,round(ELEC_2035,1),round(INF_2035,1)])
             self.custom_fig(fig,title,yvals, xvals=df_to_plot_eff['Years'].unique())
             fig.write_image(self.outdir+"Return_eff_line.pdf", width=1200, height=550)
             plt.close()
@@ -924,7 +924,7 @@ class AmplGraph:
             
             title = "<b>Investments over transition</b><br>[b€<sub>2015</sub>]"
             temp = df_to_plot_full.groupby(['Years']).sum()
-            yvals = [0,min(round(temp['cumsum'],1)),max(round(temp['cumsum'],1))]
+            yvals = sorted([0,min(round(temp['cumsum'],1)),max(round(temp['cumsum'],1))])
             
             self.custom_fig(fig,title,yvals)
             fig.write_image(self.outdir+"C_inv_phase.pdf", width=1200, height=550)
@@ -1081,10 +1081,10 @@ class AmplGraph:
             RE_2050 = float(df_to_plot.loc
                             [(df_to_plot['Years'] == '2050') &
                              (df_to_plot['Category'] == 'RE_FUELS')]['cumsum'])
-            yvals = [0,min(round(temp['cumsum'],1)),
+            yvals = sorted([0,min(round(temp['cumsum'],1)),
                      round(NRE_2050,1),
                      round(NRE_2050+RE_2050,1),
-                     max(round(temp['cumsum'],1))]
+                     max(round(temp['cumsum'],1))])
             
             self.custom_fig(fig,title,yvals)
             fig.write_image(self.outdir+"C_op_phase.pdf", width=1200, height=550)
@@ -1185,7 +1185,7 @@ class AmplGraph:
                     title = "<b>{} - Installed capacities</b><br>[{}]".format(sector,
                                                                               self.dict_tech_cap_unit[sector])
                     temp = df_to_plot.groupby(['Years']).sum()
-                    yvals = [0,round(min(temp['F']),1),round(max(temp['F']),1)]
+                    yvals = sorted([0,round(min(temp['F']),1),round(max(temp['F']),1)])
                     
                     self.custom_fig(fig,title,yvals,xvals=sorted(df_to_plot['Years'].unique()))
                         
@@ -1409,8 +1409,8 @@ class AmplGraph:
                 title = "<b>Cumulative opex difference versus REF</b><br>[b€<sub>2015</sub>]"
             else:
                 title = "<b>Cumulative capex difference versus REF</b><br>[b€<sub>2015</sub>]"
-            yvals = [round(min(df_to_plot['cumsum']),1),0,
-                     round(max(df_to_plot['cumsum']),1)]
+            yvals = sorted([round(min(df_to_plot['cumsum']),1),0,
+                     round(max(df_to_plot['cumsum']),1)])
             
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"{}_diff_PF.pdf".format(type_of_graph), width=1200, height=550)
@@ -1440,8 +1440,8 @@ class AmplGraph:
                 
                 title = "<b>Installed capacities difference versus REF - {}</b><br>[{}]".format(sector,
                                                                                                 self.dict_tech_cap_unit[sector])
-                yvals = [round(min(df_to_plot_s['F']),1),0,
-                         round(max(df_to_plot_s['F']),1)]
+                yvals = sorted([round(min(df_to_plot_s['F']),1),0,
+                         round(max(df_to_plot_s['F']),1)])
                 
                 self.custom_fig(fig,title,yvals,neg_value=True)
                 if not os.path.exists(Path(self.outdir+"Tech_Cap/Diff_PF/")):
@@ -1468,8 +1468,8 @@ class AmplGraph:
                 pio.show(fig)
                 
                 title = "<b>Layer balance difference versus REF - {}</b><br>[{}]".format(k,self.dict_layer_unit[k])
-                yvals = [round(min(df_to_plot_layer[k]),1),0,
-                         round(max(df_to_plot_layer[k]),1)]
+                yvals = sorted([round(min(df_to_plot_layer[k]),1),0,
+                         round(max(df_to_plot_layer[k]),1)])
                 
                 self.custom_fig(fig,title,yvals,neg_value=True)
                 if not os.path.exists(Path(self.outdir+"Layers/Diff_PF/")):
@@ -1487,8 +1487,8 @@ class AmplGraph:
             pio.show(fig)
             
             title = "<b>GWP per sector difference versus REF</b><br>[MtCO2/y]"
-            yvals = [round(min(df_to_plot['GWP_EUD']),1),0,
-                     round(max(df_to_plot['GWP_EUD']),1)]
+            yvals = sorted([round(min(df_to_plot['GWP_EUD']),1),0,
+                     round(max(df_to_plot['GWP_EUD']),1)])
             
             self.custom_fig(fig,title,yvals,neg_value=True)
             
@@ -1534,8 +1534,8 @@ class AmplGraph:
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
             title = "<b>Primary energy difference versus REF</b><br>[TWh]"
-            yvals = [round(min(df_to_plot['Res']),1),0,
-                     round(max(df_to_plot['Res']),1)]
+            yvals = sorted([round(min(df_to_plot['Res']),1),0,
+                     round(max(df_to_plot['Res']),1)])
             
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"Primary_res_diff_PF.pdf", width=1200, height=550)
@@ -1571,8 +1571,8 @@ class AmplGraph:
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
             title = "<b>Primary energy difference versus REF</b><br>[TWh]"
-            yvals = [round(min(df_to_plot_category['Res']),1),0,
-                     round(max(df_to_plot_category['Res']),1)]
+            yvals = sorted([round(min(df_to_plot_category['Res']),1),0,
+                     round(max(df_to_plot_category['Res']),1)])
             
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"Primary_res_diff_PF_category.pdf", width=1200, height=550)
@@ -1586,9 +1586,9 @@ class AmplGraph:
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
             title = "<b>Cost return difference versus REF</b><br>[b€<sub>2015</sub>]"
-            yvals = [min(round(df_to_plot['Cost_return'],1)),0,
+            yvals = sorted([min(round(df_to_plot['Cost_return'],1)),0,
                      max(round(df_to_plot.loc[df_to_plot['Category'] == 'INFRASTRUCTURE']['Cost_return'],1)),
-                     max(round(df_to_plot['Cost_return'],1))]
+                     max(round(df_to_plot['Cost_return'],1))])
             
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"Cost_return_diff_PF.pdf", width=1200, height=550)
@@ -1599,8 +1599,8 @@ class AmplGraph:
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
             pio.show(fig)
             title = "<b>Cumulative transition total cost difference versus REF</b><br>[b€<sub>2015</sub>]"
-            yvals = [min(round(df_to_plot['Tot_trans_cost'],1)),0,
-                     max(round(df_to_plot['Tot_trans_cost'],1))]
+            yvals = sorted([min(round(df_to_plot['Tot_trans_cost'],1)),0,
+                     max(round(df_to_plot['Tot_trans_cost'],1))])
             self.custom_fig(fig,title,yvals,neg_value=True)
             fig.write_image(self.outdir+"Cum_total_cost_diff_REF.pdf", width=1200, height=550)
             plt.close()

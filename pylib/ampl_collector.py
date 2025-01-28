@@ -121,6 +121,16 @@ class AmplCollector:
         if not os.path.exists(Path(self.output_file).parent):
             os.makedirs(Path(self.output_file).parent)
         
+        csv_folder = os.path.join(Path(self.output_file).parent,'csv')
+        if not os.path.exists(csv_folder):
+            os.makedirs(csv_folder)
+        
         open_file = open(self.output_file,"wb")
         pickle.dump(self.results,open_file)
         open_file.close()
+        
+        results_to_csv = ['Assets','Resources']
+        for r in self.results:
+            if r in results_to_csv:
+                path_csv = csv_folder+'/'+r+'.csv'
+                self.results[r].to_csv(path_csv)
