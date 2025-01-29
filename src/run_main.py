@@ -43,7 +43,7 @@ CO2_neutrality_2050_val = 3406.92 # Value equivalent to CO2-neutrality in 2050
                                   # [ktCO2,eq]
                                   
 run_opti = True # True to run optimisation
-graph = True # True to plot graphs for deterministic run
+graph = False # True to plot graphs for deterministic run
 graph_comp = False # True to plot comparative graphs between two deterministic
                    # runs
 
@@ -57,14 +57,12 @@ expl_text = '_showcase_text' # Give here explanation text to describe the
 
 if type_of_model == 'MO':
     mod_1_path = [os.path.join(pth_model,'PESMO_model.mod'),
-                os.path.join(pth_model,'PESMO_store_variables.mod'),
                 os.path.join(pth_model,'PES_store_variables.mod')]
     mod_2_path = [os.path.join(pth_model,'PESMO_initialise_2025.mod'),
                   os.path.join(pth_model,'fix.mod')]
     dat_path = [os.path.join(pth_model,'PESMO_data_all_years.dat')]
 else:
     mod_1_path = [os.path.join(pth_model,'PESTD_model.mod'),
-            os.path.join(pth_model,'PESTD_store_variables.mod'),
             os.path.join(pth_model,'PES_store_variables.mod')]
     mod_2_path = [os.path.join(pth_model,'PESTD_initialise_2025.mod'),
               os.path.join(pth_model,'fix.mod')]
