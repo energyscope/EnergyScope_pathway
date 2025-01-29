@@ -109,9 +109,9 @@ ampl_options = {'show_stats': 1,
 #%% Actual script part
 if __name__ == '__main__':
     
-    N_year_opti = 25 # Duration of the time window to optimise. Must be a
+    N_year_opti = 10 # Duration of the time window to optimise. Must be a
                      # multiple of 5, between 5 and 25.
-    N_year_overlap = 0 # Duration of the overlap between two consecutives
+    N_year_overlap = 5 # Duration of the overlap between two consecutives
                        # time windows. Must be a multiple of 5 and smaller 
                        # than the duration of the time window
         
