@@ -59,7 +59,7 @@ class AmplObject:
         self.ampl_path = ampl_path
         self.options = options
         self.ampl = self.set_ampl(mod_1_path, mod_2_path, data_path, options, 
-                                  ampl_path)
+                                  self.ampl_path)
         self.vars = self.ampl.getVariables()
         self.params = self.ampl.getParameters()
         self.sets = dict()
@@ -200,7 +200,7 @@ class AmplObject:
     
     def clean_history(self):
         open(os.path.join(self.dir,'fix.mod'), 'w').close()
-        open(os.path.join(self.dir,'PESTD_data_remaining_wnd.dat'), 'w').close()
+        open(os.path.join(self.dir,'PES_data_remaining_wnd.dat'), 'w').close()
         open(os.path.join(self.dir,'PES_seq_opti.dat'), 'w').close()
 
     """"
