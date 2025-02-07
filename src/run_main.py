@@ -42,14 +42,14 @@ CO2_neutrality_2050 = True # True if setting the GWP of 2050 to carbon-
 CO2_neutrality_2050_val = 3406.92 # Value equivalent to CO2-neutrality in 2050
                                   # [ktCO2,eq]
                                   
-run_opti = True # True to run optimisation
-graph = False # True to plot graphs for deterministic run
+run_opti = False # True to run optimisation
+graph = True # True to plot graphs for deterministic run
 graph_comp = False # True to plot comparative graphs between two deterministic
                    # runs
 
-case_study = '_showcase' # Give here the name of the case study for 
+case_study = '_showcase_CO2_neut' # Give here the name of the case study for 
                     # deterministic run
-expl_text = '_showcase_text' # Give here explanation text to describe the
+expl_text = '_showcase_CO2_neut_text' # Give here explanation text to describe the
                         # case study
         
 #%% Join the .dat and .mod files depending on the type of model (MO or TD).
@@ -107,9 +107,9 @@ ampl_options = {'show_stats': 1,
 #%% Actual script part
 if __name__ == '__main__':
     
-    N_year_opti = 10 # Duration of the time window to optimise. Must be a
+    N_year_opti = 25 # Duration of the time window to optimise. Must be a
                      # multiple of 5, between 5 and 25.
-    N_year_overlap = 5 # Duration of the overlap between two consecutives
+    N_year_overlap = 0 # Duration of the overlap between two consecutives
                        # time windows. Must be a multiple of 5 and smaller 
                        # than the duration of the time window
         
@@ -192,16 +192,16 @@ if __name__ == '__main__':
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
         ampl_graph.graph_resource() # Primary energy mix
-        ampl_graph.graph_cost() # Total annual system cost 
-        ampl_graph.graph_gwp_per_sector() # GWP per energy sector
-        ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
-        ampl_graph.graph_cost_op_phase() # Cumulative operational costs
-        ampl_graph.graph_cost_return() # Salvage value
+        # ampl_graph.graph_cost() # Total annual system cost 
+        # ampl_graph.graph_gwp_per_sector() # GWP per energy sector
+        # ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
+        # ampl_graph.graph_cost_op_phase() # Cumulative operational costs
+        # ampl_graph.graph_cost_return() # Salvage value
 
         
-        ampl_graph.graph_layer() # Prod-Cons graph per layer
+        # ampl_graph.graph_layer() # Prod-Cons graph per layer
         ampl_graph.graph_tech_cap() # Installed capapcities per sector
-        ampl_graph.graph_load_factor() # Load factor per sector
+        # ampl_graph.graph_load_factor() # Load factor per sector
         df_unused,_ = ampl_graph.graph_load_factor_scaled() # Scaled load factor
         
     #%% Plot graphs to compare two different deterministic runs:
@@ -216,23 +216,23 @@ if __name__ == '__main__':
         output_file_2 = os.path.join(output_folder_2,'_Results.pkl')
         
         # Reference case: TD-Perfect foresight
-        case_study_1 = 'case_ref'
+        case_study_1 = '_showcase_ref'
         output_folder_1 = os.path.join(pth_output_all,case_study_1)
         output_file_1 = os.path.join(output_folder_1,'_Results.pkl')
         
 
         output_files = [output_file_1,output_file_2]
         
-        # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
-        # ampl_graph.graph_comparison(output_files,'C_op_phase')
-        # ampl_graph.graph_comparison(output_files,'Resources')
-        # ampl_graph.graph_comparison(output_files,'Cost_return')
-        # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
-        # ampl_graph.graph_comparison(output_files,'Total_system_cost')
-        # ampl_graph.graph_comparison(output_files,'Tech_cap')
-        # ampl_graph.graph_comparison(output_files,'Layer')
-        # ampl_graph.graph_comparison(output_files,'GWP_per_sector')
-        # ampl_graph.graph_comparison(output_files,'Load_factor')
+        ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
+        ampl_graph.graph_comparison(output_files,'C_op_phase')
+        ampl_graph.graph_comparison(output_files,'Resources')
+        ampl_graph.graph_comparison(output_files,'Cost_return')
+        ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+        ampl_graph.graph_comparison(output_files,'Total_system_cost')
+        ampl_graph.graph_comparison(output_files,'Tech_cap')
+        ampl_graph.graph_comparison(output_files,'Layer')
+        ampl_graph.graph_comparison(output_files,'GWP_per_sector')
+        ampl_graph.graph_comparison(output_files,'Load_factor')
 
         
     ###############################################################################
