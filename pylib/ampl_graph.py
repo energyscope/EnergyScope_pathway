@@ -1436,6 +1436,8 @@ class AmplGraph:
                               title='Comparison - {} - {}'.format(type_of_graph,sector),
                               color_discrete_map=self.color_dict_full,markers=True)
                 fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot_s['Years'].unique()))
+                fig.update_traces(marker=dict(size=12))
+                fig.update_traces(line={'width': 10})
                 pio.show(fig)
                 
                 title = "<b>Installed capacities difference versus REF - {}</b><br>[{}]".format(sector,

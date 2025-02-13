@@ -54,9 +54,9 @@ UQ = False # True to run PCE via RHEIA
 pol_order = 2 # Polynomial order for PCE
 
 if deterministic :
-    case_study = 'test_test' # Give here the name of the case study for 
+    case_study = 'TD_30_0_gwp_budget_no_efuels_2020_SMR' # Give here the name of the case study for 
                         # deterministic run
-    expl_text = 'test_text' # Give here explanation text to describe the
+    expl_text = '' # Give here explanation text to describe the
                             # case study
 else:
     case_study_uq = 'test_uq' # Give here the name of the case study for 
@@ -66,7 +66,7 @@ else:
                 'site-packages/rheia/RESULTS/ES_PATHWAY/UQ/')
 
 graph = False # True to plot graphs for deterministic run
-graph_comp = False # True to plot comparative graphs between two deterministic
+graph_comp = True # True to plot comparative graphs between two deterministic
                    # runs
 graph_UQ = False # True to plot graphs for UQ runs
         
@@ -273,16 +273,16 @@ if __name__ == '__main__':
 
         output_files = [output_file_1,output_file_2]
         
-        ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
-        ampl_graph.graph_comparison(output_files,'C_op_phase')
-        ampl_graph.graph_comparison(output_files,'Resources')
-        ampl_graph.graph_comparison(output_files,'Cost_return')
-        ampl_graph.graph_comparison(output_files,'Total_trans_cost')
-        ampl_graph.graph_comparison(output_files,'Total_system_cost')
+        # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
+        # ampl_graph.graph_comparison(output_files,'C_op_phase')
+        # ampl_graph.graph_comparison(output_files,'Resources')
+        # ampl_graph.graph_comparison(output_files,'Cost_return')
+        # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+        # ampl_graph.graph_comparison(output_files,'Total_system_cost')
         ampl_graph.graph_comparison(output_files,'Tech_cap')
-        ampl_graph.graph_comparison(output_files,'Layer')
-        ampl_graph.graph_comparison(output_files,'GWP_per_sector')
-        ampl_graph.graph_comparison(output_files,'Load_factor')
+        # ampl_graph.graph_comparison(output_files,'Layer')
+        # ampl_graph.graph_comparison(output_files,'GWP_per_sector')
+        # ampl_graph.graph_comparison(output_files,'Load_factor')
     
     #%% Plot graphs related to UQ analysis
     if graph_UQ :
