@@ -34,7 +34,7 @@ from ampl_uq import AmplUQ
 
 #%% Options of this run_main.py
 
-type_of_model = 'TD' # Define the time resolution of the model. 'TD' for hourly
+type_of_model = 'MO' # Define the time resolution of the model. 'TD' for hourly
                      # model and 'MO' for monthly model
 
 nbr_tds = 12 # Number of typical days per year to consider. Can choose between
@@ -43,7 +43,7 @@ nbr_tds = 12 # Number of typical days per year to consider. Can choose between
 
 gwp_budget = True # True if limiting the overall GWP of the whole transition
 gwp_budget_val = 1224935.4 # GWP budget for the whole transition [ktCO2,eq]
-CO2_neutrality_2050 = False # True if setting the GWP of 2050 to carbon-
+CO2_neutrality_2050 = True # True if setting the GWP of 2050 to carbon-
                             # neutrality
 CO2_neutrality_2050_val = 3406.92 # Value equivalent to CO2-neutrality in 2050
                                   # [ktCO2,eq]
@@ -54,9 +54,9 @@ UQ = False # True to run PCE via RHEIA
 pol_order = 2 # Polynomial order for PCE
 
 if deterministic :
-    case_study = 'TD_30_0_gwp_budget_no_efuels_2020_lin_VRES_increase' # Give here the name of the case study for 
+    case_study = 'TD_30_0_gwp_budget_no_efuels_2020' # Give here the name of the case study for 
                         # deterministic run
-    expl_text = 'Limit the deployment of VRES to a linear increase up to max capacity' # Give here explanation text to describe the
+    expl_text = 'Limiting gas storage to existing capacity' # Give here explanation text to describe the
                             # case study
 else:
     case_study_uq = 'test_uq' # Give here the name of the case study for 
@@ -66,7 +66,7 @@ else:
                 'site-packages/rheia/RESULTS/ES_PATHWAY/UQ/')
 
 graph = True # True to plot graphs for deterministic run
-graph_comp = True # True to plot comparative graphs between two deterministic
+graph_comp = False # True to plot comparative graphs between two deterministic
                    # runs
 graph_UQ = False # True to plot graphs for UQ runs
         
@@ -135,6 +135,8 @@ if __name__ == '__main__':
         
     # To do once at initialisation of the environment
     i = 0
+    
+
     
     output_folder = os.path.join(pth_output_all,case_study)
     output_file = os.path.join(output_folder,'_Results.pkl')
@@ -205,7 +207,8 @@ if __name__ == '__main__':
                 
                 break
             #%% Run deterministic optimisation and collect results
-            if deterministic: 
+            if deterministic:
+                
                 solve_result = ampl.run_ampl()
                 ampl.get_results()
             
@@ -236,11 +239,12 @@ if __name__ == '__main__':
             
     #%% Plot graphs for deterministic runs
     if graph:
-        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_lin_VRES_increase'#case_study
+        case_study = case_study #'TD_30_0_gwp_budget_no_efuels_2020'#case_study
+        case_study = '_TEST_AMPL'
         
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
-        # ampl_graph.graph_resource() # Primary energy mix
+        ampl_graph.graph_resource() # Primary energy mix
         # ampl_graph.graph_cost() # Total annual system cost 
         # ampl_graph.graph_gwp_per_sector() # GWP per energy sector
         # ampl_graph.graph_cost_inv_phase_tech() # Cumulative investment costs
@@ -248,8 +252,8 @@ if __name__ == '__main__':
         # ampl_graph.graph_cost_return() # Salvage value
 
         
-        # ampl_graph.graph_layer() # Prod-Cons graph per layer
-        # ampl_graph.graph_tech_cap() # Installed capapcities per sector
+        ampl_graph.graph_layer() # Prod-Cons graph per layer
+        ampl_graph.graph_tech_cap() # Installed capapcities per sector
         # ampl_graph.graph_load_factor() # Load factor per sector
         # df_unused,_ = ampl_graph.graph_load_factor_scaled() # Scaled load factor
         
@@ -258,7 +262,7 @@ if __name__ == '__main__':
       # case_study_1: the reference case study
       # Graphs present the absolute difference: case_study - case_study_1
     if graph_comp:
-        case_study = 'TD_30_0_gwp_budget_no_efuels_2020_lin_VRES_increase'#case_study
+        case_study = case_study #'TD_30_0_gwp_budget_no_efuels_2020_SMR'#case_study
         output_file = pth_output_all + '/' + case_study + '/_Results.pkl'
         ampl_graph = AmplGraph(output_file, ampl_0, case_study)
         output_folder_2 = os.path.join(pth_output_all,case_study)
@@ -274,12 +278,12 @@ if __name__ == '__main__':
         
         # ampl_graph.graph_comparison(output_files,'C_inv_phase_tech')
         # ampl_graph.graph_comparison(output_files,'C_op_phase')
-        # ampl_graph.graph_comparison(output_files,'Resources')
+        ampl_graph.graph_comparison(output_files,'Resources')
         # ampl_graph.graph_comparison(output_files,'Cost_return')
-        ampl_graph.graph_comparison(output_files,'Total_trans_cost')
-        ampl_graph.graph_comparison(output_files,'Total_system_cost')
-        # ampl_graph.graph_comparison(output_files,'Tech_cap')
-        # ampl_graph.graph_comparison(output_files,'Layer')
+        # ampl_graph.graph_comparison(output_files,'Total_trans_cost')
+        # ampl_graph.graph_comparison(output_files,'Total_system_cost')
+        ampl_graph.graph_comparison(output_files,'Tech_cap')
+        ampl_graph.graph_comparison(output_files,'Layer')
         # ampl_graph.graph_comparison(output_files,'GWP_per_sector')
         # ampl_graph.graph_comparison(output_files,'Load_factor')
     

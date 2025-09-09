@@ -93,7 +93,7 @@ class AmplGraph:
         if ampl_collector == None:
             ampl_collector = self.ampl_collector
         
-        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS',
+        col_plot = ['AMMONIA','ELECTRICITY','GAS','H2','WASTE','COAL','WOOD','WET_BIOMASS',
                     'HEAT_HIGH_T','HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC',
                     'METHANOL','MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL',
                     'MOB_FREIGHT_ROAD','MOB_PRIVATE','MOB_PUBLIC']
@@ -154,7 +154,7 @@ class AmplGraph:
             
                 title = "<b>{} - Layer balance</b><br>[{}]".format(k,
                                                        self.dict_layer_unit[k])
-                if k in ['GAS','H2','WOOD','WET_BIOMASS']:
+                if k in ['GAS','H2','WOOD','WET_BIOMASS','WASTE','COAL']:
                     EUD_2020 = 0
                     EUD_2050 = 0
                 else:
@@ -1534,6 +1534,8 @@ class AmplGraph:
                           title='Comparison - {}'.format(type_of_graph),
                           color_discrete_map=self.color_dict_full,markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            fig.update_traces(marker=dict(size=12))
+            fig.update_traces(line={'width': 10})
             pio.show(fig)
             title = "<b>Primary energy difference versus REF</b><br>[TWh]"
             yvals = [round(min(df_to_plot['Res']),1),0,
@@ -1571,6 +1573,8 @@ class AmplGraph:
                           title='Comparison - {}'.format(type_of_graph),
                           color_discrete_map=self.color_dict_full,markers=True)
             fig.update_xaxes(categoryorder='array', categoryarray= sorted(df_to_plot['Years'].unique()))
+            fig.update_traces(marker=dict(size=12))
+            fig.update_traces(line={'width': 10})
             pio.show(fig)
             title = "<b>Primary energy difference versus REF</b><br>[TWh]"
             yvals = [round(min(df_to_plot_category['Res']),1),0,
@@ -1791,7 +1795,7 @@ class AmplGraph:
         layers = ['AMMONIA','ELECTRICITY','GAS','H2','WOOD','WET_BIOMASS','HEAT_HIGH_T',
                     'HEAT_LOW_T_DECEN','HEAT_LOW_T_DHN','HVC','METHANOL',
                     'MOB_FREIGHT_BOAT','MOB_FREIGHT_RAIL','MOB_FREIGHT_ROAD','MOB_PRIVATE',
-                    'MOB_PUBLIC']
+                    'MOB_PUBLIC','WASTE','COAL']
 
         dict_layer_unit =  dict.fromkeys(layers)
         for sector in layers:
